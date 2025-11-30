@@ -1,3 +1,4 @@
+```text
 mini2440_rtos/
 ├── arch/                           # 【架构层】
 │   ├── startup.S                   # 启动代码（需要修改中断函数地址，加上export，直接b跳转到对应c语言中断函数）
@@ -28,7 +29,7 @@ mini2440_rtos/
 │   ├── os_mailbox.c                # 邮箱
 │   ├── os_mem.c                    # 内存管理
 │   ├── os_mutex.c                  # 互斥量
-│   ├── os_queue.c                  # 消息队列                    
+│   ├── os_queue.c                  # 消息队列
 │   ├── os_sem.c                    # 信号量
 │   ├── os_task.c                   # 任务管理
 │   ├── os_time.c                   # 时间管理
@@ -38,6 +39,7 @@ mini2440_rtos/
 │   ├── os_debug.c                   # 实现可重入函数和print函数
 │   └── main.c                       # 用户代码 (引用 include.h)
 │
-├── build/                          # 编译产物
-├── Makefile                        # 编译脚本✅
-└── linker.ld                       # 链接脚本✅
+├── build/                           # 编译产物
+├── Makefile                         # 编译脚本✅
+└── linker.ld                        # 链接脚本✅
+```
