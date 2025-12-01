@@ -33,9 +33,6 @@ void Task1(void *pdata)
     }
 }
 
-void delay(volatile int count) {
-    while (count--);
-}
  
 void EINT0_Handler(void) {
     rSRCPND |= (1<<0);  // EINT0 对应 位0
@@ -59,7 +56,7 @@ void Task2(void *pdata)
         // 流水灯
         for(int i = 5; i <= 8; i++) {
              rGPBDAT &= ~(1 << i); // 点亮 LED i
-             delay(0xF0000);
+             OSTimeDlyHMSM(0, 0, 1, 0);
              rGPBDAT |= (1 << i);  // 熄灭 LED i
         }
     }

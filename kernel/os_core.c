@@ -40,3 +40,16 @@ void  OSInit(void)
 //阻止上下文切换
 //开启上下文切换
 //
+
+
+
+INT8U OS_TCBInit(INT8U prio, OS_STACK *ptos)
+{
+    OS_CPU_SR  cpu_sr;
+    OS_TCB     *ptcb;
+    OS_ENTER_CRITICAL();
+    
+
+    OS_EXIT_CRITICAL();
+    
+}

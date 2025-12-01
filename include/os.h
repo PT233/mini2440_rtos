@@ -4,13 +4,13 @@
 
 /*
 *   OS_TCB Task Control Block
-*   
+*   去掉了ext
 */
-typedef struct OS_TCB{
+typedef struct os_tcb{
     OS_STACK        *OSTCBStackPtr;             //指向当前任务栈的栈顶指针
     //双向链表
-    struct OS_TCB   *OSTCBPrevPtr;              //指向上一个TCB任务控制块的指针
-    struct OS_TCB   *OSTCBNextPtr;              //指向下一个TCB任务控制块的指针
+    struct os_tcb   *OSTCBPrevPtr;              //指向上一个TCB任务控制块的指针
+    struct os_tcb   *OSTCBNextPtr;              //指向下一个TCB任务控制块的指针
     //OS_EVENT 还没定义
     OS_EVENT        *OSTCBEventPtr;             //指向任务所等待的事件控制块的指针
     void            *OSTCBMessage;              //从邮箱或者消息队列中的消息
