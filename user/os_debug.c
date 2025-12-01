@@ -2,6 +2,7 @@
 
 // 手动定义变长参数宏，不依赖 <stdarg.h>
 typedef __builtin_va_list va_list;
+
 #define va_start(v,l)   __builtin_va_start(v,l)
 #define va_end(v)       __builtin_va_end(v)
 #define va_arg(v,l)     __builtin_va_arg(v,l)
@@ -17,7 +18,7 @@ int ReentrantTest(int* a, int* b, long c)
 }
 
 // 将整数转换为字符串
-static void print_dec(unsigned int n)
+static void print_dec(uint32_t n)
 {
     if (n == 0) {
         Uart_SendByte('0');
@@ -37,7 +38,7 @@ static void print_dec(unsigned int n)
     }
 }
 
-static void print_hex(unsigned int n)
+static void print_hex(uint32_t n)
 {
     int i;
     int started = 0;

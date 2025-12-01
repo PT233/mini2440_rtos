@@ -20,7 +20,6 @@ typedef int32_t     INT32S;
 typedef float       FP32;
 typedef double      FP64;
 
-
 //D:double
 #define BYTE        INT8S
 #define UBYTE       INT8U
