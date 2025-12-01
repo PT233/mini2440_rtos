@@ -1,0 +1,4 @@
+*.h linguist-language=C
+*.c linguist-language=C
+*.S linguist-language=Assembly
+*.inc linguist-language=Assembly
