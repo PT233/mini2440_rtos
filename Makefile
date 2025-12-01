@@ -1,5 +1,5 @@
 # =====================================================================
-# Makefile for mini2440 (GNU Toolchain)
+# Makefile for mini2440_rtos (GNU Toolchain)
 # =====================================================================
 
 # 交叉编译器
@@ -13,7 +13,7 @@ OBJDUMP = $(CROSS_COMPILE)objdump
 READELF = $(CROSS_COMPILE)readelf
 
 # 目标文件名
-TARGET  = mini2440
+TARGET  = mini2440_rtos
 BUILD_DIR = build
 
 # 编译选项
