@@ -46,10 +46,41 @@ void  OSInit(void)
 INT8U OS_TCBInit(INT8U prio, OS_STACK *ptos)
 {
     OS_CPU_SR  cpu_sr;
-    OS_TCB     *ptcb;
+    OS_TCB     *ptcb;    //point to TCB
     OS_ENTER_CRITICAL();
-    
+    ptcb = OS_TCBFreeList;                                      /* 从空闲列表中取出一个TCB */
+    if(ptcb != (OS_TCB *)0){
+        OS_TCBFreeList = ptcb->OSTCBNextPtr;                    /* 调整空闲列表指针 */
+        OS_EXIT_CRITICAL();
+        ptcb->OSTCBStackPtr    = (OS_STACK *)ptos;              /* 设置任务栈指针 */
+        ptcb->OSTCBEventPtr    = (OS_EVENT *)0;                 /* 任务不等待任何事件 */
+        ptcb->OSTCBMessage     = (void *)0;                     /* 任务没有收到任何消息 */
+        ptcb->OSTCBFlagNode    = (OS_FLAG_NODE *)0;             /* 任务不等待任何事件标志 */
+        ptcb->OSTCBFlagsReady  = (OS_FLAGS)0;
+        ptcb->OSTCBPrio        = (INT8U)prio;                   /* 设置任务优先级 */
+        ptcb->OSTCBStatus      = OS_STAT_RDY;                   /* 设置任务状态为就绪态 */
+        ptcb->OSTCBDelay       = 0;                             /* 无延迟 */
+        ptcb->OSTCB_Y          = prio >> 3;                     /* 计算任务优先级在组中的索引 */
+        ptcb->OSTCBBit_Y       = OSMapTable[ptcb->OSTCB_Y];     /* 计算访问就绪表中的位位置的位掩码 */
+        ptcb->OSTCB_X          = prio & 0x07;                   /* 计算任务优先级的组中的位位置 */
+        ptcb->OSTCBBit_X       = OSMapTable[ptcb->OSTCB_X];     /* 计算访问就绪表中的位位置的位掩码 */
+        ptcb->OSTCBDeleteReq   = OS_NO_ERR;                     /* 任务删除请求标志清零 */
 
+        OSTCBInitHook(ptcb);                                    /* 调用用户定义的钩子函数 */
+        OSTaskCreateHook(ptcb);                                 /* 调用用户定义的钩子函数 */
+        OS_ENTER_CRITICAL();
+        OSTCBPrioTable[prio] = ptcb;                            /* 在优先级表中注册该任务 */
+        ptcb->OSTCBNextPtr = OS_TCBList;
+        ptcb->OSTCBPrevPtr = (OS_TCB *)0;
+        if(OS_TCBList != (OS_TCB *)0){                          /* 如果TCB列表为空 */
+            OS_TCBList->OSTCBPrevPtr = ptcb;
+        } 
+        OS_TCBList                   = ptcb;
+        OSReadyGroup                |= ptcb->OSTCBBit_Y;        /* 设置就绪组 */
+        OSReadyTable[ptcb->OSTCB_Y] |= ptcb->OSTCBBit_X;        /* 设置就绪表 */
+        OS_EXIT_CRITICAL();
+        return (OS_NO_ERR); /* 返回成功 */
+    }
     OS_EXIT_CRITICAL();
-    
+    return (OS_NO_MORE_TCB); /* 返回没有更多的TCB */
 }
