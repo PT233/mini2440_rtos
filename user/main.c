@@ -73,5 +73,14 @@ void Task3(void *pdata)
     pdata = pdata; // 防止编译器警告
     for(;;) {
         ReentrantTest(&a, &b, c);
+        OSFlagPend();
+        OSMailBoxPend();
+        OSMutexPend();
+        OSQueuePend();
+        OSSemPend();
+        OSTaskDelete(OS_PRIO_SELF);
+        OSTaskSuspend(OS_PRIO_SELF);
+        OSTimeDelay();
+        OSTimeDelayHMSM();//HMSM:小时,分钟,秒,毫秒
     }
 }
