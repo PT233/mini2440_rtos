@@ -190,17 +190,17 @@ typedef struct os_tcb{
     BOOLEAN          OSTCBDeleteReq;            //任务等待事件的返回值
 }OS_TCB;
 
+extern INT8U         OSTaskCtr;                       //已创建的任务数
 
-
-extern INT8U         OSReadyGroup;                        /* 就绪列表组*/
-extern INT8U         OSReadyTable[OS_RDY_TBL_SIZE];       /* 准备运行的任务表*/
+extern INT8U         OSReadyGroup;                        //就绪列表组
+extern INT8U         OSReadyTable[OS_RDY_TBL_SIZE];       //准备运行的任务表
 
 extern OS_TCB       *OSTCBCurrent; //指向当前任务的TCB
 extern OS_TCB       *OSTCBHighRdy; //指向最高优先级就绪任务的TCB
-extern OS_TCB       *OS_TCBFreeList; //指向空闲TCB列表的头指针
-extern OS_TCB       *OS_TCBList;     //指向所有任务TCB列表的头指针
-extern OS_TCB        OS_TCBTable[OS_LOWEST_PRIO + 1]; //任务控制块数组
-extern OS_TCB        OS_TCBTable[OS_MAX_TASKS + OS_N_SYS_TASKS]; //任务控制块数组
+extern OS_TCB       *OSTCBFreeList; //指向空闲TCB列表的头指针
+extern OS_TCB       *OSTCBList;     //指向所有任务TCB列表的头指针
+extern OS_TCB       *OSTCBPrioTable[OS_LOWEST_PRIO + 1]; //任务控制块指针数组
+extern OS_TCB        OSTCBTable[OS_MAX_TASKS + OS_N_SYS_TASKS]; //任务控制块数组
 
 
 
