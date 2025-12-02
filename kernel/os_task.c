@@ -1,8 +1,5 @@
 #include "include.h"
-/*
-*
-*
-*/
+
 /*
 *********************************************************************************************************
 *                                            CREATE A TASK
@@ -61,7 +58,7 @@ INT8U  OSTaskDelete (INT8U prio)
         return (OS_ERR_DEL_ISR);                                /* 不能在中断中删除任务*/
     }
     if (prio == OS_IDLE_PRIO) {
-        return (OS_ERR_DEL_IDLE);                               /* 不能删除空闲任务*/
+        return (OS_TASK_DEL_IDLE);                               /* 不能删除空闲任务*/
     }
     if (prio > OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {
         return (OS_PRIO_INVALID);                               /* 优先级错误*/
@@ -72,13 +69,13 @@ INT8U  OSTaskDelete (INT8U prio)
     }
     ptcb = OSTCBPrioTable[prio];                                /* 获取任务控制块优先级*/
     if (ptcb != (OS_TCB *)0) {                                  /* 任务存在*/
-        if ((OSReadyTabale[ptcb->OSTCB_Y] &= ptcb->OSTCBBit_X) == 0) {
+        if ((OSEventTable[ptcb->OSTCB_Y] &= ptcb->OSTCBBit_X) == 0) {
             OSReadyGroup &= ~ptcb->OSTCBBit_Y;                  /* 从任务就绪组中删除*/
         }
         pevent = ptcb->OSTCBEventPtr;                           /* 获取任务等待的事件控制块*/
         if (pevent != (OS_EVENT *)0) {                          /* 任务正在等待某个事件*/
-            if ((pevent->OSReadyTabale[ptcb->OSTCB_Y] &= ptcb->OSTCBBit_X) == 0) {
-                pevent->OSReadyGroup &= ~ptcb->OSTCBBit_Y;      /* 从事件就绪组中删除*/
+            if ((pevent->OSEventTable[ptcb->OSTCB_Y] &= ptcb->OSTCBBit_X) == 0) {
+                pevent->OSEventGrp &= ~ptcb->OSTCBBit_Y;      /* 从事件就绪组中删除*/
             }
         }
         pnode = ptcb->OSTCBFlagNode;                            /* 获取任务等待的事件标志节点*/
@@ -199,11 +196,11 @@ INT8U  OSTaskChangePrio (INT8U oldprio, INT8U newprio)
             } else {
                 pevent = ptcb->OSTCBEventPtr;                   /* 获取任务等待的事件控制块*/
                 if (pevent != (OS_EVENT *)0) {                  /* 任务正在等待某个事件*/
-                    if ((pevent->OSReadyTable[ptcb->OSTCB_Y] &= ~ptcb->OSTCBBit_X) == 0x00) {
-                        pevent->OSReadyGroup &= ~ptcb->OSTCBBit_Y; /* 从事件就绪组中删除*/
+                    if ((pevent->OSEventTable[ptcb->OSTCB_Y] &= ~ptcb->OSTCBBit_X) == 0x00) {
+                        pevent->OSEventGrp &= ~ptcb->OSTCBBit_Y; /* 从事件就绪组中删除*/
                     }
-                    pevent->OSReadyGroup    |= Bit_Y;           /* 设置新优先级就绪组*/
-                    pevent->OSReadyTable[Y] |= Bit_X;           /* 设置新优先级就绪表*/
+                    pevent->OSEventGrp    |= Bit_Y;           /* 设置新优先级就绪组*/
+                    pevent->OSEventTable[Y] |= Bit_X;           /* 设置新优先级就绪表*/
                 }
             }
             OSTCBPrioTable[newprio] = ptcb;                     /* 注册新优先级任务*/
@@ -231,7 +228,6 @@ INT8U  OSTaskChangePrio (INT8U oldprio, INT8U newprio)
 INT8U  OSTaskStackCheck (INT8U prio, OS_STK_DATA *pata)
 {
     /* 不需要写检查，因为没有定义taskcreateext函数，没有相应的参数返回size*/
-    return (OS_NO_ERR);
 }
 /*
 *********************************************************************************************************

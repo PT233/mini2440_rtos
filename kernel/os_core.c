@@ -85,8 +85,7 @@ void OS_EventTaskWait(OS_EVENT *pevent){
         OSReadyGroup &= ~OSTCBCurrent->OSTCBBit_Y; /* 如果就绪表中没有任务，清除就绪组 */        
     }
     pevent->OSEventTable[OSTCBCurrent->OSTCB_Y] |= OSTCBCurrent->OSTCBBit_X; /* 设置事件表 */
-    pevent->OSEventGrp; 
-
+    pevent->OSEventGrp |= OSTCBCurrent->OSTCBBit_Y;
 }
 
 //事件超时使任务就绪运行
