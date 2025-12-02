@@ -1,7 +1,5 @@
 #include "include.h"
 
-#define TASK_STACK_SIZE  512        //任务栈大小,单位:OS_STACK
-
 OS_STACK TaskStack1[TASK_STACK_SIZE];
 OS_STACK TaskStack2[TASK_STACK_SIZE];
 OS_STACK TaskStack3[TASK_STACK_SIZE];
@@ -16,9 +14,9 @@ void main(void)
 {
     OS_init();//还没定义
     InitTimer();//还没定义
-    OS_TASK_CREATE(Task1, (void *)0, &TaskStack1[0], 5);//还没定义
-    OS_TASK_CREATE(Task2, (void *)0, &TaskStack2[0], 6);//还没定义
-    OS_TASK_CREATE(Task3, (void *)0, &TaskStack3[0], 7);//还没定义
+    OS_TASK_CREATE(Task1, (void *)0, &TaskStack1[TASK_STACK_SIZE - 1], 5);//还没定义
+    OS_TASK_CREATE(Task2, (void *)0, &TaskStack2[TASK_STACK_SIZE - 1], 6);//还没定义
+    OS_TASK_CREATE(Task3, (void *)0, &TaskStack3[TASK_STACK_SIZE - 1], 7);//还没定义
     OS_start();//还没定义
 }
 //============================================================ 

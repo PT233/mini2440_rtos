@@ -10,4 +10,6 @@
 #include "os.h"
 #include "os_config.h"
 
+#define TASK_STACK_SIZE  1024        //任务栈大小,单位:32位，1024*4 = 4kb，安全考虑，避免栈溢出
+
 #endif // __INCLUDE_H__

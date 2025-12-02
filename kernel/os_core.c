@@ -19,7 +19,7 @@ const INT8U OSUnMapTable[] = {
     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xE0 to 0xEF                             */
     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0        /* 0xF0 to 0xFF                             */
 };
-
+//函数声明
 //初始化操作系统
 void  OSInit(void)
 {
@@ -37,15 +37,32 @@ void  OSInit(void)
 }
 //进入ISR
 //退出ISR
-//阻止上下文切换
-//开启上下文切换
-//
-
-
-
+//停止调度
+//启动调度
+//多任务系统开始运行
+//系统状态初始化
+//系统滴答
+//空函数
+void OS_Dummy(void)
+{
+}
+//任务就绪，准备做事件
+//挂起任务，没有事件可做
+//事件超时使任务就绪运行
+//事件等待列表初始化
+//事件列表初始化
+//其余变量初始化
+//就绪列表初始化
+//空闲任务初始化
+//任务状态初始化
+//TCB表初始化
+//调度程序
+//空闲任务
+//任务状态
+//TCB初始化
 INT8U OS_TCBInit(INT8U prio, OS_STACK *ptos)
 {
-    OS_CPU_SR  cpu_sr;
+    OS_CPU_SR   cpu_sr;
     OS_TCB     *ptcb;    //point to TCB
     OS_ENTER_CRITICAL();
     ptcb = OSTCBFreeList;                                      /* 从空闲列表中取出一个TCB */

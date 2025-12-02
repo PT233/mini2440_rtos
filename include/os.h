@@ -164,9 +164,16 @@
 #define OS_FLAG_INVALID_OPT     153
 #define OS_FLAG_GRP_DEPLETED    154
 
+/*
+* task stack data
+*/
+typedef struct {
+    INT32U  OSFree;                    /* 堆栈上的空闲字节数                            */
+    INT32U  OSUsed;                    /* 堆栈上已使用的字节数                            */
+} OS_STK_DATA;
 
 /*
-*   OS_TCB Task Control Block
+*   Task Control Block
 *   去掉了ext
 */
 typedef struct os_tcb{
