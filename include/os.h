@@ -4,9 +4,11 @@
 #include "include.h"
 #include "os_config.h"
 
-#define  OS_VERSION              252                    /* Version of uC/OS-II (Vx.yy mult. by 100)    */
-
-
+/*
+*********************************************************************************************************
+*                                             MISCELLANEOUS
+*********************************************************************************************************
+*/
 #define  OS_EXT  extern
 
 
@@ -163,19 +165,19 @@
 #define OS_FLAG_ERR_NOT_RDY     152
 #define OS_FLAG_INVALID_OPT     153
 #define OS_FLAG_GRP_DEPLETED    154
-
-/*
-* task stack data
-*/
+//EVENT CONTROL BLOCK===============================
+//EVENT FLAGS CONTROL BLOCK=========================
+//MESSAGE MAILBOX DATA==============================
+//MEMORY PARTITION DATA STRUCTURES==================
+//MUTUAL EXCLUSION SEMAPHORE DATA===================
+//MESSAGE QUEUE DATA================================
+//SEMAPHORE DATA====================================
+//TASK STACK DATA===================================
 typedef struct {
     INT32U  OSFree;                    /* 堆栈上的空闲字节数                            */
     INT32U  OSUsed;                    /* 堆栈上已使用的字节数                            */
 } OS_STK_DATA;
-
-/*
-*   Task Control Block
-*   去掉了ext
-*/
+//TASK CONTROL BLOCK
 typedef struct os_tcb{
     OS_STACK        *OSTCBStackPtr;             //指向当前任务栈的栈顶指针
     //双向链表
@@ -196,6 +198,8 @@ typedef struct os_tcb{
     INT8U            OSTCBBit_Y;             //访问就绪表中的位位置的位掩码
     BOOLEAN          OSTCBDeleteReq;            //任务等待事件的返回值
 }OS_TCB;
+//GLOBAL VARIABLES==================================
+
 
 extern INT8U         OSTaskCtr;                       //已创建的任务数
 
@@ -210,8 +214,24 @@ extern OS_TCB       *OSTCBPrioTable[OS_LOWEST_PRIO + 1]; //任务控制块指针
 extern OS_TCB        OSTCBTable[OS_MAX_TASKS + OS_N_SYS_TASKS]; //任务控制块数组
 
 
-
-
-
+//EVENT FLAGS MANAGEMENT=============================
+//MESSAGE MAILBOX MANAGEMENT=========================
+//MEMORY MANAGEMENT==================================
+//MUTUAL EXCLUSION SEMAPHORE MANAGEMENT==============
+//MESSAGE QUEUE MANAGEMENT===========================
+//SEMAPHORE MANAGEMENT===============================
+//TASK MANAGEMENT====================================
+//TIME MANAGEMENT====================================
+//MISCELLANEOUS======================================
+//Prototype==========================================
+//EVENT FLAGS========================================
+//MESSAGE MAILBOXES==================================
+//MEMORY MANAGEMENT==================================
+//MUTUAL EXCLUSION SEMAPHORES========================
+//MESSAGE QUEUES=====================================
+//SEMAPHORES=========================================
+//TASK MANAGEMENT====================================
+//TIME MANAGEMENT====================================
+//MISCELLANEOUS======================================
 
 #endif // __OS_H__

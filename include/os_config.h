@@ -24,7 +24,7 @@
 									
 
 #define OS_LOWEST_PRIO            8    /*定义可以分配的最低优先级*/
-                                       /*绝不能高于 63！*/
+                                       /*绝不能高于 63*/
 
 #define OS_TASK_IDLE_STK_SIZE    64    /*空闲任务堆栈大小 (OS_STK 宽条目的数量)*/
 
