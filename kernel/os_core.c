@@ -19,6 +19,7 @@ const INT8U OSUnMapTable[] = {
     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xE0 to 0xEF                             */
     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0        /* 0xF0 to 0xFF                             */
 };
+
 //函数声明
 //初始化操作系统
 void  OSInit(void)
@@ -35,6 +36,7 @@ void  OSInit(void)
     OS_InitTaskStat();               /* 创建统计任务 */
     OSInitHookEnd();                 /* 调用特定于端口的初始化代码*/
 }
+
 //进入ISR
 //退出ISR
 //停止调度
@@ -43,14 +45,66 @@ void  OSInit(void)
 //系统状态初始化
 //系统滴答
 //空函数
-void OS_Dummy(void)
-{
+void OS_Dummy(void){
+
 }
-//任务就绪，准备做事件
-//挂起任务，没有事件可做
+//事件触发任务就绪
+INT8U OS_EventTaskRdy(OS_EVENT *pevent, void *msg, INT8U msk){
+    OS_TCB    *ptcb;
+    INT8U      prio;
+    INT8U      X;
+    INT8U      Y;
+    INT8U      Bit_X;
+    INT8U      Bit_Y;
+
+    Y       = OSUnMapTable[pevent->OSEventGrp];
+    Bit_Y   = OSMapTable[Y];
+    X       = OSUnMapTable[pevent->OSEventTable[Y]];
+    Bit_X   = OSMapTable[X];
+    prio    = (INT8U)((Y << 3) + X);
+    if((pevent->OSEventTable[Y] & ~Bit_X) == 0x00){ /* 检查事件表中是否有任务等待 */
+        pevent->OSEventGrp &= ~Bit_Y; /* 清除就绪组 */
+    }
+    ptcb = OSTCBPrioTable[prio]; /* 获取任务控制块 */
+    ptcb->OSTCBDelay    = 0; /* 清除延迟 */
+    ptcb->OSTCBEventPtr = (OS_EVENT *)0; /* 清除事件指针 */
+    ptcb->OSTCBMessage  = msg; /* 设置消息 */
+    msg = msg; /* 防止未使用变量警告 */
+    ptcb->OSTCBStatus   &= ~msk; /* 清除任务状态 */
+    if(ptcb->OSTCBStatus == OS_STAT_RDY){ /* 如果任务是就绪状态 */
+        OSReadyGroup    |= Bit_Y; /* 设置就绪组 */
+        OSReadyTable[Y] |= Bit_X; /* 设置就绪表 */
+    }
+    return(prio); /* 返回任务优先级 */
+}
+
+//任务等待事件发生
+void OS_EventTaskWait(OS_EVENT *pevent){
+    OSTCBCurrent->OSTCBEventPtr = pevent; /* 设置任务等待的事件 */
+    if((OSReadyTable[OSTCBCurrent->OSTCB_Y] &= ~OSTCBCurrent->OSTCBBit_X) == 0x00){
+        OSReadyGroup &= ~OSTCBCurrent->OSTCBBit_Y; /* 如果就绪表中没有任务，清除就绪组 */        
+    }
+    pevent->OSEventTable[OSTCBCurrent->OSTCB_Y] |= OSTCBCurrent->OSTCBBit_X; /* 设置事件表 */
+    pevent->OSEventGrp; 
+
+}
+
 //事件超时使任务就绪运行
-//事件等待列表初始化
-//事件列表初始化
+void OS_EventTO(OS_EVENT *pevent){
+    if((pevent->OSEventTable[OSTCBCurrent->OSTCB_Y] &= ~OSTCBCurrent->OSTCBBit_X) == 0x00){ /* 检查事件表中是否有任务等待 */
+        pevent->OSEventGrp &= ~OSTCBCurrent->OSTCBBit_Y; /* 清除就绪组 */
+    }
+    OSTCBCurrent->OSTCBStatus = OS_STAT_RDY; /* 设置任务状态为就绪 */
+    OSTCBCurrent->OSTCBEventPtr = (OS_EVENT *)0; /* 清除任务等待的事件 */
+}
+
+//事件控制块等待列表初始化
+void OS_EventWaitListInit(OS_EVENT *pevent){
+    pevent->OSEventType = 0;                                 /* 事件类型初始化为0 */
+    memset(pevent->OSEventTable, 0, sizeof(pevent->OSEventTable));
+}
+
+//事件控制块空闲列表初始化
 //其余变量初始化
 //就绪列表初始化
 //空闲任务初始化
@@ -60,6 +114,7 @@ void OS_Dummy(void)
 //空闲任务
 //任务状态
 //TCB初始化
+
 INT8U OS_TCBInit(INT8U prio, OS_STACK *ptos)
 {
     OS_CPU_SR   cpu_sr;

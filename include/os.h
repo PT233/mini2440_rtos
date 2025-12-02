@@ -166,24 +166,40 @@
 #define OS_FLAG_INVALID_OPT     153
 #define OS_FLAG_GRP_DEPLETED    154
 //EVENT CONTROL BLOCK===============================
+typedef struct os_event {
+    INT8U           OSEventType;        /* 事件类型 。它可以是信号量(OS_EVENT-TYPE_SEM)、互斥型信号
+                                        (OS-EVENT-TYPE-MUTEX)、邮箱(OS_EVENT-TYPE-MBOX)或消息队列
+                                        (OSEVENT-TYPE-Q)中的一种。*/
+    INT8U           OSEventGrp;         /* 任务等待此事件的就绪组                            */
+    void           *OSEventPtr;         /* 指向等待此事件的最高优先级任务的指针                */
+    INT32U          OSEventCnt;         /* 信号量计数                                        */
+    INT8U           OSEventTable[OS_EVENT_TBL_SIZE]; /* 任务等待此事件的就绪表                */
+}OS_EVENT;
+
 //EVENT FLAGS CONTROL BLOCK=========================
+
 //MESSAGE MAILBOX DATA==============================
+
 //MEMORY PARTITION DATA STRUCTURES==================
+
 //MUTUAL EXCLUSION SEMAPHORE DATA===================
+
 //MESSAGE QUEUE DATA================================
+
 //SEMAPHORE DATA====================================
+
 //TASK STACK DATA===================================
 typedef struct {
     INT32U  OSFree;                    /* 堆栈上的空闲字节数                            */
     INT32U  OSUsed;                    /* 堆栈上已使用的字节数                            */
 } OS_STK_DATA;
-//TASK CONTROL BLOCK
+
+//TASK CONTROL BLOCK================================
 typedef struct os_tcb{
     OS_STACK        *OSTCBStackPtr;             //指向当前任务栈的栈顶指针
     //双向链表
     struct os_tcb   *OSTCBPrevPtr;              //指向上一个TCB任务控制块的指针
     struct os_tcb   *OSTCBNextPtr;              //指向下一个TCB任务控制块的指针
-    //OS_EVENT 还没定义
     OS_EVENT        *OSTCBEventPtr;             //指向任务所等待的事件控制块的指针
     void            *OSTCBMessage;              //从邮箱或者消息队列中的消息
     //OS_FLAG_NODE 还没定义
@@ -198,6 +214,7 @@ typedef struct os_tcb{
     INT8U            OSTCBBit_Y;             //访问就绪表中的位位置的位掩码
     BOOLEAN          OSTCBDeleteReq;            //任务等待事件的返回值
 }OS_TCB;
+
 //GLOBAL VARIABLES==================================
 
 
