@@ -1,5 +1,6 @@
 #ifndef OS_DEBUG_H
 #define OS_DEBUG_H
+#include "os_uart.h"
 
 int ReentrantTest(int* a, int* b, long c);
 

@@ -1,6 +1,6 @@
 #ifndef OS_DATATYPE_H
 #define OS_DATATYPE_H
-//把OS_CPU.h的数据类型改写为mini2440的数据类型；把OS_STACK改为32位...
+//把OS_CPU.h的数据类型改写为mini2440的数据类型；把OS_STACK改为32位
 typedef unsigned char  uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int   uint32_t;

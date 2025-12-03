@@ -12,7 +12,7 @@ void Task3(void *pdata);
 //============================================================
 void main(void)
 {
-    OS_init();//还没定义
+    OS_init();
     InitTimer();//还没定义
     OS_TASK_CREATE(Task1, (void *)0, &TaskStack1[TASK_STACK_SIZE - 1], 5);//还没定义
     OS_TASK_CREATE(Task2, (void *)0, &TaskStack2[TASK_STACK_SIZE - 1], 6);//还没定义
