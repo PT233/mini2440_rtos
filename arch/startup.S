@@ -1,7 +1,3 @@
-// startup_gnu.S
-// 适配 GNU Assembler (GAS) / GCC 工具链 (WSL2/Linux 环境)
-
-
 
 // 全局变量以及头文件
     .equ BUSWIDTH, 32 
@@ -47,7 +43,7 @@ my_entry:
     b   pabort              // 0x0C
     b   dabort              // 0x10
     b   .                   // 0x14 
-    b   irq                 // 0x18
+    b   OSTickISR           // 已修改irq -> OSTickISR,跳转到os_cpu_context_switch.S中
     b   fiq                 // 0x1C
 
 

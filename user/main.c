@@ -9,15 +9,16 @@ OS_STACK TaskStack3[TASK_STACK_SIZE];
 void Task1(void *pdata);
 void Task2(void *pdata);
 void Task3(void *pdata);
+void InitTimer4(void);
 //============================================================
 void main(void)
 {
-    OS_init();
-    InitTimer();//还没定义
+    OS_Init();
+    InitTimer4();
     OS_TASK_CREATE(Task1, (void *)0, &TaskStack1[TASK_STACK_SIZE - 1], 5);//还没定义
     OS_TASK_CREATE(Task2, (void *)0, &TaskStack2[TASK_STACK_SIZE - 1], 6);//还没定义
     OS_TASK_CREATE(Task3, (void *)0, &TaskStack3[TASK_STACK_SIZE - 1], 7);//还没定义
-    OS_start();//还没定义
+    OSStart();
 }
 //============================================================ 
 //任务1:
@@ -78,4 +79,24 @@ void Task3(void *pdata)
         OSTimeDelay();
         OSTimeDelayHMSM();//HMSM:小时,分钟,秒,毫秒
     }
+}
+//============================================================
+// 定时器初始化函数 (在 OSStart 之前调用)
+
+void InitTimer4(void)
+{
+    // 1. 配置频率 (假设 PCLK=50MHz -> Timer=50kHz)
+    rTCFG0 = (rTCFG0 & ~(0xFF<<8)) | (249<<8); 
+    rTCFG1 = (rTCFG1 & ~(0x0F<<16)) | (1<<16);
+
+    // 2. 配置计数值 (10ms 中断一次 -> 500)
+    rTCNTB4 = 500; 
+
+    // 3. 加载并启动 (自动重装载)
+    rTCON |= (1<<21);    // 手动更新
+    rTCON &= ~(1<<21);   // 清除手动更新
+    rTCON |= (1<<22) | (1<<20); // 开启重载和启动
+
+    // 4. 解除中断屏蔽
+    rINTMSK &= ~(1 << 14); 
 }
