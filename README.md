@@ -1,24 +1,21 @@
+# Mini2440 RTOS Project
+
+这是一个基于 uC/OS-II 的 Mini2440 实时操作系统项目。
+
+## 目录结构
+
 ```text
-1.因为uc/os是可裁剪的系统，通过设置os_cfg.h实现，然而我们没必要考虑这个因素。去掉所有条件执行，改为全部执行，除非影响系统稳定性，例如test.c中：
-#if OS_CRITICAL_METHOD == 3
-    OS_CPU_SR  cpu_sr;
-#endif
-改为：
-    OS_CPU_SR  cpu_sr;
-
-2.去掉所有的扩展功能函数，只保留基础功能，OSTimeDlyHMSM与OSTimeDly，但没必要去掉：
-扩展函数：OSTaskCreateExt、OSMboxPostOpt、OSQPostOpt
-基础函数：OSTaskCreate、OSMboxPost、OSQPost
-3.有歧义的函数缩写一概全称
-
 mini2440_rtos/
 ├── arch/                           # 【架构层】
 │   ├── inc/
+│   │   ├── 2440addr.h              # S3C2440 寄存器定义 (C语言)
+│   │   ├── 2440addr.inc            # S3C2440 寄存器定义 (汇编)
+│   │   ├── memcfg.inc              # 内存控制器配置
 │   │   └── os_cpu.h                # 架构相关头文件 (包含数据类型定义)
 │   └── src/
 │       ├── startup.S               # 启动代码
 │       ├── os_cpu_context_switch.S # 上下文切换汇编
-│       └── os_cpu_init.c           # 再次初始化
+│       └── os_cpu_init.c           # 堆栈初始化
 │
 ├── drivers/                        # 【驱动层】
 │   ├── inc/
@@ -28,34 +25,51 @@ mini2440_rtos/
 │       ├── os_uart.c               # 串口驱动
 │       └── os_timer.c              # 定时器驱动
 │
-├── include/                        # 【引用】
-│   ├── 2440addr.h                  # C寄存器定义✅
-│   ├── 2440addr.inc                # 汇编寄存器定义✅
-│   ├── includes.h                  # RTOS 总头文件(包含所有h头文件)
-│   ├── memcfg.inc                  # 内存控制器配置参数✅
-│   └── ucos_ii.h                   # uC/OS-II 核心头文件 (原 os.h)
+├── include/                        # 【公共引用】
+│   ├── includes.h                  # 项目总头文件 (包含所有模块头文件)
+│   └── ucos_ii.h                   # uC/OS-II 核心头文件
 │
 ├── kernel/                         # 【内核层】
-│   ├── os_core.c                   # 调度器
-│   ├── os_flag.c                   # 标志位
-│   ├── os_mailbox.c                # 邮箱
+│   ├── os_core.c                   # 核心调度
+│   ├── os_flag.c                   # 事件标志组
+│   ├── os_mailbox.c                # 邮箱管理
 │   ├── os_mem.c                    # 内存管理
-│   ├── os_mutex.c                  # 互斥量
+│   ├── os_mutex.c                  # 互斥信号量
 │   ├── os_queue.c                  # 消息队列
 │   ├── os_sem.c                    # 信号量
 │   ├── os_task.c                   # 任务管理
 │   ├── os_time.c                   # 时间管理
-│   └── ucos_ii.c                   # (通常用于包含所有内核源文件，当前为空)
+│   └── ucos_ii.c                   # 内核源文件集合
 │
 ├── user/                           # 【应用层】
 │   ├── inc/
-│   │   ├── os_cfg.h                # os参数设置 (原 os_config.h)
-│   │   └── os_debug.h              # 调试头文件
+│   │   ├── os_cfg.h                # 系统配置文件 (裁剪与配置)
+│   │   └── os_debug.h              # 调试工具头文件
 │   └── src/
-│       ├── main.c                  # 用户代码 (引用 includes.h)
-│       └── os_debug.c              # 调试函数实现
+│       ├── main.c                  # 主程序入口
+│       └── os_debug.c              # 调试函数实现 (printf等)
 │
-├── build/                          # 编译产物
-├── Makefile                        # 编译脚本✅
-└── link.ld                         # 链接脚本✅
+├── build/                          # 编译产物目录
+├── Makefile                        # 构建脚本
+└── link.ld                         # 链接脚本
 ```
+
+## 编译说明
+
+使用 `make` 命令进行编译：
+
+```bash
+make
+```
+
+编译产物将生成在 `build/` 目录下：
+- `mini2440_rtos.bin`: 可烧录的二进制文件
+- `mini2440_rtos.elf`: 用于调试的 ELF 文件
+- `mini2440_rtos.dis`: 反汇编文件
+
+## 清理
+
+```bash
+make clean
+```
+

@@ -277,6 +277,13 @@ extern  INT8U             OSUnMapTbl[];               // 优先级->索引    �
 //SEMAPHORE MANAGEMENT===============================
 //TASK MANAGEMENT====================================
 //TIME MANAGEMENT====================================
+void          OSTimeDly(INT16U ticks);
+INT8U         OSTimeDlyHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U milli);
+INT8U         OSTimeDlyResume(INT8U prio);
+INT32U        OSTimeGet(void);
+void          OSTimeSet(INT32U ticks);
+void          OSTimeTick(void);
+
 //MISCELLANEOUS======================================
 //FUNC Prototype=====================================
 void    OSCtxSw(void);

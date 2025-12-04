@@ -25,7 +25,7 @@ BUILD_DIR = build
 # -MMD -MP      : 生成依赖文件
 INCLUDES = -Iinclude -Iarch/inc -Iuser/inc -Idrivers/inc -Ikernel
 CFLAGS   = -mcpu=arm920t -g -Wall -O0 -nostdlib $(INCLUDES) -MMD -MP
-ASFLAGS  = -mcpu=arm920t -g $(INCLUDES) -Wa,-Iinclude
+ASFLAGS  = -mcpu=arm920t -g $(INCLUDES) -Wa,-Iinclude -Wa,-Iarch/inc
 LDFLAGS  = -T link.ld
 
 # 源文件列表

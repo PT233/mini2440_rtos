@@ -44,7 +44,7 @@ OS_CPU_SR_Restore:
 
 
 OSStartHighRdy:
-    // 1. 调用钩子函数
+    // 1. 钩子函数
     // bl OSTaskSwHook
 
     // 2. 标记系统开始运行
@@ -79,7 +79,7 @@ OSCtxSw:
     ldr     r1, [r0]            // R1 = OSTCBCur
     str     sp, [r1]            // OSTCBCur->OSTCBStackPtr = SP
 
-    // 3. 调用钩子
+    // 3. 钩子函数
     // bl OSTaskSwHook
 
     // 4. 切换 TCB 指针: OSTCBCur = OSTCBHighRdy
