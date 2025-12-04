@@ -2,7 +2,7 @@
     .include "../include/2440addr.inc" 
     .include "../include/memcfg.inc"
 
-    .equ NO_IRQ_FIQ,     0xC0     // 掩码：禁止 IRQ 和 FIQ
+    .equ NO_IRQ_FIQ, 0xC0        // 禁止 IRQ 和 FIQ
     .equ SVC_MODE,   0x13        // 管理模式 (Supervisor Mode)
     .equ IRQ_MODE,   0x12        // 中断模式 (IRQ Mode)
 
@@ -11,7 +11,7 @@
     .global OSStartHighRdy
     .global OSCtxSw
     .global OSIntCtxSw
-    .global OSTickISR           // 系统心跳中断入口
+    .global OSTickISR           // 系统滴答中断入口
 
     .extern OSTCBCur
     .extern OSTCBHighRdy
@@ -79,7 +79,7 @@ OSCtxSw:
     ldr     r1, [r0]            // R1 = OSTCBCur
     str     sp, [r1]            // OSTCBCur->OSTCBStackPtr = SP
 
-    // 3. 调用钩子 (可选)
+    // 3. 调用钩子
     // bl OSTaskSwHook
 
     // 4. 切换 TCB 指针: OSTCBCur = OSTCBHighRdy
@@ -141,7 +141,7 @@ OSTickISR:
     // 4. 准备切换到 SVC 模式
     add     sp, sp, #(6*4)      // 恢复 IRQ 堆栈指针
     
-    // 5. 切换到 SVC 模式 (保持关中断)
+    // 5. 切换到 SVC 模式
     msr     cpsr_c, #(SVC_MODE | NO_IRQ_FIQ) 
     
     // 6. 重新压入刚才那些寄存器

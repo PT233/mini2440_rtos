@@ -1,7 +1,7 @@
-#ifndef __OS_H__
-#define __OS_H__
+#ifndef __UCOS_II_H__
+#define __UCOS_II_H__
 
-#include "os_config.h"
+#include "os_cfg.h"
 #include "os_cpu.h"
 
 /*

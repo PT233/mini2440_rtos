@@ -15,8 +15,7 @@ mini2440_rtos/
 ├── arch/                           # 【架构层】
 │   ├── startup.S                   # 启动代码（需要修改中断函数地址，加上export，直接b跳转到对应c语言中断函数）
 │   ├── os_cpu_context_switch.S     # 上下文切换汇编
-│   ├── os_cpu_init.c               # 再次初始化
-│   └── os_datatype.h               # 核心数据类型定义 (u32, OS_STK)
+│   └── os_cpu_init.c               # 再次初始化
 │
 ├── drivers/                        # 【驱动层】
 │   ├── os_uart.c                   # 串口驱动 (引用 inc/2440addr.h)
@@ -25,15 +24,14 @@ mini2440_rtos/
 ├── include/                        # 【引用】
 │   ├── 2440addr.h                  # C寄存器定义✅
 │   ├── 2440addr.inc                # 汇编寄存器定义✅
-│   ├── include.h                   # RTOS 核心头文件(包含所有h头文件)
+│   ├── includes.h                  # RTOS 总头文件(包含所有h头文件)
 │   ├── memcfg.inc                  # 内存控制器配置参数✅
-│   ├── os_config.h                 # os参数设置
-│   ├── os_cpu.h                    # os_cpu头文件
-│   ├── os_datatype.h               # 核心数据类型定义 (u32, OS_STK)
+│   ├── os_cfg.h                    # os参数设置 (原 os_config.h)
+│   ├── os_cpu.h                    # os_cpu头文件 (包含数据类型定义)
 │   ├── os_debug.h                  # debug头文件
 │   ├── os_timer.h                  # 计时器
 │   ├── os_uart.h                   # uart
-│   └── os.h                        # os头文件，每个模块的结构体放这里
+│   └── ucos_ii.h                   # uC/OS-II 核心头文件 (原 os.h)
 │
 ├── kernel/                         # 【内核层】
 │   ├── os_core.c                   # 调度器
