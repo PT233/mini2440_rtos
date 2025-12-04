@@ -162,6 +162,7 @@
 #define OS_FLAG_ERR_NOT_RDY     152
 #define OS_FLAG_INVALID_OPT     153
 #define OS_FLAG_GRP_DEPLETED    154
+
 //EVENT CONTROL BLOCK===============================
 typedef struct os_event {
     INT8U           OSEventType;        // 事件类型 。它可以是信号量(OS_EVENT-TYPE_SEM)、互斥型信号

@@ -1,6 +1,6 @@
 
-    .include "../include/2440addr.inc" 
-    .include "../include/memcfg.inc"
+    .include "2440addr.inc" 
+    .include "memcfg.inc"
 
     .equ NO_IRQ_FIQ, 0xC0        // 禁止 IRQ 和 FIQ
     .equ SVC_MODE,   0x13        // 管理模式 (Supervisor Mode)

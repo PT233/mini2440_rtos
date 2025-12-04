@@ -1,8 +1,8 @@
 
 // 全局变量以及头文件
     .equ BUSWIDTH, 32 
-    .include "../include/2440addr.inc" 
-    .include "../include/memcfg.inc"
+    .include "2440addr.inc" 
+    .include "memcfg.inc"
 
 
 // 外部符号声明

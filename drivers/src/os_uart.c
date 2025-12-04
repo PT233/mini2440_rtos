@@ -11,15 +11,14 @@ void Uart_Init(int pclk, int baud)
 
     // 2. 配置 UART 控制寄存器
     rULCON0 = 0x3;  // 8N1: 8数据位, 无校验, 1停止位
-    rUCON0  = 0x5;  // 查询模式 (Polling mode)
+    rUCON0  = 0x5;  // 查询模式 
     rUFCON0 = 0x0;  // 禁用 FIFO
     rUMCON0 = 0x0;  // 禁用流控
 
     // 3. 设置波特率 115200
-    // UBRDIVn = (int)(PCLK / (baud * 16)) - 1
     rUBRDIV0 = (int)(pclk / (baud * 16)) - 1;
 
-    // 简单的延时，等待设置稳定
+    // 等待设置稳定
     for(i=0; i<100; i++);
 }
 

@@ -23,17 +23,17 @@ BUILD_DIR = build
 # -O0           : 不优化
 # -nostdlib     : 不链接标准库
 # -MMD -MP      : 生成依赖文件
-INCLUDES = -Iinclude -Iarch -Iuser -Idrivers -Ikernel
+INCLUDES = -Iinclude -Iarch/inc -Iuser/inc -Idrivers/inc -Ikernel
 CFLAGS   = -mcpu=arm920t -g -Wall -O0 -nostdlib $(INCLUDES) -MMD -MP
 ASFLAGS  = -mcpu=arm920t -g $(INCLUDES) -Wa,-Iinclude
 LDFLAGS  = -T link.ld
 
 # 源文件列表
-SRCS_ASM = $(wildcard arch/*.S)
+SRCS_ASM = $(wildcard arch/src/*.S)
 
-SRCS_C   = $(wildcard user/*.c)
-SRCS_C  += $(wildcard arch/*.c)
-SRCS_C  += $(wildcard drivers/*.c)
+SRCS_C   = $(wildcard user/src/*.c)
+SRCS_C  += $(wildcard arch/src/*.c)
+SRCS_C  += $(wildcard drivers/src/*.c)
 SRCS_C  += $(wildcard kernel/*.c)
 
 # 生成文件到build目录

@@ -13,24 +13,26 @@
 
 mini2440_rtos/
 ├── arch/                           # 【架构层】
-│   ├── startup.S                   # 启动代码（需要修改中断函数地址，加上export，直接b跳转到对应c语言中断函数）
-│   ├── os_cpu_context_switch.S     # 上下文切换汇编
-│   └── os_cpu_init.c               # 再次初始化
+│   ├── inc/
+│   │   └── os_cpu.h                # 架构相关头文件 (包含数据类型定义)
+│   └── src/
+│       ├── startup.S               # 启动代码
+│       ├── os_cpu_context_switch.S # 上下文切换汇编
+│       └── os_cpu_init.c           # 再次初始化
 │
 ├── drivers/                        # 【驱动层】
-│   ├── os_uart.c                   # 串口驱动 (引用 inc/2440addr.h)
-│   └── os_timer.c                  # 定时器驱动 (引用 inc/2440addr.h)
+│   ├── inc/
+│   │   ├── os_uart.h               # 串口驱动头文件
+│   │   └── os_timer.h              # 定时器驱动头文件
+│   └── src/
+│       ├── os_uart.c               # 串口驱动
+│       └── os_timer.c              # 定时器驱动
 │
 ├── include/                        # 【引用】
 │   ├── 2440addr.h                  # C寄存器定义✅
 │   ├── 2440addr.inc                # 汇编寄存器定义✅
 │   ├── includes.h                  # RTOS 总头文件(包含所有h头文件)
 │   ├── memcfg.inc                  # 内存控制器配置参数✅
-│   ├── os_cfg.h                    # os参数设置 (原 os_config.h)
-│   ├── os_cpu.h                    # os_cpu头文件 (包含数据类型定义)
-│   ├── os_debug.h                  # debug头文件
-│   ├── os_timer.h                  # 计时器
-│   ├── os_uart.h                   # uart
 │   └── ucos_ii.h                   # uC/OS-II 核心头文件 (原 os.h)
 │
 ├── kernel/                         # 【内核层】
@@ -43,13 +45,17 @@ mini2440_rtos/
 │   ├── os_sem.c                    # 信号量
 │   ├── os_task.c                   # 任务管理
 │   ├── os_time.c                   # 时间管理
-│   └── os.c			    # 
+│   └── ucos_ii.c                   # (通常用于包含所有内核源文件，当前为空)
 │
-├── user/                            # 【应用层】
-│   ├── os_debug.c                   # 实现可重入函数和print函数
-│   └── main.c                       # 用户代码 (引用 include.h)
+├── user/                           # 【应用层】
+│   ├── inc/
+│   │   ├── os_cfg.h                # os参数设置 (原 os_config.h)
+│   │   └── os_debug.h              # 调试头文件
+│   └── src/
+│       ├── main.c                  # 用户代码 (引用 includes.h)
+│       └── os_debug.c              # 调试函数实现
 │
-├── build/                           # 编译产物
-├── Makefile                         # 编译脚本✅
-└── linker.ld                        # 链接脚本✅
+├── build/                          # 编译产物
+├── Makefile                        # 编译脚本✅
+└── link.ld                         # 链接脚本✅
 ```
