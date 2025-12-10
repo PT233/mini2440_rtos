@@ -1,0 +1,303 @@
+main
+	OSInit();
+        OSInitHookBegin();
+            {未定义}
+        OS_InitMisc();    
+            {
+            OSTime        = 0L;                                          /* Clear the 32-bit system clock            */
+            OSIntNesting  = 0;                                           /* Clear the interrupt nesting counter      */
+            OSLockNesting = 0;                                           /* Clear the scheduling lock counter        */
+            OSTaskCtr     = 0;                                           /* Clear the number of tasks                */
+            OSRunning     = FALSE;                                       /* Indicate that multitasking not started   */
+            OSCtxSwCtr    = 0;                                           /* Clear the context switch counter         */
+            OSIdleCtr     = 0L;                                          /* Clear the 32-bit idle counter            */
+            OSIdleCtrRun  = 0L;
+            OSIdleCtrMax  = 0L;
+            OSStatRdy     = FALSE;
+            }
+        OS_InitRdyList(); 
+            {
+            INT16U   i;
+            INT8U   *prdytbl;
+            OSRdyGrp      = 0x00;                                        /* Clear the ready list                     */
+            prdytbl       = &OSRdyTbl[0];
+            for (i = 0; i < OS_RDY_TBL_SIZE; i++) {
+                *prdytbl++ = 0x00;
+            }
+            OSPrioCur     = 0;
+            OSPrioHighRdy = 0;
+            OSTCBHighRdy  = (OS_TCB *)0;                                 
+            OSTCBCur      = (OS_TCB *)0;
+            }
+        OS_InitTCBList();   
+            {    
+            INT8U    i;
+            OS_TCB  *ptcb1;
+            OS_TCB  *ptcb2;
+            OSTCBList     = (OS_TCB *)0;                                 /* TCB Initialization                       */
+            for (i = 0; i < (OS_LOWEST_PRIO + 1); i++) {                 /* Clear the priority table                 */
+                OSTCBPrioTbl[i] = (OS_TCB *)0;
+            }
+            ptcb1 = &OSTCBTbl[0];
+            ptcb2 = &OSTCBTbl[1];
+            for (i = 0; i < (OS_MAX_TASKS + OS_N_SYS_TASKS - 1); i++) {  /* Init. list of free TCBs                  */
+                ptcb1->OSTCBNext = ptcb2;
+                ptcb1++;
+                ptcb2++;
+            }
+            ptcb1->OSTCBNext = (OS_TCB *)0;                              /* Last OS_TCB                              */
+            OSTCBFreeList    = &OSTCBTbl[0];
+            }
+        OS_InitEventList();   
+            {
+                INT16U     i;
+                OS_EVENT  *pevent1;
+                OS_EVENT  *pevent2;
+                pevent1 = &OSEventTbl[0];
+                pevent2 = &OSEventTbl[1];
+                for (i = 0; i < (OS_MAX_EVENTS - 1); i++) {                  /* Init. list of free EVENT control blocks  */
+                    pevent1->OSEventType = OS_EVENT_TYPE_UNUSED;
+                    pevent1->OSEventPtr  = pevent2;
+                    pevent1++;
+                    pevent2++;
+                }
+                pevent1->OSEventType = OS_EVENT_TYPE_UNUSED;
+                pevent1->OSEventPtr  = (OS_EVENT *)0;
+                OSEventFreeList      = &OSEventTbl[0];
+            }
+        OS_FlagInit();   {
+            #if OS_MAX_FLAGS == 1
+                OSFlagFreeList                 = (OS_FLAG_GRP *)&OSFlagTbl[0];  /* Only ONE event flag group!      */
+                OSFlagFreeList->OSFlagType     = OS_EVENT_TYPE_UNUSED;
+                OSFlagFreeList->OSFlagWaitList = (void *)0;
+            #endif
+
+            #if OS_MAX_FLAGS >= 2
+                INT8U        i;
+                OS_FLAG_GRP *pgrp1;
+                OS_FLAG_GRP *pgrp2;
+
+
+                pgrp1 = &OSFlagTbl[0];
+                pgrp2 = &OSFlagTbl[1];
+                for (i = 0; i < (OS_MAX_FLAGS - 1); i++) {                      /* Init. list of free EVENT FLAGS  */
+                    pgrp1->OSFlagType     = OS_EVENT_TYPE_UNUSED;
+                    pgrp1->OSFlagWaitList = (void *)pgrp2;
+                    pgrp1++;
+                    pgrp2++;
+                }
+                pgrp1->OSFlagWaitList = (void *)0;
+                OSFlagFreeList        = (OS_FLAG_GRP *)&OSFlagTbl[0];
+            #endif
+            }
+        OS_MemInit();    {
+            #if OS_MAX_MEM_PART == 1
+                OSMemFreeList                = (OS_MEM *)&OSMemTbl[0]; /* Point to beginning of free list          */
+                OSMemFreeList->OSMemFreeList = (void *)0;              /* Initialize last node                     */
+                OSMemFreeList->OSMemAddr     = (void *)0;              /* Store start address of memory partition  */
+                OSMemFreeList->OSMemNFree    = 0;                      /* No free blocks                           */
+                OSMemFreeList->OSMemNBlks    = 0;                      /* No blocks                                */
+                OSMemFreeList->OSMemBlkSize  = 0;                      /* Zero size                                */
+            #endif
+
+            #if OS_MAX_MEM_PART >= 2
+                OS_MEM  *pmem;
+                INT16U   i;
+
+
+                pmem = (OS_MEM *)&OSMemTbl[0];                    /* Point to memory control block (MCB)           */
+                for (i = 0; i < (OS_MAX_MEM_PART - 1); i++) {     /* Init. list of free memory partitions          */
+                    pmem->OSMemFreeList = (void *)&OSMemTbl[i+1]; /* Chain list of free partitions                 */
+                    pmem->OSMemAddr     = (void *)0;              /* Store start address of memory partition       */
+                    pmem->OSMemNFree    = 0;                      /* No free blocks                                */
+                    pmem->OSMemNBlks    = 0;                      /* No blocks                                     */
+                    pmem->OSMemBlkSize  = 0;                      /* Zero size                                     */
+                    pmem++;
+                }
+                pmem->OSMemFreeList = (void *)0;                  /* Initialize last node                          */
+                pmem->OSMemAddr     = (void *)0;                  /* Store start address of memory partition       */
+                pmem->OSMemNFree    = 0;                          /* No free blocks                                */
+                pmem->OSMemNBlks    = 0;                          /* No blocks                                     */
+                pmem->OSMemBlkSize  = 0;                          /* Zero size                                     */
+
+                OSMemFreeList       = (OS_MEM *)&OSMemTbl[0];     /* Point to beginning of free list               */
+            #endif
+            }
+        OS_QInit();      {
+            #if OS_MAX_QS == 1
+                OSQFreeList         = &OSQTbl[0];            /* Only ONE queue!                                    */
+                OSQFreeList->OSQPtr = (OS_Q *)0;
+            #endif
+            #if OS_MAX_QS >= 2
+                INT16U  i;
+                OS_Q   *pq1;
+                OS_Q   *pq2;
+                pq1 = &OSQTbl[0];
+                pq2 = &OSQTbl[1];
+                for (i = 0; i < (OS_MAX_QS - 1); i++) {      /* Init. list of free QUEUE control blocks            */
+                    pq1->OSQPtr = pq2;
+                    pq1++;
+                    pq2++;
+                }
+                pq1->OSQPtr = (OS_Q *)0;
+                OSQFreeList = &OSQTbl[0];
+            #endif
+            }    
+        OS_InitTaskIdle();    {
+                (void)OSTaskCreate(OS_TaskIdle,
+                                (void *)0,
+                                &OSTaskIdleStk[OS_TASK_IDLE_STK_SIZE - 1],
+                                OS_IDLE_PRIO);
+                    {
+                        OS_CPU_SR  cpu_sr;
+                        OS_STK   *psp;
+                        INT8U      err;
+                        if (prio > OS_LOWEST_PRIO) {             /* Make sure priority is within allowable range           */
+                            return (OS_PRIO_INVALID);
+                        }
+                        OS_ENTER_CRITICAL();
+                        if (OSTCBPrioTbl[prio] == (OS_TCB *)0) { /* Make sure task doesn't already exist at this priority  */
+                            OSTCBPrioTbl[prio] = (OS_TCB *)1;    /* Reserve the priority to prevent others from doing ...  */
+                                                                /* ... the same thing until task is created.              */
+                            OS_EXIT_CRITICAL();
+                            psp = (OS_STK *)OSTaskStkInit(task, pdata1, ptos, 0);    
+                                {
+                                OS_STK * stk;
+
+                                opt    = opt;                           /* 'opt' is not used, prevent warning                      */
+                                stk = ptos;
+
+                                *stk++ = 19;
+                                *stk++ = (INT16U)task & 0xff;	//Simulate function call.
+                                *stk++ = (INT16U)task >> 8;
+
+                                *stk++ = (INT16U)task & 0xff;	//Simulate interrupt.
+                                *stk++ = (INT16U)task >> 8;
+                                *stk++ = 0x00;	//ACC.
+                                *stk++ = 0x11;	//B.
+                                *stk++ = 0x22;	//PSW.
+                                *stk++ = 0x33;	//DPH.
+                                *stk++ = 0x44;	//DPL.
+                                *stk++ = 0x77;	//R7.
+                                *stk++ = 0x66;	//R6.
+                                *stk++ = 0x55;	//R5.
+                                *stk++ = 0x44;	//R4.
+                                *stk++ = (INT32U)pdata1 >> 16;	//R3, Mem type.
+                                *stk++ = (INT16U)pdata1 >> 8;		//R2, MSB.
+                                *stk++ = (INT16U)pdata1 & 0xff;	//R1, LSB.
+                                *stk++ = 0x00;	//R0.
+                                *stk++ = ((INT16U)ptos + TASK_STK_SIZE * sizeof(OS_STK)) >> 8;		//?C_XBP
+                                *stk = ((INT16U)ptos + TASK_STK_SIZE * sizeof(OS_STK)) & 0xff;
+
+                                return ptos;   
+                                }
+                            err = OS_TCBInit(prio, psp, (OS_STK *)0, 0, 0, (void *)0, 0);
+                                {
+                                OS_CPU_SR  cpu_sr;
+                                OS_TCB   *ptcb;
+                                OS_ENTER_CRITICAL();
+                                ptcb = OSTCBFreeList;                                  /* Get a free TCB from the free TCB list    */
+                                if (ptcb != (OS_TCB *)0) {
+                                    OSTCBFreeList        = ptcb->OSTCBNext;            /* Update pointer to free TCB list          */
+                                    OS_EXIT_CRITICAL();
+                                    ptcb->OSTCBStkPtr    = (OS_STK RUNSISI_IDATA*)ptos;/* Load Stack pointer in TCB                */
+                                    ptcb->OSTCBPrio      = (INT8U)prio;                /* Load task priority into TCB              */
+                                    ptcb->OSTCBStat      = OS_STAT_RDY;                /* Task is ready to run                     */
+                                    ptcb->OSTCBDly       = 0;                          /* Task is not delayed                      */
+
+                                    ptcb->OSTCBDelReq    = OS_NO_ERR;
+
+                                    ptcb->OSTCBY         = prio >> 3;                  /* Pre-compute X, Y, BitX and BitY          */
+                                    ptcb->OSTCBBitY      = OSMapTbl[ptcb->OSTCBY];
+                                    ptcb->OSTCBX         = prio & 0x07;
+                                    ptcb->OSTCBBitX      = OSMapTbl[ptcb->OSTCBX];
+
+                                    ptcb->OSTCBEventPtr  = (OS_EVENT *)0;              /* Task is not pending on an event          */
+
+                                    ptcb->OSTCBFlagNode  = (OS_FLAG_NODE *)0;          /* Task is not pending on an event flag     */
+
+                                    ptcb->OSTCBMsg       = (void *)0;                  /* No message received                      */
+
+                                    OSTCBInitHook(ptcb);
+
+                                    OSTaskCreateHook(ptcb);                            /* Call user defined hook                   */
+                                    OS_ENTER_CRITICAL();
+                                    OSTCBPrioTbl[prio] = ptcb;
+                                    ptcb->OSTCBNext    = OSTCBList;                    /* Link into TCB chain                      */
+                                    ptcb->OSTCBPrev    = (OS_TCB *)0;
+                                    if (OSTCBList != (OS_TCB *)0) {
+                                        OSTCBList->OSTCBPrev = ptcb;
+                                    }
+                                    OSTCBList               = ptcb;
+                                    OSRdyGrp               |= ptcb->OSTCBBitY;         /* Make task ready to run                   */
+                                    OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+                                    OS_EXIT_CRITICAL();
+                                    return (OS_NO_ERR);
+                                
+                                    OS_EXIT_CRITICAL();
+                                    return (OS_NO_MORE_TCB);
+
+                                }
+                            if (err == OS_NO_ERR) {
+                                OS_ENTER_CRITICAL();
+                                OSTaskCtr++;                                        /* Increment the #tasks counter        */
+                                OS_EXIT_CRITICAL();
+                                if (OSRunning == TRUE) {         /* Find highest priority task if multitasking has started */
+                                    OS_Sched();
+                                        {
+                                            OS_CPU_SR  cpu_sr;  
+                                            INT8U      y;
+
+                                            OS_ENTER_CRITICAL();
+                                            if ((OSIntNesting == 0) && (OSLockNesting == 0)) { /* 仅当所有 ISR 完成且未锁定时调度    */
+                                                y             = OSUnMapTbl[OSRdyGrp];          /* 获取指向就绪运行的 HPT 的指针              */
+                                                OSPrioHighRdy = (INT8U)((y << 3) + OSUnMapTbl[OSRdyTbl[y]]);
+                                                if (OSPrioHighRdy != OSPrioCur) {              /* 如果当前任务是最高优先级就绪任务，则不进行上下文切换     */
+                                                    OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
+                                                    OSCtxSwCtr++;                              /* 递增上下文切换计数器             */
+                                                    OS_TASK_SW();                              /* 执行上下文切换                     */
+                                                }
+                                            }
+                                            OS_EXIT_CRITICAL();
+                                        }  
+                                }
+                            } else {
+                                OS_ENTER_CRITICAL();
+                                OSTCBPrioTbl[prio] = (OS_TCB *)0;/* Make this priority available to others                 */
+                                OS_EXIT_CRITICAL();
+                            }
+                            return (err);
+                        }
+                        OS_EXIT_CRITICAL();
+                        return (OS_PRIO_EXIST);
+                        }
+                }
+            }
+        OS_InitTaskStat();    {
+            (void)OSTaskCreate(OS_TaskStat,
+                       (void *)0,                                      /* No args passed to OS_TaskStat()*/
+                       &OSTaskStatStk[OS_TASK_STAT_STK_SIZE - 1],      /* Set Top-Of-Stack               */
+                       OS_STAT_PRIO);}
+        OSInitHookEnd();          
+            {}
+    InitTimer0();
+        {}
+    OSTaskCreate(Task, 2, &TaskStk[0], 2);
+	OSTaskCreate(TaskLed, 1, &TaskLedStk[0], 5);
+    OSStart();{
+        INT8U y;
+        INT8U x;
+
+        if (OSRunning == FALSE) {
+            y             = OSUnMapTbl[OSRdyGrp];        /* Find highest priority's task priority number   */
+            x             = OSUnMapTbl[OSRdyTbl[y]];
+            OSPrioHighRdy = (INT8U)((y << 3) + x);
+            OSPrioCur     = OSPrioHighRdy;
+            OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy]; /* Point to highest priority task ready to run    */
+            OSTCBCur      = OSTCBHighRdy;
+            OSStartHighRdy();                            /* Execute target specific code to start task     */
+            }
+        }
+
+
+    

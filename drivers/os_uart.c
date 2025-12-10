@@ -35,7 +35,7 @@ void Uart_SendByte(char c)
 }
 
 // 发送字符串
-void Uart_SendString(char *pt)
+void Uart_Printf(char *pt)
 {
     while(*pt)
         Uart_SendByte(*pt++);

@@ -1,348 +1,273 @@
+/*
+*********************************************************************************************************
+* uC/OS-II
+* The Real-Time Kernel
+* TASK MANAGEMENT
+*
+* (c) Copyright 1992-2002, Jean J. Labrosse, Weston, FL
+* All Rights Reserved
+*
+* File : OS_TASK.C
+* By   : Jean J. Labrosse
+*********************************************************************************************************
+*/
+
 #include "includes.h"
 
 /*
 *********************************************************************************************************
-*                                            CREATE A TASK
+* Task Description
+* 任务 1: 改变任务优先级 (OSTaskChangePrio)
+*
+* 描述:
+* 动态改变一个任务的优先级。
+*
+* 功能:
+* 1. 检查优先级有效性。
+* 2. 确保新优先级未被占用。
+* 3. 查找旧任务的 TCB。
+* 4. 从就绪表或事件等待表中移除旧优先级。
+* 5. 更新 TCB 中的优先级信息。
+* 6. 将任务以新优先级加入就绪表或事件等待表。
+* 7. 触发调度。
+*
+* 移植要点:
+* - 涉及复杂的位操作和链表操作，需确保原子性。
 *********************************************************************************************************
 */
-
-INT8U  OSTaskCreate (void task(void *pdata), void *pdata1, OS_STACK *ptos, INT8U prio)
-{
-    OS_CPU_SR    cpu_sr;                                        //CPU 状态寄存器
-    OS_STACK    *psp;                                           // point to stack pointer
-    INT8U        err;                                           //错误代码
-
-
-    if (prio > OS_LOWEST_PRIO) {
-        return (OS_PRIO_INVALID);                               // 优先级错误
+INT8U OSTaskChangePrio(INT8U oldprio, INT8U newprio){
+    OS_CPU_SR cpu_sr;
+    OS_TCB    *ptcb;
+    if(oldprio >= OS_LOWEST_PRIO || newprio >= OS_LOWEST_PRIO){
+        return OS_PRIO_INVALID;
+    }
+    if(oldprio != OS_PRIO_SELF){
+        return OS_PRIO_ERR;
+    }
+    if(newprio == OS_PRIO_EXIST){
+        return OS_PRIO_EXIST;
     }
     OS_ENTER_CRITICAL();
-    if (OSTCBPrioTbl[prio] == (OS_TCB *)0) {                    // 优先级不存在
-        OSTCBPrioTbl[prio] = (OS_TCB *)1;                       // 先占位，防止重复创建同一优先级任务
+    ptcb->OSTCBPrio = newprio;
+    OS_EXIT_CRITICAL();//检查
+    ptcb->OSTCBY = newprio >> 3;
+    ptcb->OSTCBX = newprio & 7;
+    ptcb->OSTCBBitY = OSMapTbl[ptcb->OSTCBY];
+    ptcb->OSTCBBitX = OSUnMapTbl[ptcb->OSTCBX];
+
+
+    if(ptcb->OSTCBEventPtr != 0){
+        oseventwaitlist;
+        return //直接看
+    }
+    return OS_NO_ERR;
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 2: 创建任务 (OSTaskCreate)
+*
+* 描述:
+* 创建一个新任务，初始化其堆栈和 TCB。
+*
+* 功能:
+* 1. 检查优先级有效性。
+* 2. 确保优先级未被占用。
+* 3. 调用 OSTaskStkInit() 初始化堆栈结构。
+* 4. 调用 OS_TCBInit() 获取并初始化 TCB。
+* 5. 触发调度。
+*
+* 移植要点:
+* - 关键依赖 OSTaskStkInit (在 OS_CPU_C.C 中)。
+* - 对于 Mini2440，传递的 ptos 应该是堆栈的高地址（因为是满递减堆栈）。
+*********************************************************************************************************
+*/
+INT8U OSTaskCreate(int (*task)(int* pdata), void *pata1, void *ptos, INT8U prio){
+    //不考虑ext的情况
+    OS_CPU_SR   cpu_sr;
+    OS_STK      *psp; //pointer to stack pointer
+    INT8U       err;
+
+    if(prio > OS_LOWEST_PRIO){
+        return OS_PRIO_INVALID;
+    }
+    OS_ENTER_CRITICAL();
+    if(OSTCBPrioTbl[prio] == (OS_TCB *)0){
+        OSTCBPrioTbl[prio] = (OS_TCB *)1;
         OS_EXIT_CRITICAL();
-        psp = (OS_STACK *)OSTaskStkInit(task, pdata1, ptos); 
-        err = OSTCBInit(prio, psp);
-        if (err == OS_NO_ERR) {                                 // 初始化成功，任务创建成功
+        psp = (OS_STK *)OSTaskStkInit(task, pata1, ptos, 0);//还没完成
+        err = OS_TCBInit(prio, psp, (OS_STK *)0,0,0,(void *)0,0);//还没完成
+        if(err == OS_NO_ERR){
             OS_ENTER_CRITICAL();
-            OSTaskCtr++;                                        // 已创建任务数加1
+            OSTaskCtr++;
             OS_EXIT_CRITICAL();
-            if (OSRunning == TRUE) {                            
-                OS_Sched();                                     
+            if(OSRunning == TRUE){
+                OS_Sched();//还没完成
             }
-        } 
-        else {                                                  // 初始化失败，任务创建失败
-            OS_ENTER_CRITICAL();
-            OSTCBPrioTbl[prio] = (OS_TCB *)0;                   // 释放优先级占位
-            OS_EXIT_CRITICAL();
         }
+        else{
+                OS_ENTER_CRITICAL();
+                OSTCBPrioTbl[prio] = (OS_TCB *)0;
+                OS_EXIT_CRITICAL();
+            }
         return (err);
     }
     OS_EXIT_CRITICAL();
-    return (OS_PRIO_EXIST);                                     // 优先级已经存在,任务创建失败
+    return (OS_PRIO_EXIST);
 }
+
 /*
 *********************************************************************************************************
-*                                            DELETE A TASK
+* Task Description
+* 任务 3: 创建任务扩展版 (OSTaskCreateExt)
+*
+* 描述:
+* 创建一个新任务，允许更多选项（如堆栈检查、清除、扩展数据）。
+*
+* 功能:
+* 1. 类似 OSTaskCreate。
+* 2. 支持堆栈清除（如果设置了 OS_TASK_OPT_STK_CLR）。
+* 3. 将额外信息 (id, stack size, pext) 传递给 OS_TCBInit。
+*
+* 移植要点:
+* - 如果启用堆栈检查，需要确保堆栈底 (pbos) 和堆栈大小在 Mini2440 内存映射中是有效的。
 *********************************************************************************************************
 */
+INT8U  OSTaskCreateExt (void (*task)(void *pd), void *pdata1, OS_STK *ptos, INT8U prio, INT16U id, OS_STK *pbos, INT32U stk_size, void *pext, INT16U opt)
+{
+    // 在此输入代码
 
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 4: 删除任务 (OSTaskDel)
+*
+* 描述:
+* 删除指定优先级的任务。
+*
+* 功能:
+* 1. 禁止删除空闲任务。
+* 2. 将任务从就绪表、事件等待表移除。
+* 3. 如果任务持有事件标志，解除链接。
+* 4. 将 TCB 返回给空闲列表。
+* 5. 触发调度。
+*
+* 移植要点:
+* - 删除当前任务时，调用 OS_Dummy() 确保在开中断后、上下文切换前 CPU 有指令可执行（防止流水线问题，虽在 ARM 上较少见，但为了兼容性保留）。
+*********************************************************************************************************
+*/
 INT8U  OSTaskDel (INT8U prio)
 {
-    OS_CPU_SR         cpu_sr;
-    OS_EVENT         *pevent;
-    OS_FLAG_NODE     *pnode;
-    OS_TCB           *ptcb;
-    BOOLEAN           self;
-
-
-    if (OSIntNesting > 0) {                                     // 中断嵌套
-        return (OS_ERR_DEL_ISR);                                // 不能在中断中删除任务
-    }
-    if (prio == OS_IDLE_PRIO) {
-        return (OS_TASK_DEL_IDLE);                               // 不能删除空闲任务，空闲任务已经被删除了
-    }
-    if (prio > OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {
-        return (OS_PRIO_INVALID);                               // 优先级错误
-    }
-    OS_ENTER_CRITICAL();
-    if (prio == OS_PRIO_SELF) {                                 // 任务请求删除自身
-        prio = OSTCBCur->OSTCBPrio;                             // 获取当前任务的优先级
-    }
-    ptcb = OSTCBPrioTbl[prio];                                  // 获取任务控制块优先级
-    if (ptcb != (OS_TCB *)0) {                                  // 任务存在
-        if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0) {
-            OSRdyGrp &= ~ptcb->OSTCBBitY;                       // 从任务就绪组中删除
-        }
-        pevent = ptcb->OSTCBEventPtr;                           // 获取任务等待的事件控制块
-        if (pevent != (OS_EVENT *)0) {                          // 任务正在等待某个事件
-            if ((pevent->OSEventTable[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0) {
-                pevent->OSEventGrp &= ~ptcb->OSTCBBitY;      // 从事件就绪组中删除
-            }
-        }
-        pnode = ptcb->OSTCBFlagNode;                            // 获取任务等待的事件标志节点
-        if (pnode != (OS_FLAG_NODE *)0) {                       // 任务正在等待事件标志
-            OS_FlagUnlink(pnode);                               // 还没定义OS_FlagUnlink, 从node表中删除
-        }
-        ptcb->OSTCBDly    = 0;                                  // 清除任务延迟
-        ptcb->OSTCBStat   = OS_STAT_RDY;                        // 设置任务状态为就绪
-        if (OSLockNesting < 255) {                              // 调度没有被锁定
-            OSLockNesting++;
-        }
-        OS_EXIT_CRITICAL();
-        OS_Dummy();                                             // 空指令
-        OS_ENTER_CRITICAL();
-        if (OSLockNesting > 0) {
-            OSLockNesting--;
-        }
-        OSTaskDelHook(ptcb);                                 // 调用用户定义的钩子函数
-        OSTaskCtr--;
-        OSTCBPrioTbl[prio] = (OS_TCB *)0;                       // 从优先级表中删除该任务
-        if (ptcb->OSTCBPrev == (OS_TCB *)0) {                   // 从 TCB 链表中移除
-            ptcb->OSTCBNext->OSTCBPrev = (OS_TCB *)0;
-            OSTCBList                  = ptcb->OSTCBNext;
-        } 
-        else {
-            ptcb->OSTCBPrev->OSTCBNext = ptcb->OSTCBNext;
-            ptcb->OSTCBNext->OSTCBPrev = ptcb->OSTCBPrev;
-        }
-        ptcb->OSTCBNext = OSTCBFreeList;                        // 将该 TCB 加入到空闲 TCB 链表中
-        OSTCBFreeList   = ptcb;
-        OS_EXIT_CRITICAL();
-        OS_Sched();                                             // 还没定义OS_Sched
-        return (OS_NO_ERR);                                     // 没有错误
-    }
-    OS_EXIT_CRITICAL();
-    return (OS_TASK_DEL_ERR);                                   // 任务删除失败
+    // 在此输入代码
 }
+
 /*
 *********************************************************************************************************
-*                                            REQUEST TO DELETE A TASK
+* Task Description
+* 任务 5: 请求删除任务 (OSTaskDelReq)
+*
+* 描述:
+* 请求另一个任务删除自身，或查询是否被请求删除。
+*
+* 功能:
+* 1. 如果是 OS_PRIO_SELF，返回当前 TCB 的删除请求标志。
+* 2. 否则，设置目标任务 TCB 的删除请求标志。
+*
+* 移植要点:
+* - 纯逻辑操作。
 *********************************************************************************************************
 */
-
 INT8U  OSTaskDelReq (INT8U prio)
 {
-    OS_CPU_SR    cpu_sr;
-    OS_TCB      *ptcb;
-    BOOLEAN      stat;
-    INT8U        err;
-
-
-    if (prio == OS_IDLE_PRIO) {                                 // 不允许删除空闲任务
-        return (OS_TASK_DEL_IDLE);
-    }
-    if (prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {       // 任务优先级有效 ?
-        return (OS_PRIO_INVALID);
-    }
-    if (prio == OS_PRIO_SELF) {                                 // 查看是否有任务请求 ...
-        OS_ENTER_CRITICAL();                                    // ... 此任务删除自身
-        stat = OSTCBCur->OSTCBDelReq;                       // 将请求状态返回给调用者
-        OS_EXIT_CRITICAL();
-        return (stat);
-    }
-    OS_ENTER_CRITICAL();
-    ptcb = OSTCBPrioTbl[prio];
-    if (ptcb != (OS_TCB *)0) {                                  // 要删除的任务必须存在
-        ptcb->OSTCBDelReq = OS_TASK_DEL_REQ;                    // 设置标志指示任务将被删除
-        err = OS_NO_ERR;                                        // 没有错误
-    } 
-    else {
-        err = OS_TASK_NOT_EXIST;                                // 任务必须已被删除
-    }
-    OS_EXIT_CRITICAL();
-    return (err);
-}
-/*
-*********************************************************************************************************
-*                                            CHANGE PRIORITY OF A TASK
-*********************************************************************************************************
-*/
-
-INT8U  OSTaskChangePrio (INT8U oldprio, INT8U newprio)
-{
-    OS_CPU_SR    cpu_sr;
-    OS_EVENT    *pevent;
-    OS_TCB      *ptcb;
-    INT8U        X;
-    INT8U        Y;
-    INT8U        Bit_X;
-    INT8U        Bit_Y;
-
-
-    if (oldprio > OS_LOWEST_PRIO && oldprio != OS_PRIO_SELF || newprio >= OS_LOWEST_PRIO) {
-        return (OS_PRIO_INVALID);                               // oldprio优先级错误
-    }
-    OS_ENTER_CRITICAL();
-    if (OSTCBPrioTbl[newprio] != (OS_TCB *)0) {
-        OS_EXIT_CRITICAL();
-        return (OS_PRIO_EXIST);                                 // 新优先级已经存在
-    } 
-    else {
-        OSTCBPrioTbl[newprio] = (OS_TCB *)1;                  // 先占位，防止重复创建同一优先级任务
-        OS_EXIT_CRITICAL();
-        Y     = newprio >> 3;
-        Bit_Y = OSMapTbl[Y];
-        X     = newprio & 0x07;
-        Bit_X = OSMapTbl[X];
-        OS_ENTER_CRITICAL();
-        if (oldprio == OS_PRIO_SELF) {
-            oldprio = OSTCBCur->OSTCBPrio;                      // 获取当前任务的TCB
-        }
-        ptcb = OSTCBPrioTbl[oldprio];                            // 获取任务控制块优先级
-        if (ptcb != (OS_TCB *)0) {                              // oldprio任务存在
-            OSTCBPrioTbl[oldprio] = (OS_TCB *)0;              // 释放旧优先级占位
-            if ((OSRdyTbl[ptcb->OSTCBY] & ptcb->OSTCBBitX) != 0x00) {
-                if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) {
-                    OSRdyGrp &= ~ptcb->OSTCBBitY;          // 从任务就绪组中删除
-                }
-                OSRdyGrp    |= Bit_Y;                       // 设置新优先级就绪组
-                OSRdyTbl[Y] |= Bit_X;                       // 设置新优先级就绪表
-            } 
-            else {
-                pevent = ptcb->OSTCBEventPtr;                   // 获取任务等待的事件控制块
-                if (pevent != (OS_EVENT *)0) {                  // 任务正在等待某个事件
-                    if ((pevent->OSEventTable[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) {
-                        pevent->OSEventGrp &= ~ptcb->OSTCBBitY; // 从事件就绪组中删除
-                    }
-                    pevent->OSEventGrp      |= Bit_Y;           // 设置新优先级就绪组
-                    pevent->OSEventTable[Y] |= Bit_X;           // 设置新优先级就绪表
-                }
-            }
-            OSTCBPrioTbl[newprio]   = ptcb;                     // 注册新优先级任务
-            ptcb->OSTCBPrio         = newprio;                  // 设置任务新优先
-            ptcb->OSTCBY            = Y;                        // 更新任务优先级在组中的索引
-            ptcb->OSTCBBitY         = Bit_Y;                    // 更新访问就绪
-            ptcb->OSTCBX            = X;                        // 更新任务优先级的组中的位位置
-            ptcb->OSTCBBitX         = Bit_X;                    // 更新访问就绪
-            OS_EXIT_CRITICAL();
-            OS_Sched();                                         // 还没定义OS_Sched
-            return (OS_NO_ERR);                                 // 没有错误
-        } 
-        else {
-            OSTCBPrioTbl[newprio]   = (OS_TCB *)0;              // 释放新优先级占位
-            OS_EXIT_CRITICAL();
-            return (OS_PRIO_ERR);                               // 任务不存在
-        }
-    }
-}
-/*
-*********************************************************************************************************
-*                                            CHECK TASK STACK
-*********************************************************************************************************
-*/
-
-INT8U  OSTaskStkChk (INT8U prio, OS_STK_DATA *pata)
-{
-    // 不需要写检查，因为没有定义taskcreateext函数，没有相应的参数返回size
-}
-/*
-*********************************************************************************************************
-*                                            SUSPEND A TASK
-*********************************************************************************************************
-*/
-
-INT8U  OSTaskSuspend (INT8U prio)
-{
-    OS_CPU_SR    cpu_sr;//CPU 状态寄存器 
-    OS_TCB      *ptcb;// pointer to TCB
-    BOOLEAN      self;//是否挂起自身
-
-
-    if (prio == OS_IDLE_PRIO) {                                 // 不允许挂起空闲任务
-        return (OS_TASK_SUSPEND_IDLE);
-    }
-    if (prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {       // 任务优先级有效 ?
-        return (OS_PRIO_INVALID);
-    }
-    OS_ENTER_CRITICAL();
-    if (prio == OS_PRIO_SELF) {                                 // 挂起当前任务 ?
-        prio = OSTCBCur->OSTCBPrio;
-        self = TRUE;
-    } 
-    else if (prio == OSTCBCur->OSTCBPrio) {               // 挂起当前任务 ?
-        self = TRUE;
-    } 
-    else {
-        self = FALSE;
-    }
-    ptcb = OSTCBPrioTbl[prio];
-    if (ptcb == (OS_TCB *)0) {                                  // 任务必须存在
-        OS_EXIT_CRITICAL();
-        return (OS_TASK_SUSPEND_PRIO);
-    }
-    if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) { // 使任务不就绪
-        OSRdyGrp &= ~ptcb->OSTCBBitY;                           // 从任务就绪组中删除
-    }
-    ptcb->OSTCBStat |= OS_STAT_SUSPEND;                         // 任务状态为 'SUSPENDED'
-    OS_EXIT_CRITICAL();
-    if (self == TRUE) {                                         // 仅当自身时进行上下文切换
-        OS_Sched();
-    }
-    return (OS_NO_ERR);
+    // 在此输入代码
 }
 
 /*
 *********************************************************************************************************
-*                                            RESUME A SUSPENDED TASK
+* Task Description
+* 任务 6: 恢复挂起的任务 (OSTaskResume)
+*
+* 描述:
+* 恢复一个被 OSTaskSuspend 挂起的任务。
+*
+* 功能:
+* 1. 清除 TCB 状态中的 OS_STAT_SUSPEND 位。
+* 2. 如果任务没有其他等待条件（延时为 0），将其加入就绪表。
+* 3. 触发调度。
+*
+* 移植要点:
+* - 纯逻辑操作。
 *********************************************************************************************************
 */
-
 INT8U  OSTaskResume (INT8U prio)
 {
-    OS_CPU_SR    cpu_sr;
-    OS_TCB      *ptcb;
-
-
-    if (prio >= OS_LOWEST_PRIO) {
-        return (OS_PRIO_INVALID);                               // 优先级错误
-    }
-    OS_ENTER_CRITICAL();
-    ptcb = OSTCBPrioTbl[prio];
-    if (ptcb == (OS_TCB *)0) {                                  // 任务必须存在
-        OS_EXIT_CRITICAL();
-        return (OS_TASK_RESUME_PRIO);
-    }
-    if ((ptcb->OSTCBStat & OS_STAT_SUSPEND) != OS_STAT_RDY) { // 任务被挂起 ?
-        if (((ptcb->OSTCBStat &= ~OS_STAT_SUSPEND) == OS_STAT_RDY) && (ptcb->OSTCBDly == 0)) { // 任务不能在等待时间
-            OSRdyGrp                |= ptcb->OSTCBBitY;    // 使任务就绪
-            OSRdyTbl[ptcb->OSTCBY]  |= ptcb->OSTCBBitX;    // 使任务就绪
-            OS_EXIT_CRITICAL();
-            OS_Sched();                                         
-        } 
-        else {
-            OS_EXIT_CRITICAL();
-        }
-        return (OS_NO_ERR);
-    }
-    OS_EXIT_CRITICAL();
-    return (OS_TASK_NOT_SUSPENDED);                             // 任务没有被挂起
+    // 在此输入代码
 }
+
 /*
 *********************************************************************************************************
-*                                            QUERY A TASK
+* Task Description
+* 任务 7: 堆栈检查 (OSTaskStkChk)
+*
+* 描述:
+* 计算任务堆栈的空闲和已用空间。
+*
+* 功能:
+* 1. 验证任务存在且启用了堆栈检查选项。
+* 2. 从堆栈底部向上扫描，统计 0 值（空闲）的数量。
+* 3. 计算字节数。
+*
+* 移植要点:
+* - 依赖于堆栈增长方向 (OS_STK_GROWTH)。在 Mini2440 (ARM) 上，OS_STK_GROWTH 为 1，扫描需适应从低地址向高地址检查空闲区域。
 *********************************************************************************************************
 */
-
-INT8U  OSTaskQuery (INT8U prio, OS_TCB *pdata)
+INT8U  OSTaskStkChk (INT8U prio, OS_STK_DATA *p_data)
 {
-    OS_CPU_SR    cpu_sr;
-    OS_TCB      *ptcb;
-
-
-    if (prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {
-        return (OS_PRIO_INVALID);                               // 优先级错误
-    }
-    OS_ENTER_CRITICAL();
-    if (prio == OS_PRIO_SELF) {
-        prio = OSTCBCur->OSTCBPrio;
-    }
-    ptcb = OSTCBPrioTbl[prio];
-    if (ptcb == (OS_TCB *)0) {                                  // 任务不存在
-        OS_EXIT_CRITICAL();
-        return (OS_PRIO_ERR);
-    }
-    memcpy(pdata, ptcb, sizeof(OS_TCB));                        // 将 TCB 复制到用户存储区域
-    OS_EXIT_CRITICAL();
-    return (OS_NO_ERR);
+    // 在此输入代码
 }
 
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 8: 挂起任务 (OSTaskSuspend)
+*
+* 描述:
+* 无条件挂起一个任务。
+*
+* 功能:
+* 1. 禁止挂起空闲任务。
+* 2. 将任务从就绪表移除。
+* 3. 在 TCB 状态中设置 OS_STAT_SUSPEND 位。
+* 4. 触发调度。
+*
+* 移植要点:
+* - 纯逻辑操作。
+*********************************************************************************************************
+*/
+INT8U  OSTaskSuspend (INT8U prio)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 9: 查询任务信息 (OSTaskQuery)
+*
+* 描述:
+* 复制任务的 TCB 内容到用户提供的结构中。
+*
+* 功能:
+* 1. 复制 TCB 内容。
+*
+* 移植要点:
+* - 涉及内存拷贝，注意结构体对齐。
+*********************************************************************************************************
+*/
+INT8U  OSTaskQuery (INT8U prio, OS_TCB *p_data)
+{
+    // 在此输入代码
+}

@@ -42,7 +42,7 @@ typedef signed int     int32_t;
 #define LONG           INT32S
 #define ULONG          INT32U
 
-typedef INT32U         OS_STACK;   /* Alias for OS_STK for compatibility */
+typedef INT32U         OS_STK;   /* Alias for OS_STK for compatibility */
 typedef INT32U         OS_FLAGS;   /* Date type for event flag bits      */
 
 /*
@@ -58,7 +58,7 @@ void       OSCtxSw(void);
 void       OSIntCtxSw(void);
 void       OSStartHighRdy(void);
 
-OS_STACK  *OSTaskStkInit(void (*task)(void *p_arg), void *p_arg, OS_STACK *ptos, INT16U opt);
+OS_STK     *OSTaskStkInit(void (*task)(void *p_arg), void *p_arg, OS_STK *ptos, INT16U opt);
 
 /*
 *********************************************************************************************************
@@ -66,7 +66,7 @@ OS_STACK  *OSTaskStkInit(void (*task)(void *p_arg), void *p_arg, OS_STACK *ptos,
 *********************************************************************************************************
 */
 
-#define  OS_ENTER_CRITICAL()   (cpu_sr = OS_CPU_SR_Save())    /* Disable interrupts                        */
-#define  OS_EXIT_CRITICAL()    (OS_CPU_SR_Restore(cpu_sr))    /* Restore  interrupts                        */
+#define     OS_ENTER_CRITICAL()   (cpu_sr = OS_CPU_SR_Save())    /* Disable interrupts                        */
+#define     OS_EXIT_CRITICAL()    (OS_CPU_SR_Restore(cpu_sr))    /* Restore  interrupts                        */
 
 #endif // __OS_CPU_H__

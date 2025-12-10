@@ -2,7 +2,7 @@
 #define __OS_CONFIG_H__
 
 
-#define TASK_STACK_SIZE  1024          //任务栈大小,单位:32位，1024*4 = 4kb，安全考虑，避免栈溢出
+#define TASK_STACK_SIZE  256          //任务栈大小,单位:32位，256*4 = 1kb，安全考虑，避免栈溢出
 
 #define OS_MAX_EVENTS             1    //应用程序中事件控制块的最大数量
                                        //必须 > 0

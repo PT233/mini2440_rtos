@@ -1,0 +1,1952 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_3.xsd">
+  <vendor>Samsung</vendor>
+  <vendorID>SS</vendorID>
+  <name>S3C2440A</name>
+  <series>S3C2440</series>
+  <version>1.0</version>
+  <description>Samsung S3C2440A ARM920T-based Microprocessor for FriendlyARM Mini2440 Development Board</description>
+  
+  <!-- ============ CPU信息 ============ -->
+  <cpu>
+    <name>ARM920T</name>
+    <revision>r1p1</revision>
+    <endian>little</endian>
+    <mpuPresent>true</mpuPresent>
+    <fpuPresent>false</fpuPresent>
+    <nvicPrioBits>0</nvicPrioBits>
+    <vendorSystickConfig>false</vendorSystickConfig>
+  </cpu>
+  
+  <!-- ============ 系统信息 ============ -->
+  <addressUnitBits>8</addressUnitBits>
+  <width>32</width>
+  <size>32</size>
+  <access>read-write</access>
+  <resetValue>0x00000000</resetValue>
+  <resetMask>0xFFFFFFFF</resetMask>
+  
+  <!-- ============ 存储器映射 ============ -->
+  <peripherals>
+  
+    <!-- ============ 存储器控制器 ============ -->
+    <peripheral>
+      <name>MEMCON</name>
+      <description>Memory Controller</description>
+      <groupName>MEMCON</groupName>
+      <baseAddress>0x48000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x5C</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>BWSCON</name>
+          <displayName>BWSCON</displayName>
+          <description>Bus Width & Wait Status Control Register</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>DW7</name>
+              <description>Bank7 bus width (00=8-bit, 01=16-bit, 10=32-bit)</description>
+              <bitOffset>30</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DW6</name>
+              <description>Bank6 bus width</description>
+              <bitOffset>28</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DW5</name>
+              <description>Bank5 bus width</description>
+              <bitOffset>26</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DW4</name>
+              <description>Bank4 bus width</description>
+              <bitOffset>24</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DW3</name>
+              <description>Bank3 bus width</description>
+              <bitOffset>22</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DW2</name>
+              <description>Bank2 bus width</description>
+              <bitOffset>20</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DW1</name>
+              <description>Bank1 bus width</description>
+              <bitOffset>18</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DW0</name>
+              <description>Bank0 bus width</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>WS7</name>
+              <description>Bank7 WAIT status enable (0=disable, 1=enable)</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>WS6</name>
+              <description>Bank6 WAIT status enable</description>
+              <bitOffset>14</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>WS5</name>
+              <description>Bank5 WAIT status enable</description>
+              <bitOffset>13</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>WS4</name>
+              <description>Bank4 WAIT status enable</description>
+              <bitOffset>12</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>WS3</name>
+              <description>Bank3 WAIT status enable</description>
+              <bitOffset>11</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>WS2</name>
+              <description>Bank2 WAIT status enable</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>WS1</name>
+              <description>Bank1 WAIT status enable</description>
+              <bitOffset>9</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST7</name>
+              <description>Bank7 SRAM type (0=not using UB/LB, 1=using UB/LB)</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST6</name>
+              <description>Bank6 SRAM type</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST5</name>
+              <description>Bank5 SRAM type</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST4</name>
+              <description>Bank4 SRAM type</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST3</name>
+              <description>Bank3 SRAM type</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST2</name>
+              <description>Bank2 SRAM type</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST1</name>
+              <description>Bank1 SRAM type</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ST0</name>
+              <description>Bank0 SRAM type</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        
+        <register>
+          <name>BANKCON0</name>
+          <description>Bank 0 Control Register</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000700</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKCON1</name>
+          <description>Bank 1 Control Register</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000700</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKCON2</name>
+          <description>Bank 2 Control Register</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000700</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKCON3</name>
+          <description>Bank 3 Control Register</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000700</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKCON4</name>
+          <description>Bank 4 Control Register</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000700</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKCON5</name>
+          <description>Bank 5 Control Register</description>
+          <addressOffset>0x18</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000700</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKCON6</name>
+          <description>Bank 6 Control Register</description>
+          <addressOffset>0x1C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00018008</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKCON7</name>
+          <description>Bank 7 Control Register</description>
+          <addressOffset>0x20</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00018008</resetValue>
+        </register>
+        
+        <register>
+          <name>REFRESH</name>
+          <description>SDRAM Refresh Control Register</description>
+          <addressOffset>0x24</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>BANKSIZE</name>
+          <description>Flexible Bank Size Register</description>
+          <addressOffset>0x28</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>MRSRB6</name>
+          <description>Mode Register Set for Bank6</description>
+          <addressOffset>0x2C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000030</resetValue>
+        </register>
+        
+        <register>
+          <name>MRSRB7</name>
+          <description>Mode Register Set for Bank7</description>
+          <addressOffset>0x30</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000030</resetValue>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ USB Host Controller ============ -->
+    <peripheral>
+      <name>USBHOST</name>
+      <description>USB Host Controller</description>
+      <groupName>USBHOST</groupName>
+      <baseAddress>0x49000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x400</size>
+        <usage>registers</usage>
+      </addressBlock>
+    </peripheral>
+    
+    <!-- ============ 中断控制器 ============ -->
+    <peripheral>
+      <name>INTC</name>
+      <description>Interrupt Controller</description>
+      <groupName>INTC</groupName>
+      <baseAddress>0x4A000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x100</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>SRCPND</name>
+          <displayName>SRCPND</displayName>
+          <description>Interrupt Source Pending Register</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>INT_ADC</name>
+              <description>ADC and Touch Screen interrupt (1=pending)</description>
+              <bitOffset>31</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_RTC</name>
+              <description>RTC alarm interrupt (1=pending)</description>
+              <bitOffset>30</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_SPI1</name>
+              <description>SPI1 interrupt (1=pending)</description>
+              <bitOffset>29</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_UART0</name>
+              <description>UART0 interrupt (1=pending)</description>
+              <bitOffset>28</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_IIC</name>
+              <description>IIC interrupt (1=pending)</description>
+              <bitOffset>27</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_USBH</name>
+              <description>USB Host interrupt (1=pending)</description>
+              <bitOffset>26</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_USBD</name>
+              <description>USB Device interrupt (1=pending)</description>
+              <bitOffset>25</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_NFCON</name>
+              <description>NAND Flash Controller interrupt (1=pending)</description>
+              <bitOffset>24</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_UART1</name>
+              <description>UART1 interrupt (1=pending)</description>
+              <bitOffset>23</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_SPI0</name>
+              <description>SPI0 interrupt (1=pending)</description>
+              <bitOffset>22</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_SDI</name>
+              <description>SD Interface interrupt (1=pending)</description>
+              <bitOffset>21</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_DMA3</name>
+              <description>DMA channel 3 interrupt (1=pending)</description>
+              <bitOffset>20</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_DMA2</name>
+              <description>DMA channel 2 interrupt (1=pending)</description>
+              <bitOffset>19</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_DMA1</name>
+              <description>DMA channel 1 interrupt (1=pending)</description>
+              <bitOffset>18</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_DMA0</name>
+              <description>DMA channel 0 interrupt (1=pending)</description>
+              <bitOffset>17</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_LCD</name>
+              <description>LCD interrupt (1=pending)</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_UART2</name>
+              <description>UART2 interrupt (1=pending)</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_TIMER4</name>
+              <description>Timer4 interrupt (1=pending)</description>
+              <bitOffset>14</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_TIMER3</name>
+              <description>Timer3 interrupt (1=pending)</description>
+              <bitOffset>13</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_TIMER2</name>
+              <description>Timer2 interrupt (1=pending)</description>
+              <bitOffset>12</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_TIMER1</name>
+              <description>Timer1 interrupt (1=pending)</description>
+              <bitOffset>11</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_TIMER0</name>
+              <description>Timer0 interrupt (1=pending)</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_WDT</name>
+              <description>Watchdog Timer interrupt (1=pending)</description>
+              <bitOffset>9</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_TICK</name>
+              <description>RTC Time Tick interrupt (1=pending)</description>
+              <bitOffset>8</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>nBATT_FLT</name>
+              <description>Battery Fault interrupt (1=pending)</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>INT_CAM</name>
+              <description>Camera Interface interrupt (1=pending)</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>EINT8_23</name>
+              <description>External interrupt 8~23 (1=pending)</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>EINT4_7</name>
+              <description>External interrupt 4~7 (1=pending)</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>EINT3</name>
+              <description>External interrupt 3 (1=pending)</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>EINT2</name>
+              <description>External interrupt 2 (1=pending)</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>EINT1</name>
+              <description>External interrupt 1 (1=pending)</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>EINT0</name>
+              <description>External interrupt 0 (1=pending)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        
+        <register>
+          <name>INTMOD</name>
+          <description>Interrupt Mode Register</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>INTMSK</name>
+          <description>Interrupt Mask Register</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0xFFFFFFFF</resetValue>
+        </register>
+        
+        <register>
+          <name>PRIORITY</name>
+          <description>IRQ Priority Control Register</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>INTPND</name>
+          <description>Interrupt Pending Register</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>INTOFFSET</name>
+          <description>Interrupt Offset Register</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>SUBSRCPND</name>
+          <description>Sub Source Pending Register</description>
+          <addressOffset>0x18</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>INTSUBMSK</name>
+          <description>Interrupt Sub Mask Register</description>
+          <addressOffset>0x1C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000007</resetValue>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ DMA 控制器 ============ -->
+    <peripheral>
+      <name>DMA</name>
+      <description>Direct Memory Access Controller</description>
+      <groupName>DMA</groupName>
+      <baseAddress>0x4B000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x100</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>DISRC0</name>
+          <description>DMA 0 Initial Source Address</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>DISRCC0</name>
+          <description>DMA 0 Source Control</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>DIDST0</name>
+          <description>DMA 0 Initial Destination Address</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>DIDSTC0</name>
+          <description>DMA 0 Destination Control</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>DCON0</name>
+          <description>DMA 0 Control</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>DSTAT0</name>
+          <description>DMA 0 Status</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>DCSRC0</name>
+          <description>DMA 0 Current Source Address</description>
+          <addressOffset>0x18</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>DCDST0</name>
+          <description>DMA 0 Current Destination Address</description>
+          <addressOffset>0x1C</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <!-- DMA 1-3 的类似寄存器 -->
+      </registers>
+    </peripheral>
+    
+    <!-- ============ 时钟和电源管理 ============ -->
+    <peripheral>
+      <name>CLKPWR</name>
+      <description>Clock & Power Management</description>
+      <groupName>CLKPWR</groupName>
+      <baseAddress>0x4C000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x40</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>LOCKTIME</name>
+          <description>PLL Lock Time Counter</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00FFFFFF</resetValue>
+        </register>
+        
+        <register>
+          <name>MPLLCON</name>
+          <description>MPLL Control Register</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x0005C080</resetValue>
+          <fields>
+            <field>
+              <name>MDIV</name>
+              <description>Main Divider</description>
+              <bitOffset>12</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+            <field>
+              <name>PDIV</name>
+              <description>Pre-divider</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>4</bitWidth>
+            </field>
+            <field>
+              <name>SDIV</name>
+              <description>Post-divider</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+          </fields>
+        </register>
+        
+        <register>
+          <name>UPLLCON</name>
+          <description>UPLL Control Register</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00028080</resetValue>
+        </register>
+        
+        <register>
+          <name>CLKCON</name>
+          <description>Clock Control Register</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00007FFF</resetValue>
+          <fields>
+            <field>
+              <name>CAM</name>
+              <description>Camera interface clock enable</description>
+              <bitOffset>19</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>SPI</name>
+              <description>SPI clock enable</description>
+              <bitOffset>18</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>IIS</name>
+              <description>IIS clock enable</description>
+              <bitOffset>17</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>IIC</name>
+              <description>IIC clock enable</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ADC</name>
+              <description>ADC clock enable</description>
+              <bitOffset>15</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>RTC</name>
+              <description>RTC clock enable</description>
+              <bitOffset>14</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>GPIO</name>
+              <description>GPIO clock enable</description>
+              <bitOffset>13</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>UART2</name>
+              <description>UART2 clock enable</description>
+              <bitOffset>12</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>UART1</name>
+              <description>UART1 clock enable</description>
+              <bitOffset>11</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>UART0</name>
+              <description>UART0 clock enable</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>SDI</name>
+              <description>SDI clock enable</description>
+              <bitOffset>9</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>PWM</name>
+              <description>PWM timer clock enable</description>
+              <bitOffset>8</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>USBDEV</name>
+              <description>USB device clock enable</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>USBHOST</name>
+              <description>USB host clock enable</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>LCDC</name>
+              <description>LCD controller clock enable</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>NAND</name>
+              <description>NAND Flash controller clock enable</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>SLEEP</name>
+              <description>Sleep mode</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>IDLE</name>
+              <description>Idle mode</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        
+        <register>
+          <name>CLKSLOW</name>
+          <description>Slow Clock Control Register</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        
+        <register>
+          <name>CLKDIVN</name>
+          <description>Clock Divider Control Register</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ LCD 控制器 ============ -->
+    <peripheral>
+      <name>LCDC</name>
+      <description>LCD Controller</description>
+      <groupName>LCDC</groupName>
+      <baseAddress>0x4D000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x100</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>LCDCON1</name>
+          <description>LCD Control 1 Register</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>LCDCON2</name>
+          <description>LCD Control 2 Register</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>LCDCON3</name>
+          <description>LCD Control 3 Register</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>LCDCON4</name>
+          <description>LCD Control 4 Register</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>LCDCON5</name>
+          <description>LCD Control 5 Register</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>LCDSADDR1</name>
+          <description>Frame Buffer Start Address 1</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>LCDSADDR2</name>
+          <description>Frame Buffer Start Address 2</description>
+          <addressOffset>0x18</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>LCDSADDR3</name>
+          <description>Virtual Screen Address Set</description>
+          <addressOffset>0x1C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ NAND Flash 控制器 ============ -->
+    <peripheral>
+      <name>NFCON</name>
+      <description>NAND Flash Controller</description>
+      <groupName>NFCON</groupName>
+      <baseAddress>0x4E000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x20</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>NFCONF</name>
+          <description>NAND Flash Configuration</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>NFCMD</name>
+          <description>NAND Flash Command</description>
+          <addressOffset>0x04</addressOffset>
+          <size>8</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>NFADDR</name>
+          <description>NAND Flash Address</description>
+          <addressOffset>0x08</addressOffset>
+          <size>8</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>NFDATA</name>
+          <description>NAND Flash Data</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>8</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>NFSTAT</name>
+          <description>NAND Flash Status</description>
+          <addressOffset>0x10</addressOffset>
+          <size>8</size>
+          <access>read-only</access>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ UART 0 ============ -->
+    <peripheral>
+      <name>UART0</name>
+      <description>UART 0</description>
+      <groupName>UART</groupName>
+      <baseAddress>0x50000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x2C</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>ULCON0</name>
+          <displayName>ULCON0</displayName>
+          <description>UART Line Control Register 0</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>WL</name>
+              <description>Word Length (00=5-bit, 01=6-bit, 10=7-bit, 11=8-bit)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>SB</name>
+              <description>Stop Bits (0=1 bit, 1=2 bits)</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>PM</name>
+              <description>Parity Mode (00=no parity, 01=odd, 10=even, 11=parity forced/check)</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>IR</name>
+              <description>Infrared Mode (0=normal, 1=infrared)</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        
+        <register>
+          <name>UCON0</name>
+          <description>UART Control Register 0</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>UFCON0</name>
+          <description>UART FIFO Control Register 0</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>UMCON0</name>
+          <description>UART Modem Control Register 0</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>UTRSTAT0</name>
+          <description>UART Tx/Rx Status Register 0</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000006</resetValue>
+          <fields>
+            <field>
+              <name>TXFE</name>
+              <description>Transmit FIFO empty (1=empty)</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>TXDE</name>
+              <description>Transmitter empty (1=empty)</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>RXD</name>
+              <description>Receive data ready (1=ready)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        
+        <register>
+          <name>UERSTAT0</name>
+          <description>UART Error Status Register 0</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>UFSTAT0</name>
+          <description>UART FIFO Status Register 0</description>
+          <addressOffset>0x18</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>UMSTAT0</name>
+          <description>UART Modem Status Register 0</description>
+          <addressOffset>0x1C</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>UTXH0</name>
+          <description>UART Transmission Hold Register 0</description>
+          <addressOffset>0x20</addressOffset>
+          <size>8</size>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>URXH0</name>
+          <description>UART Receive Buffer Register 0</description>
+          <addressOffset>0x24</addressOffset>
+          <size>8</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <register>
+          <name>UBRDIV0</name>
+          <description>Baud Rate Divisor Register 0</description>
+          <addressOffset>0x28</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ UART 1 ============ -->
+    <peripheral>
+      <name>UART1</name>
+      <description>UART 1</description>
+      <groupName>UART</groupName>
+      <baseAddress>0x50004000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x2C</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <!-- 类似 UART0 的寄存器定义 -->
+    </peripheral>
+    
+    <!-- ============ UART 2 ============ -->
+    <peripheral>
+      <name>UART2</name>
+      <description>UART 2</description>
+      <groupName>UART</groupName>
+      <baseAddress>0x50008000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x2C</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <!-- 类似 UART0 的寄存器定义 -->
+    </peripheral>
+    
+    <!-- ============ PWM 定时器 ============ -->
+    <peripheral>
+      <name>PWM</name>
+      <description>PWM Timer</description>
+      <groupName>PWM</groupName>
+      <baseAddress>0x51000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x40</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>TCFG0</name>
+          <description>Timer Configuration 0</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>TCFG1</name>
+          <description>Timer Configuration 1</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>TCON</name>
+          <description>Timer Control</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>TCNTB0</name>
+          <description>Timer Count Buffer 0</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>TCMPB0</name>
+          <description>Timer Compare Buffer 0</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>TCNTO0</name>
+          <description>Timer Count Observation 0</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <!-- 定时器 1-4 的类似寄存器 -->
+      </registers>
+    </peripheral>
+    
+    <!-- ============ USB 设备控制器 ============ -->
+    <peripheral>
+      <name>USBD</name>
+      <description>USB Device Controller</description>
+      <groupName>USBD</groupName>
+      <baseAddress>0x52000140</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x200</size>
+        <usage>registers</usage>
+      </addressBlock>
+    </peripheral>
+    
+    <!-- ============ 看门狗定时器 ============ -->
+    <peripheral>
+      <name>WDT</name>
+      <description>Watchdog Timer</description>
+      <groupName>WDT</groupName>
+      <baseAddress>0x53000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>WTCON</name>
+          <description>Watchdog Timer Control Register</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00008021</resetValue>
+        </register>
+        <register>
+          <name>WTDAT</name>
+          <description>Watchdog Timer Data Register</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00008000</resetValue>
+        </register>
+        <register>
+          <name>WTCNT</name>
+          <description>Watchdog Timer Count Register</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00008000</resetValue>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ I2C 控制器 ============ -->
+    <peripheral>
+      <name>I2C</name>
+      <description>I2C Controller</description>
+      <groupName>I2C</groupName>
+      <baseAddress>0x54000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>IICCON</name>
+          <description>I2C Control</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>IICSTAT</name>
+          <description>I2C Status</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>IICADD</name>
+          <description>I2C Address</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>IICDS</name>
+          <description>I2C Data Shift</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ IIS 音频接口 ============ -->
+    <peripheral>
+      <name>IIS</name>
+      <description>IIS Audio Interface</description>
+      <groupName>IIS</groupName>
+      <baseAddress>0x55000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x14</size>
+        <usage>registers</usage>
+      </addressBlock>
+    </peripheral>
+    
+    <!-- ============ I/O 端口 ============ -->
+    <peripheral>
+      <name>GPIO</name>
+      <description>General Purpose I/O</description>
+      <groupName>GPIO</groupName>
+      <baseAddress>0x56000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x100</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <!-- Port A -->
+        <register>
+          <name>GPACON</name>
+          <description>Port A Control Register</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPADAT</name>
+          <description>Port A Data Register</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- Port B -->
+        <register>
+          <name>GPBCON</name>
+          <description>Port B Control Register</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPBDAT</name>
+          <description>Port B Data Register</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPBUP</name>
+          <description>Port B Pull-up Disable Register</description>
+          <addressOffset>0x18</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- Port C -->
+        <register>
+          <name>GPCCON</name>
+          <description>Port C Control Register</description>
+          <addressOffset>0x20</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPCDAT</name>
+          <description>Port C Data Register</description>
+          <addressOffset>0x24</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPCUP</name>
+          <description>Port C Pull-up Disable Register</description>
+          <addressOffset>0x28</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- Port D -->
+        <register>
+          <name>GPDCON</name>
+          <description>Port D Control Register</description>
+          <addressOffset>0x30</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPDDAT</name>
+          <description>Port D Data Register</description>
+          <addressOffset>0x34</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPDUP</name>
+          <description>Port D Pull-up Disable Register</description>
+          <addressOffset>0x38</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- Port E -->
+        <register>
+          <name>GPECON</name>
+          <description>Port E Control Register</description>
+          <addressOffset>0x40</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPEDAT</name>
+          <description>Port E Data Register</description>
+          <addressOffset>0x44</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPEUP</name>
+          <description>Port E Pull-up Disable Register</description>
+          <addressOffset>0x48</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- Port F -->
+        <register>
+          <name>GPFCON</name>
+          <description>Port F Control Register</description>
+          <addressOffset>0x50</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPFDAT</name>
+          <description>Port F Data Register</description>
+          <addressOffset>0x54</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPFUP</name>
+          <description>Port F Pull-up Disable Register</description>
+          <addressOffset>0x58</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- Port G -->
+        <register>
+          <name>GPGCON</name>
+          <description>Port G Control Register</description>
+          <addressOffset>0x60</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPGDAT</name>
+          <description>Port G Data Register</description>
+          <addressOffset>0x64</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPGUP</name>
+          <description>Port G Pull-up Disable Register</description>
+          <addressOffset>0x68</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- Port H -->
+        <register>
+          <name>GPHCON</name>
+          <description>Port H Control Register</description>
+          <addressOffset>0x70</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPHDAT</name>
+          <description>Port H Data Register</description>
+          <addressOffset>0x74</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GPHUP</name>
+          <description>Port H Pull-up Disable Register</description>
+          <addressOffset>0x78</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        
+        <!-- External Interrupt Control -->
+        <register>
+          <name>EXTINT0</name>
+          <description>External Interrupt Control Register 0</description>
+          <addressOffset>0x88</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>EXTINT1</name>
+          <description>External Interrupt Control Register 1</description>
+          <addressOffset>0x8C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>EXTINT2</name>
+          <description>External Interrupt Control Register 2</description>
+          <addressOffset>0x90</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>EINTFLT0</name>
+          <description>External Interrupt Filter Register 0</description>
+          <addressOffset>0x94</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>EINTFLT1</name>
+          <description>External Interrupt Filter Register 1</description>
+          <addressOffset>0x98</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>EINTMASK</name>
+          <description>External Interrupt Mask Register</description>
+          <addressOffset>0xA4</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00FFFFF0</resetValue>
+        </register>
+        <register>
+          <name>EINTPEND</name>
+          <description>External Interrupt Pending Register</description>
+          <addressOffset>0xA8</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GSTATUS0</name>
+          <description>External Pin Status Register 0</description>
+          <addressOffset>0xAC</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000001</resetValue>
+        </register>
+        <register>
+          <name>GSTATUS1</name>
+          <description>External Pin Status Register 1</description>
+          <addressOffset>0xB0</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GSTATUS2</name>
+          <description>External Pin Status Register 2</description>
+          <addressOffset>0xB4</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GSTATUS3</name>
+          <description>External Pin Status Register 3</description>
+          <addressOffset>0xB8</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>GSTATUS4</name>
+          <description>External Pin Status Register 4</description>
+          <addressOffset>0xBC</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ RTC ============ -->
+    <peripheral>
+      <name>RTC</name>
+      <description>Real Time Clock</description>
+      <groupName>RTC</groupName>
+      <baseAddress>0x57000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x50</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>RTCCON</name>
+          <description>RTC Control</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>TICNT</name>
+          <description>RTC Tick Time Count</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>RTCALM</name>
+          <description>RTC Alarm Control</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <!-- 时间和日期寄存器 -->
+      </registers>
+    </peripheral>
+    
+    <!-- ============ ADC 和触摸屏 ============ -->
+    <peripheral>
+      <name>ADC</name>
+      <description>ADC and Touch Screen Interface</description>
+      <groupName>ADC</groupName>
+      <baseAddress>0x58000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x20</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>ADCCON</name>
+          <description>ADC Control</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000020</resetValue>
+        </register>
+        <register>
+          <name>ADCTSC</name>
+          <description>ADC Touch Screen Control</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>ADCDLY</name>
+          <description>ADC Start Delay</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x000000FF</resetValue>
+        </register>
+        <register>
+          <name>ADCDAT0</name>
+          <description>ADC Conversion Data 0</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+        <register>
+          <name>ADCDAT1</name>
+          <description>ADC Conversion Data 1</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ SPI 0 ============ -->
+    <peripheral>
+      <name>SPI0</name>
+      <description>SPI 0</description>
+      <groupName>SPI</groupName>
+      <baseAddress>0x59000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x20</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>SPCON0</name>
+          <description>SPI Control Register 0</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>SPSTA0</name>
+          <description>SPI Status Register 0</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SPPIN0</name>
+          <description>SPI Pin Control Register 0</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>SPPRE0</name>
+          <description>SPI Baud Rate Prescaler Register 0</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>SPTDAT0</name>
+          <description>SPI Tx Data Register 0</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>SPRDAT0</name>
+          <description>SPI Rx Data Register 0</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+      </registers>
+    </peripheral>
+    
+    <!-- ============ SPI 1 ============ -->
+    <peripheral>
+      <name>SPI1</name>
+      <description>SPI 1</description>
+      <groupName>SPI</groupName>
+      <baseAddress>0x59000020</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x20</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <!-- 类似 SPI0 的寄存器定义 -->
+    </peripheral>
+    
+    <!-- ============ SD 接口 ============ -->
+    <peripheral>
+      <name>SDI</name>
+      <description>SD Interface</description>
+      <groupName>SDI</groupName>
+      <baseAddress>0x5A000000</baseAddress>
+      <addressBlock>
+        <offset>0x00</offset>
+        <size>0x100</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>SDICON</name>
+          <description>SDI Control</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>SDIPRE</name>
+          <description>SDI Baud Rate Prescaler</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>SDICmdArg</name>
+          <description>SDI Command Argument</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>SDICmdCon</name>
+          <description>SDI Command Control</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>SDICmdSta</name>
+          <description>SDI Command Status</description>
+          <addressOffset>0x10</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SDIRSP0</name>
+          <description>SDI Response 0</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SDIRSP1</name>
+          <description>SDI Response 1</description>
+          <addressOffset>0x18</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SDIRSP2</name>
+          <description>SDI Response 2</description>
+          <addressOffset>0x1C</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SDIRSP3</name>
+          <description>SDI Response 3</description>
+          <addressOffset>0x20</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SDIDTimer</name>
+          <description>SDI Data/Busy Timer</description>
+          <addressOffset>0x24</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+        <register>
+          <name>SDIBSize</name>
+          <description>SDI Block Size</description>
+          <addressOffset>0x28</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>SDIDatCon</name>
+          <description>SDI Data Control</description>
+          <addressOffset>0x2C</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>SDIDatCnt</name>
+          <description>SDI Data Remain Counter</description>
+          <addressOffset>0x30</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+        </register>
+        <register>
+          <name>SDIDatSta</name>
+          <description>SDI Data Status</description>
+          <addressOffset>0x34</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SDIFSTA</name>
+          <description>SDI FIFO Status</description>
+          <addressOffset>0x38</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SDIDAT</name>
+          <description>SDI Data</description>
+          <addressOffset>0x3C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+        </register>
+      </registers>
+    </peripheral>
+    
+  </peripherals>
+</device>

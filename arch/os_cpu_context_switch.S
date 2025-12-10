@@ -47,7 +47,7 @@ OSStartHighRdy:
     // 1. 钩子函数
     // bl OSTaskSwHook
 
-    // 2. 标记系统开始运行
+    // 2. OSRunning = true
     ldr     r0, =OSRunning
     mov     r1, #1
     strb    r1, [r0]
@@ -55,11 +55,9 @@ OSStartHighRdy:
     // 3. 获取最高优先级任务的 TCB 地址
     ldr     r0, =OSTCBHighRdy
     ldr     r0, [r0]            // R0 = ptcb
-
-    // 4. 获取堆栈指针
     ldr     sp, [r0]            // SP = ptcb->OSTCBStackPtr
 
-    // 5. 恢复全部现场
+    // 4. 恢复全部现场
     ldmfd   sp!, {r0}           // 弹出 SPSR 
     msr     cpsr_c, r0          // 恢复 CPSR 
     

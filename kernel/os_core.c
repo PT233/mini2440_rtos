@@ -1,7 +1,30 @@
+/*
+*********************************************************************************************************
+* uC/OS-II
+* The Real-Time Kernel
+* CORE FUNCTIONS
+*
+* (c) Copyright 1992-2002, Jean J. Labrosse, Weston, FL
+* All Rights Reserved
+*
+* File : OS_CORE.C
+* By   : Jean J. Labrosse
+*********************************************************************************************************
+*/
+
 #include "includes.h"
 
-const INT8U OSMapTbl[]   = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-const INT8U OSUnMapTbl[] = {
+/*
+*********************************************************************************************************
+* LOOKUP TABLES
+* 描述:
+* 系统用于优先级判定和位操作的查找表。
+* 虽然这是数据而非代码，但为了项目完整性保留在此。
+*********************************************************************************************************
+*/
+INT8U  const  OSMapTbl[]   = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+
+INT8U  const  OSUnMapTbl[] = {
     0, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x00 to 0x0F                             */
     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x10 to 0x1F                             */
     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x20 to 0x2F                             */
@@ -20,7 +43,11 @@ const INT8U OSUnMapTbl[] = {
     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0        /* 0xF0 to 0xFF                             */
 };
 
-//函数声明
+/*
+*********************************************************************************************************
+* FUNCTION PROTOTYPES
+*********************************************************************************************************
+*/
 static  void  OS_InitEventList(void);
 static  void  OS_InitMisc(void);
 static  void  OS_InitRdyList(void);
@@ -28,238 +55,520 @@ static  void  OS_InitTaskIdle(void);
 static  void  OS_InitTaskStat(void);
 static  void  OS_InitTCBList(void);
 
-//初始化操作系统
-void  OSInit(void)
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 1: OS 初始化 (OSInit)
+*
+* 描述:
+* 初始化 uC/OS-II 的内部数据结构。这是在调用 OSStart() 之前必须执行的第一个函数。
+*
+* 功能:
+* 1. 调用 OSInitHookBegin() 进行特定于端口的初始化。
+* 2. 调用 OS_InitMisc() 初始化杂项全局变量。
+* 3. 调用 OS_InitRdyList() 初始化就绪列表。
+* 4. 调用 OS_InitTCBList() 初始化空闲 TCB 链表。
+* 5. 调用 OS_InitEventList() 初始化空闲事件控制块链表。
+* 6. 调用 OS_FlagInit() 初始化事件标志（如果启用）。
+* 7. 调用 OS_MemInit() 初始化内存管理（如果启用）。
+* 8. 调用 OS_QInit() 初始化队列（如果启用）。
+* 9. 调用 OS_InitTaskIdle() 创建空闲任务。
+* 10. 调用 OS_InitTaskStat() 创建统计任务（如果启用）。
+* 11. 调用 OSInitHookEnd()。
+*
+* 移植要点:
+* - Mini2440 的硬件初始化（如时钟、中断控制器）通常不在这里做，而是在 main() 函数的最开始或者启动代码中。
+* - 这里主要关注 OS 内部结构的复位。
+*********************************************************************************************************
+*/
+void  OSInit (void)
 {
-    OSInitHookBegin();               /* 调用特定于端口的初始化代码*/
-    OS_InitMisc();                   /* 初始化杂项变量 */
-    OS_InitRdyList();                /* 初始化就绪列表 */
-    OS_InitTCBList();                /* 初始化 OS_TCB 的空闲列表*/
-    OS_InitEventList();              /* 初始化 OS_EVENT 的空闲列表 */
-    OS_FlagInit();                   /* 初始化事件标志结构  */
-    OS_MemInit();                    /* 初始化内存管理器*/
-    OS_QueueInit();                  /* 初始化消息队列结构 */
-    OS_InitTaskIdle();               /* 创建空闲任务*/
-    OS_InitTaskStat();               /* 创建统计任务 */
-    OSInitHookEnd();                 /* 调用特定于端口的初始化代码*/
+    // 在此输入代码
+    OSInitHookBegin();
+    OS_InitMisc();
+    OS_InitRdyList();
+    OS_InitTCBList();
+    OS_InitEventList();
+    OS_FlagInit();
+    OS_MEM_Init();
+    OS_QInit();
+    OS_InitTaskIdle();
+    OS_InitTaskStat();
+    OSInitHookEnd();
+
 }
 
-//进入ISR,需要在context switch中定义
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 2: 进入中断 (OSIntEnter)
+*
+* 描述:
+* 通知内核中断服务程序 (ISR) 已开始。允许内核跟踪中断嵌套层数。
+*
+* 功能:
+* 1. 检查 OS 是否正在运行 (OSRunning)。
+* 2. 如果是，增加中断嵌套计数器 (OSIntNesting)。
+* 3. 限制嵌套层数不超过 255。
+*
+* 移植要点:
+* - 在 Mini2440 上，此函数应在 IRQ 或 FIQ 处理程序的开头调用。
+* - 必须在关中断的情况下调用，或者确保对 OSIntNesting 的操作是原子的。
+*********************************************************************************************************
+*/
 void  OSIntEnter (void)
 {
-    if (OSRunning == TRUE) {
-        if (OSIntNesting < 255) {
-            OSIntNesting++;                      /* 递增 ISR 嵌套级别                        */
-        }
-    }
+    // 在此输入代码
 }
 
-//退出ISR，需要在context switch中定义
-void OSIntExit(void){
-    OS_CPU_SR   cpu_sr;                                         //CPU 状态寄存器
-    if(OSRunning == TRUE){
-        OS_ENTER_CRITICAL();
-       if(OSIntNesting > 0){
-           OSIntNesting--; 
-       }
-       if((OSIntNesting == 0) && (OSLockNesting == 0)){
-            OSIntExitY = OSUnMapTbl[OSRdyGrp];                     // 获取最高优先级任务
-            OSPrioHighRdy = (INT8U)((OSIntExitY << 3) + OSUnMapTbl[OSRdyTbl[OSIntExitY]]);
-            if (OSPrioHighRdy != OSPrioCur) {              /* 如果当前任务是最高优先级就绪任务，则不进行上下文切换 */
-                OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
-                OSCtxSwCtr++;                              /* 跟踪上下文切换的次数 */
-                OSIntCtxSw();                              /* 执行中断级上下文切换       */
-            }
-        }
-    OS_EXIT_CRITICAL();
-    }
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 3: 退出中断 (OSIntExit)
+*
+* 描述:
+* 通知内核 ISR 已完成。如果是最外层中断，则触发任务调度。
+*
+* 功能:
+* 1. 关中断 (OS_ENTER_CRITICAL)。
+* 2. 减少中断嵌套计数器 (OSIntNesting)。
+* 3. 如果所有中断都已退出 (OSIntNesting == 0) 且调度器未锁定 (OSLockNesting == 0)：
+* a. 计算最高优先级就绪任务 (OS_SchedNew 逻辑)。
+* b. 如果最高优先级任务不是当前任务：
+* i. 增加上下文切换计数器。
+* ii. 调用中断级任务切换函数 OSIntCtxSw()。
+* 4. 开中断 (OS_EXIT_CRITICAL)。
+*
+* 移植要点:
+* - OSIntCtxSw() 是汇编函数，在 Mini2440 上，它不需要保存寄存器（因为 ISR 入口已经保存了），只需切换堆栈指针并恢复上下文。
+* - 确保在调用 OSIntCtxSw() 之前正确设置了 OSTCBHighRdy。
+*********************************************************************************************************
+*/
+void  OSIntExit (void)
+{
+    // 在此输入代码
 }
 
-
-//调度锁
-void OSSchedLock(void){
-    OS_CPU_SR   cpu_sr;                                         //CPU 状态寄存器
-    if(OSRunning == FALSE){
-        return;
-    }
-    else{
-        OS_ENTER_CRITICAL();
-        if(OSLockNesting < 255){
-            OSLockNesting++; 
-        }
-        OS_EXIT_CRITICAL();
-    }
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 4: 锁定调度器 (OSSchedLock)
+*
+* 描述:
+* 阻止任务重新调度，但保持中断开启。
+*
+* 功能:
+* 1. 检查 OS 是否正在运行。
+* 2. 进入临界区。
+* 3. 增加 OSLockNesting 计数器。
+* 4. 退出临界区。
+*
+* 移植要点:
+* - Mini2440 是 32 位 CPU，确保对 8 位计数器的操作是安全的。
+*********************************************************************************************************
+*/
+void  OSSchedLock (void)
+{
+    // 在此输入代码
 }
 
-//关闭调度锁
-void OSSchedUnlock(void){
-    OS_CPU_SR   cpu_sr;                                         //CPU 状态寄存器
-    if(OSRunning == TRUE){
-        OS_ENTER_CRITICAL();
-        if(OSLockNesting > 0){
-            OSLockNesting--; 
-            if((OSLockNesting == 0) && (OSIntNesting == 0)){
-                OS_EXIT_CRITICAL();
-                OS_Sched();
-            }
-            else{
-                OS_EXIT_CRITICAL();
-            }
-        }
-        else{
-            OS_EXIT_CRITICAL();
-        }
-    }
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 5: 解锁调度器 (OSSchedUnlock)
+*
+* 描述:
+* 重新允许任务调度。
+*
+* 功能:
+* 1. 检查 OS 是否正在运行。
+* 2. 进入临界区。
+* 3. 减少 OSLockNesting 计数器。
+* 4. 如果 OSLockNesting 减为 0 且没有中断嵌套 (OSIntNesting == 0)：
+* a. 退出临界区。
+* b. 调用 OS_Sched() 尝试进行任务调度。
+* 5. 否则，仅退出临界区。
+*
+* 移植要点:
+* - 无特殊硬件依赖，纯逻辑操作。
+*********************************************************************************************************
+*/
+void  OSSchedUnlock (void)
+{
+    // 在此输入代码
 }
 
-//多任务系统开始运行
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 6: 启动多任务 (OSStart)
+*
+* 描述:
+* 从就绪列表中找到优先级最高的任务并开始执行。
+*
+* 功能:
+* 1. 确保 OS 尚未运行 (OSRunning == FALSE)。
+* 2. 从就绪表 (OSRdyTbl) 和组 (OSRdyGrp) 中找到最高优先级的任务。
+* 3. 设置 OSPrioHighRdy, OSTCBHighRdy, OSTCBCur。
+* 4. 调用特定于目标的汇编函数 OSStartHighRdy()。
+*
+* 移植要点:
+* - OSStartHighRdy() 在 Mini2440 上需要设置堆栈指针 (SP) 到任务的堆栈，弹出寄存器，并跳转到任务入口。
+* - 这个函数一旦调用成功，永远不会返回。
+*********************************************************************************************************
+*/
 void  OSStart (void)
 {
-    INT8U y;
-    INT8U x;
-
-    if (OSRunning == FALSE) {
-        y             = OSUnMapTbl[OSRdyGrp];        
-        x             = OSUnMapTbl[OSRdyTbl[y]];
-        OSPrioHighRdy = (INT8U)((y << 3) + x);
-        OSPrioCur     = OSPrioHighRdy;
-        OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy]; 
-        OSTCBCur      = OSTCBHighRdy;
-        OSStartHighRdy();                            
-    }
+    // 在此输入代码
 }
 
-//系统状态初始化
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 7: 统计任务初始化 (OSStatInit)
+*
+* 描述:
+* 确定基准 CPU 使用率。
+*
+* 功能:
+* 1. 延时 2 个 tick 以同步。
+* 2. 清除 OSIdleCtr。
+* 3. 延时 1 秒 (OS_TICKS_PER_SEC)。
+* 4. 保存此时的 OSIdleCtr 到 OSIdleCtrMax。
+* 5. 设置 OSStatRdy = TRUE。
+*
+* 移植要点:
+* - 依赖于 OSTimeDly，确保时钟节拍中断 (Tick ISR) 在 Mini2440 上已正确配置并工作。
+*********************************************************************************************************
+*/
 void  OSStatInit (void)
 {
-    OS_CPU_SR  cpu_sr;
-  
-    OSTimeDly(2);                                /* 与时钟滴答同步                        */
-    OS_ENTER_CRITICAL();
-    OSIdleCtr    = 0L;                           /* 清除空闲计数器                                 */
-    OS_EXIT_CRITICAL();
-    OSTimeDly(OS_TICKS_PER_SEC);                 /* 确定 1 秒内的最大空闲计数器值     */
-    OS_ENTER_CRITICAL();
-    OSIdleCtrMax = OSIdleCtr;                    /* 存储 1 秒内的最大空闲计数器计数       */
-    OSStatRdy    = TRUE;
-    OS_EXIT_CRITICAL();
+    // 在此输入代码
 }
 
-//系统滴答
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 8: 系统心跳 (OSTimeTick)
+*
+* 描述:
+* 处理系统时钟节拍，更新延时任务的状态。
+*
+* 功能:
+* 1. 调用钩子函数 OSTimeTickHook()。
+* 2. 增加系统时间计数器 OSTime。
+* 3. 遍历 TCB 链表：
+* a. 如果任务有延时 (OSTCBDly != 0)，递减之。
+* b. 如果延时减为 0，且任务处于挂起状态，则将其设为就绪 (OSRdyGrp/OSRdyTbl)。
+*
+* 移植要点:
+* - 此函数通常在定时器中断服务程序中调用。
+* - Mini2440 通常使用 Timer 4 作为系统 tick 源。
+*********************************************************************************************************
+*/
 void  OSTimeTick (void)
 {
-    OS_CPU_SR  cpu_sr;
-    OS_TCB    *ptcb;
+    // 在此输入代码
+}
 
-    OSTimeTickHook();                                      /* 调用用户可定义的钩子                 */  
-    OS_ENTER_CRITICAL();                                   /* 更新 32 位滴答计数器           */
-    OSTime++;
-    OS_EXIT_CRITICAL();
-    if (OSRunning == TRUE) {    
-        ptcb = OSTCBList;                                  /* 指向 TCB 列表中的第一个 TCB           */
-        while (ptcb->OSTCBPrio != OS_IDLE_PRIO) {          /* 遍历 TCB 列表中的所有 TCB          */
-            OS_ENTER_CRITICAL();
-            if (ptcb->OSTCBDly != 0) {                     /* 延迟或等待带有超时的事件     */
-                if (--ptcb->OSTCBDly == 0) {               /* 递减延迟结束的滴答数   */
-                    if ((ptcb->OSTCBStat & OS_STAT_SUSPEND) == OS_STAT_RDY) { /* 任务是否被挂起?    */
-                        OSRdyGrp               |= ptcb->OSTCBBitY; /* 否，使任务 R-to-R (超时)*/
-                        OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
-                    } else {                               /* 是，保留 1 个滴答以防止 ...         */
-                        ptcb->OSTCBDly = 1;                /* ... 丢失任务，当 ...        */
-                    }                                      /* ... 挂起被移除时。               */
-                }
-            }
-            ptcb = ptcb->OSTCBNext;                        /* 指向 TCB 列表中的下一个 TCB            */
-            OS_EXIT_CRITICAL();
-        }
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 9: 获取版本号 (OSVersion)
+*
+* 描述:
+* 返回 uC/OS-II 的版本号。
+*
+* 功能:
+* 1. 返回 OS_VERSION。
+*
+* 移植要点:
+* - 无。
+*********************************************************************************************************
+*/
+INT16U  OSVersion (void)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 10: 空操作 (OS_Dummy)
+*
+* 描述:
+* 一个什么都不做的函数，用于某些特定的调用场景（如删除任务时）。
+*
+* 功能:
+* 1. 空函数体。
+*
+* 移植要点:
+* - 无。
+*********************************************************************************************************
+*/
+void  OS_Dummy (void)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 11: 使等待事件的任务就绪 (OS_EventTaskRdy)
+*
+* 描述:
+* 内部函数。将等待特定事件的最高优先级任务从等待列表移除，放入就绪列表。
+*
+* 功能:
+* 1. 在事件等待表 (OSEventTbl) 中找到最高优先级的任务。
+* 2. 从事件等待表中清除该任务。
+* 3. 更新任务 TCB：清除延时，清除事件指针，设置消息指针。
+* 4. 将任务加入就绪列表 (OSRdyGrp/OSRdyTbl)。
+*
+* 移植要点:
+* - 纯逻辑操作。
+*********************************************************************************************************
+*/
+INT8U  OS_EventTaskRdy (OS_EVENT *pevent, void *msg, INT8U msk)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 12: 使任务等待事件 (OS_EventTaskWait)
+*
+* 描述:
+* 内部函数。将当前任务从就绪列表移除，加入到事件的等待列表。
+*
+* 功能:
+* 1. 设置 TCB 的事件指针。
+* 2. 从就绪列表移除当前任务。
+* 3. 将当前任务加入事件的等待列表 (OSEventTbl/OSEventGrp)。
+*
+* 移植要点:
+* - 纯逻辑操作。
+*********************************************************************************************************
+*/
+void  OS_EventTaskWait (OS_EVENT *pevent)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 13: 事件超时处理 (OS_EventTO)
+*
+* 描述:
+* 内部函数。处理等待事件超时的逻辑。
+*
+* 功能:
+* 1. 从事件等待列表中移除任务。
+* 2. 将任务状态设为就绪。
+* 3. 清除 TCB 的事件指针。
+*
+* 移植要点:
+* - 纯逻辑操作。
+*********************************************************************************************************
+*/
+void  OS_EventTO (OS_EVENT *pevent)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 14: 初始化事件等待列表 (OS_EventWaitListInit)
+*
+* 描述:
+* 内部函数。初始化事件控制块的等待列表。
+*
+* 功能:
+* 1. 清除 OSEventGrp。
+* 2. 清除 OSEventTbl 数组的所有元素。
+*
+* 移植要点:
+* - 纯逻辑操作。
+*********************************************************************************************************
+*/
+void  OS_EventWaitListInit (OS_EVENT *pevent)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 15: 初始化事件空闲列表 (OS_InitEventList)
+*
+* 描述:
+* 内部函数。初始化空闲事件控制块 (ECB) 的链表。
+*
+* 功能:
+* 1. 遍历 OSEventTbl 数组。
+* 2. 将每个 ECB 链接起来形成单向链表。
+* 3. 设置 OSEventFreeList 指向第一个元素。
+*
+* 移植要点:
+* - 确保内存已分配。
+*********************************************************************************************************
+*/
+static  void  OS_InitEventList (void)
+{
+    // 在此输入代码
+    OS_EVENT *pevent1, *pevent2;
+    pevent1 = &OSEventTbl[0];
+    pevent2 = &OSEventTbl[1];
+    for(INT16U i = 0;i < (OS_MAX_EVENTS - 1); i++){
+        pevent1->OSEventType = OS_EVENT_TYPE_UNUSED;
+        pevent1->OSEventPtr = pevent2;
+        pevent1++;
+        pevent2++;
     }
+    pevent1->OSEventType = OS_EVENT_TYPE_UNUSED;
+    pevent1->OSEventPtr = (OS_EVENT *)0;
+    OSEventFreeList = &OSEventTbl[0];
 }
 
-//空函数
-void OS_Dummy(void){
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 16: 初始化杂项变量 (OS_InitMisc)
+*
+* 描述:
+* 内部函数。初始化计数器和状态变量。
+*
+* 功能:
+* 1. 清零 OSTime, OSIntNesting, OSLockNesting, OSTaskCtr, OSRunning 等。
+*
+* 移植要点:
+* - 无。
+*********************************************************************************************************
+*/
+static  void  OS_InitMisc (void)
+{
+    // 在此输入代码
+    OSTime          = 0L;
+    OSIntNesting    = 0;
+    OSLockNesting   = 0;
+    OSTaskCtr       = 0;
+    OSRunning       = FALSE;
+    OSCtxSwCtr      = 0;
+    OSIdleCtr       = 0L;
+    OSIdleCtrRun    = 0L;
+    OSIdleCtrMax    = 0L;
+    OSStatRdy       = FALSE;
+}   
 
-}
-//事件触发任务就绪
-INT8U OS_EventTaskRdy(OS_EVENT *pevent, void *msg, INT8U msk){
-    OS_TCB    *ptcb;
-    INT8U      prio;
-    INT8U      X;
-    INT8U      Y;
-    INT8U      Bit_X;
-    INT8U      Bit_Y;
-
-    Y       = OSUnMapTbl[pevent->OSEventGrp];
-    Bit_Y   = OSMapTbl[Y];
-    X       = OSUnMapTbl[pevent->OSEventTable[Y]];
-    Bit_X   = OSMapTbl[X];
-    prio    = (INT8U)((Y << 3) + X);
-    if((pevent->OSEventTable[Y] & ~Bit_X) == 0x00){ /* 检查事件表中是否有任务等待 */
-        pevent->OSEventGrp &= ~Bit_Y; /* 清除就绪组 */
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 17: 初始化就绪列表 (OS_InitRdyList)
+*
+* 描述:
+* 内部函数。清除就绪列表。
+*
+* 功能:
+* 1. 清零 OSRdyGrp。
+* 2. 清零 OSRdyTbl 数组。
+* 3. 清零 OSPrioCur, OSPrioHighRdy, OSTCBHighRdy, OSTCBCur。
+*
+* 移植要点:
+* - 无。
+*********************************************************************************************************
+*/
+static  void  OS_InitRdyList (void)
+{
+    // 在此输入代码
+    INT8U *p;
+    OSRdyGrp = 0x00;
+    *p = &OSRdyTbl[0];
+    for(INT16U i = 0; i < OS_RDY_TBL_SIZE; i++){
+        *p++ = 0x00;
     }
-    ptcb = OSTCBPrioTbl[prio]; /* 获取任务控制块 */
-    ptcb->OSTCBDly      = 0; /* 清除延迟 */
-    ptcb->OSTCBEventPtr = (OS_EVENT *)0; /* 清除事件指针 */
-    ptcb->OSTCBMsg      = msg; /* 设置消息 */
-    msg = msg; /* 防止未使用变量警告 */
-    ptcb->OSTCBStat     &= ~msk; /* 清除任务状态 */
-    if(ptcb->OSTCBStat == OS_STAT_RDY){ /* 如果任务是就绪状态 */
-        OSRdyGrp    |= Bit_Y; /* 设置就绪组 */
-        OSRdyTbl[Y] |= Bit_X; /* 设置就绪表 */
-    }
-    return(prio); /* 返回任务优先级 */
+    OSPrioCur       = 0;
+    OSPrioHighRdy   = 0;
+    OSTCBCur        = (OS_TCB *)0;
+    OSTCBHighRdy    = (OS_TCB *)0;
 }
 
-//任务等待事件发生
-void OS_EventTaskWait(OS_EVENT *pevent){
-    OSTCBCur->OSTCBEventPtr = pevent; /* 设置任务等待的事件 */
-    if((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00){
-        OSRdyGrp &= ~OSTCBCur->OSTCBBitY; /* 如果就绪表中没有任务，清除就绪组 */        
-    }
-    pevent->OSEventTable[OSTCBCur->OSTCBY] |= OSTCBCur->OSTCBBitX; /* 设置事件表 */
-    pevent->OSEventGrp |= OSTCBCur->OSTCBBitY;
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 18: 初始化空闲任务 (OS_InitTaskIdle)
+*
+* 描述:
+* 内部函数。创建系统空闲任务。
+*
+* 功能:
+* 1. 调用 OSTaskCreate 或 OSTaskCreateExt 创建 OS_TaskIdle。
+* 2. 优先级为 OS_IDLE_PRIO。
+*
+* 移植要点:
+* - 堆栈大小由 OS_TASK_IDLE_STK_SIZE 定义。Mini2440 上需确保堆栈空间足够处理中断嵌套（如果中断使用任务堆栈）。
+*********************************************************************************************************
+*/
+static  void  OS_InitTaskIdle (void)
+{
+    // 不考虑ext扩展，且只考虑arm9的满递减栈
+    OSTaskCreate(OS_TaskIdle, (void *)0, &OSTaskIdleStk[OS_TASK_IDLE_STK_SIZE - 1], OS_IDLE_PRIO);
 }
 
-//事件超时使任务就绪运行,TO: timeout
-void OS_EventTO(OS_EVENT *pevent){
-    if((pevent->OSEventTable[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00){ /* 检查事件表中是否有任务等待 */
-        pevent->OSEventGrp &= ~OSTCBCur->OSTCBBitY; /* 清除就绪组 */
-    }
-    OSTCBCur->OSTCBStat = OS_STAT_RDY; /* 设置任务状态为就绪 */
-    OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0; /* 清除任务等待的事件 */
-}
-
-//事件控制块等待列表初始化
-void OS_EventWaitListInit(OS_EVENT *pevent){
-    pevent->OSEventType = 0;                                 /* 事件类型初始化为0 */
-    memset(pevent->OSEventTable, 0, sizeof(pevent->OSEventTable));
-}
-
-//事件控制块空闲列表初始化
-//其余变量初始化
-//就绪列表初始化
-//空闲任务初始化
-//统计任务初始化
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 19: 初始化统计任务 (OS_InitTaskStat)
+*
+* 描述:
+* 内部函数。创建系统统计任务。
+*
+* 功能:
+* 1. 调用 OSTaskCreateExt 创建 OS_TaskStat。
+* 2. 优先级为 OS_STAT_PRIO。
+*
+* 移植要点:
+* - 无。
+*********************************************************************************************************
+*/
 static  void  OS_InitTaskStat (void)
 {
-    (void)OSTaskCreate(OS_TaskStat,
-                       (void *)0,                                      /* 没有参数传递给 OS_TaskStat()*/
-                       &OSTaskStatStk[OS_TASK_STAT_STK_SIZE - 1],      /* 设置栈顶               */
-                       OS_STAT_PRIO);                                  /* 比空闲任务高一级  */
+    // 不考虑ext扩展，且只考虑arm9的满递减栈
+    OSTaskCreate(OS_TaskStat,(void *)0, &OSTaskStatStk[OS_TASK_STAT_STK_SIZE - 1], OS_STAT_PRIO);
 }
 
-//TCBList初始化
-static void OS_InitTCBList(void){
-    INT8U        i;
-    OS_TCB      *ptcb1;
-    OS_TCB      *ptcb2;
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 20: 初始化 TCB 空闲列表 (OS_InitTCBList)
+*
+* 描述:
+* 内部函数。初始化任务控制块 (TCB) 的空闲链表。
+*
+* 功能:
+* 1. 清零 OSTCBPrioTbl。
+* 2. 链接 OSTCBTbl 数组形成单向链表。
+* 3. 设置 OSTCBFreeList。
+*
+* 移植要点:
+* - TCB 结构体在 Mini2440 上通常是 4 字节对齐的。
+*********************************************************************************************************
+*/
+static  void  OS_InitTCBList (void)
+{
+    // 在此输入代码
+    OS_CPU_SR   cpu_sr;
+    OS_TCB      *ptcb1, *ptcb2;
 
     OSTCBList = (OS_TCB *)0;
-    for(i = 0; i < OS_LOWEST_PRIO + 1; i++){
+    for (INT16U i = 0; i < (OS_LOWEST_PRIO + 1); i++) {                 /* Clear the priority table                 */
         OSTCBPrioTbl[i] = (OS_TCB *)0;
     }
-    ptcb1 = &OSTCBTbl[0];
-    ptcb2 = &OSTCBTbl[1];
-    for(i = 0; i < OS_MAX_TASKS + OS_N_SYS_TASKS - 1; i++){
+    ptcb1 = &OSTCBPrioTbl[0];
+    ptcb2 = &OSTCBPrioTbl[1];
+    for(INT16U i = 0; i < (OS_MAX_TASKS + OS_N_SYS_TASKS - 1); i++){
         ptcb1->OSTCBNext = ptcb2;
         ptcb1++;
         ptcb2++;
@@ -268,113 +577,108 @@ static void OS_InitTCBList(void){
     OSTCBFreeList = &OSTCBTbl[0];
 }
 
-//任务调度
-void OS_Sched(void){
-    OS_CPU_SR   cpu_sr;                                                 //CPU 状态寄存器
-    INT8U       Y;                                                      //任务优先级在组中的就绪表索引
-
-    OS_ENTER_CRITICAL();
-    if((OSIntNesting == 0) && (OSLockNesting == 0)){                    // 中断嵌套和调度锁定计数为0
-        Y = OSUnMapTbl[OSRdyGrp];                                       // 获取最高优先级任务在组中的索引
-        OSPrioHighRdy = (INT8U)((Y << 3) + OSUnMapTbl[OSRdyTbl[Y]]);    // 获取最高优先级就绪任务的TCB
-        if(OSPrioHighRdy != OSPrioCur){                                  // 如果最高优先级任务不是当前任务
-            OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];                 // 获取最高优先级任务的TCB指针
-            OSCtxSwCtr++;                                               // 任务切换计数加1
-            OSCtxSw();                                                  // 执行任务切换
-        }
-    }
-    OS_EXIT_CRITICAL();
-}
-
-//空闲任务
-void OS_TaskIdle(void *pdata1){
-    OS_CPU_SR  cpu_sr;                                         //CPU 状态寄存器
-    pdata1 = pdata1;                                           // 防止未使用变量警告
-    while(1){
-        OS_ENTER_CRITICAL();
-        OSIdleCtr++;                                           // 空闲计数器加1
-        OS_EXIT_CRITICAL();
-        OSTaskIdleHook();                                     // 调用用户定义的空闲任务钩子函数,还没定义
-    }
-}
-
-//统计任务
-void OS_TaskStat(void *pdata1){
-    OS_CPU_SR  cpu_sr;   
-    INT32U     run;
-    INT32U     max;
-    INT8S      usage;
-
-    pdata1 = pdata1;                               /* 防止未使用 'pdata' 的编译器警告     */
-    while (OSStatRdy == FALSE) {
-        OSTimeDly(2 * OS_TICKS_PER_SEC);         /* 等待统计任务就绪                 */
-    }
-    max = OSIdleCtrMax / 100L;
-    for (;;) {
-        OS_ENTER_CRITICAL();
-        OSIdleCtrRun = OSIdleCtr;                /* 获取过去一秒的空闲计数器值 */
-        run          = OSIdleCtr;
-        OSIdleCtr    = 0L;                       /* 重置下一秒的空闲计数器         */
-        OS_EXIT_CRITICAL();
-        if (max > 0L) {
-            usage = (INT8S)(100L - run / max);
-            if (usage >= 0) {                    /* 确保我们没有负百分比      */
-                OSCPUUsage = usage;
-            } 
-            else {
-                OSCPUUsage = 0;
-            }
-        } 
-        else {
-            OSCPUUsage = 0;
-            max        = OSIdleCtrMax / 100L;
-        }
-        OSTaskStatHook();                        /* 调用用户可定义的钩子                         */
-        OSTimeDly(OS_TICKS_PER_SEC);             /* 为下一秒累积 OSIdleCtr           */
-    }
-}
-
-//TCB初始化
-INT8U OSTCBInit(INT8U prio, OS_STACK *ptos)
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 21: 调度器 (OS_Sched)
+*
+* 描述:
+* 核心调度函数。寻找最高优先级就绪任务并执行上下文切换。
+*
+* 功能:
+* 1. 进入临界区。
+* 2. 检查是否在 ISR 中 (OSIntNesting > 0) 或被锁定 (OSLockNesting > 0)，如果是则退出。
+* 3. 查找最高优先级任务 (OS_SchedNew)。
+* 4. 如果最高优先级任务 != 当前任务：
+* a. 更新 OSTCBHighRdy。
+* b. 增加上下文切换计数器。
+* c. 调用宏 OS_TASK_SW() 触发软中断或陷阱。
+* 5. 退出临界区。
+*
+* 移植要点:
+* - 在 Mini2440 上，OS_TASK_SW() 通常实现为汇编指令 `SWI` (Software Interrupt) 或直接修改 PC/SP (如果不使用 SWI 向量)。
+* - 必须确保在调用 OS_TASK_SW() 前已开启中断或处理好 CPSR。
+*********************************************************************************************************
+*/
+void  OS_Sched (void)
 {
-    OS_CPU_SR   cpu_sr;                                         //CPU 状态寄存器
-    OS_TCB     *ptcb;                                           //pointer to TCB
-    OS_ENTER_CRITICAL();
-    ptcb = OSTCBFreeList;                                       // 从空闲列表中取出一个TCB
-    if(ptcb != (OS_TCB *)0){                                    // 如果有空闲的TCB
-        OSTCBFreeList = ptcb->OSTCBNext;                        // 把上一步使用的TCB从空闲列表中移除，调整空闲列表指针跨过它，直接指向下一个
-        OS_EXIT_CRITICAL();
-        ptcb->OSTCBStkPtr      = (OS_STACK *)ptos;              // 设置该任务栈指针，指向栈顶
+    // 在此输入代码
+}
 
-        ptcb->OSTCBEventPtr    = (OS_EVENT *)0;                 // 初始化任务，没有事件
-        ptcb->OSTCBMsg         = (void *)0;                     // 初始化任务，没有消息
-        ptcb->OSTCBFlagNode    = (OS_FLAG_NODE *)0;             // 初始化任务，不等待任何事件标志
-        ptcb->OSTCBFlagsRdy    = (OS_FLAGS)0;                   // 初始化任务，没有就绪事件标志
-        ptcb->OSTCBDelReq      = OS_NO_ERR;                     // 初始化任务，删除请求标志清零
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 22: 空闲任务体 (OS_TaskIdle)
+*
+* 描述:
+* 系统空闲时运行的任务。
+*
+* 功能:
+* 1. 无限循环。
+* 2. 进入/退出临界区以增加 OSIdleCtr。
+* 3. 调用 OSTaskIdleHook()。
+*
+* 移植要点:
+* - 可以在 OSTaskIdleHook() 中执行 ARM 的 `WFI` (Wait For Interrupt) 指令以降低 Mini2440 功耗。
+*********************************************************************************************************
+*/
+void  OS_TaskIdle (void *pdata1)
+{
+    // 在此输入代码
+}
 
-        ptcb->OSTCBPrio        = (INT8U)prio;                   // 设置任务优先级
-        ptcb->OSTCBStat        = OS_STAT_RDY;                   // 设置任务状态为就绪态
-        ptcb->OSTCBDly         = 0;                             // 无延迟
-        ptcb->OSTCBY           = prio >> 3;                     // 计算任务优先级在哪个组，prio / 8
-        ptcb->OSTCBBitY        = OSMapTbl[ptcb->OSTCBY];        // 计算访问就绪表中的位位置的位掩码,去表里取值
-        ptcb->OSTCBX           = prio & 0x07;                   // 计算任务优先级的组中的位位置, prio % 8
-        ptcb->OSTCBBitX        = OSMapTbl[ptcb->OSTCBX];        // 计算访问就绪表中的位位置的位掩码，去表里取值
-        
-        OSTCBInitHook(ptcb);                                    // 调用用户定义的TCB钩子函数
-        OSTaskCreateHook(ptcb);                                 // 调用用户定义的Task钩子函数
-        OS_ENTER_CRITICAL();
-        OSTCBPrioTbl[prio]     = ptcb;                          // 在优先级表中注册该任务
-        ptcb->OSTCBNext        = OSTCBList;                     // 这个新的TCB，插入到TCB列表头部
-        ptcb->OSTCBPrev        = (OS_TCB *)0;                   // 前驱指针为空，这样耗时最短
-        if(OSTCBList != (OS_TCB *)0){                           // 如果TCB列表不为空
-            OSTCBList->OSTCBPrev = ptcb;
-        } 
-        OSTCBList                    = ptcb;
-        OSRdyGrp                |= ptcb->OSTCBBitY;         // 保留bit_y的值，设置就绪组
-        OSRdyTbl[ptcb->OSTCBY]  |= ptcb->OSTCBBitX;         // 保留bit_x的值，设置就绪表
-        OS_EXIT_CRITICAL();
-        return (OS_NO_ERR); // 返回成功
-    }
-    OS_EXIT_CRITICAL();
-    return (OS_NO_MORE_TCB); // 返回没有更多的TCB
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 23: 统计任务体 (OS_TaskStat)
+*
+* 描述:
+* 每秒计算一次 CPU 使用率。
+*
+* 功能:
+* 1. 等待 OSStatRdy 标志。
+* 2. 无限循环。
+* 3. 计算 OSCPUUsage。
+* 4. 调用 OSTaskStatHook()。
+* 5. 延时 1 秒。
+*
+* 移植要点:
+* - 涉及 32 位除法，ARM9 硬件无除法指令，依赖编译器提供的除法库函数。
+*********************************************************************************************************
+*/
+void  OS_TaskStat (void *p_data)
+{
+    // 在此输入代码
+}
+
+/*
+*********************************************************************************************************
+* Task Description
+* 任务 24: 初始化 TCB (OS_TCBInit)
+*
+* 描述:
+* 内部函数。初始化一个 TCB 块。
+*
+* 功能:
+* 1. 从空闲列表获取 TCB。
+* 2. 设置堆栈指针、优先级、状态、延时等。
+* 3. 链接到 TCB 链表 (OSTCBList)。
+* 4. 将任务加入就绪表。
+*
+* 移植要点:
+* - Mini2440 堆栈是向下增长的，确保 OSTCBStkPtr 指向堆栈顶端（高地址）。
+*********************************************************************************************************
+*/
+INT8U  OS_TCBInit ( INT8U prio,
+                    OS_STK *ptos, 
+                    OS_STK *pbos, 
+                    INT16U id, 
+                    INT32U stk_size, 
+                    void *pext, 
+                    INT16U opt)
+{
+    // 在此输入代码
+    OS_CPU_SR   cpu_sr;
+    OS_TCB      *ptcb;
+    
 }

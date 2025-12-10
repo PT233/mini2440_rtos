@@ -171,20 +171,88 @@ typedef struct os_event {
     INT8U           OSEventGrp;         // 任务等待此事件的就绪组                            
     void           *OSEventPtr;         // 指向等待此事件的最高优先级任务的指针                
     INT32U          OSEventCnt;         // 信号量计数                                        
-    INT8U           OSEventTable[OS_EVENT_TBL_SIZE]; // 任务等待此事件的就绪表                
+    INT8U           OSEventTbl[OS_EVENT_TBL_SIZE]; // 任务等待此事件的就绪表                
 }OS_EVENT;
 
 //EVENT FLAGS CONTROL BLOCK=========================
+typedef struct {                            /* Event Flag Group                                        */
+    INT8U         OSFlagType;               /* Should be set to OS_EVENT_TYPE_FLAG                     */
+    void         *OSFlagWaitList;           /* Pointer to first NODE of task waiting on event flag     */
+    OS_FLAGS      OSFlagFlags;              /* 8, 16 or 32 bit flags                                   */
+} OS_FLAG_GRP; 
+
+typedef struct {                            /* Event Flag Wait List Node                               */
+    void         *OSFlagNodeNext;           /* Pointer to next     NODE in wait list                   */
+    void         *OSFlagNodePrev;           /* Pointer to previous NODE in wait list                   */
+    void         *OSFlagNodeTCB;            /* Pointer to TCB of waiting task                          */  
+    void         *OSFlagNodeFlagGrp;        /* Pointer to Event Flag Group                             */  
+    OS_FLAGS      OSFlagNodeFlags;          /* Event flag to wait on                                   */  
+    INT8U         OSFlagNodeWaitType;       /* Type of wait:                                           */
+                                            /*      OS_FLAG_WAIT_AND                                   */
+                                            /*      OS_FLAG_WAIT_ALL                                   */
+                                            /*      OS_FLAG_WAIT_OR                                    */
+                                            /*      OS_FLAG_WAIT_ANY                                   */
+} OS_FLAG_NODE;
 
 //MESSAGE MAILBOX DATA==============================
+typedef struct {
+    void   *OSMsg;                         /* Pointer to message in mailbox                            */
+    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE]; /* List of tasks waiting for event to occur                 */
+    INT8U   OSEventGrp;                    /* Group corresponding to tasks waiting for event to occur  */
+} OS_MBOX_DATA;
 
 //MEMORY PARTITION DATA STRUCTURES==================
+typedef struct {                       /* MEMORY CONTROL BLOCK                                         */
+    void   *OSMemAddr;                 /* Pointer to beginning of memory partition                     */
+    void   *OSMemFreeList;             /* Pointer to list of free memory blocks                        */
+    INT32U  OSMemBlkSize;              /* Size (in bytes) of each block of memory                      */
+    INT32U  OSMemNBlks;                /* Total number of blocks in this partition                     */
+    INT32U  OSMemNFree;                /* Number of memory blocks remaining in this partition          */
+} OS_MEM;
+
+typedef struct {
+    void   *OSAddr;                    /* Pointer to the beginning address of the memory partition     */
+    void   *OSFreeList;                /* Pointer to the beginning of the free list of memory blocks   */
+    INT32U  OSBlkSize;                 /* Size (in bytes) of each memory block                         */
+    INT32U  OSNBlks;                   /* Total number of blocks in the partition                      */
+    INT32U  OSNFree;                   /* Number of memory blocks free                                 */
+    INT32U  OSNUsed;                   /* Number of memory blocks used                                 */
+} OS_MEM_DATA;
 
 //MUTUAL EXCLUSION SEMAPHORE DATA===================
+typedef struct {
+    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE];  /* List of tasks waiting for event to occur                */
+    INT8U   OSEventGrp;                     /* Group corresponding to tasks waiting for event to occur */
+    INT8U   OSValue;                        /* Mutex value (0 = used, 1 = available)                   */
+    INT8U   OSOwnerPrio;                    /* Mutex owner's task priority or 0xFF if no owner         */
+    INT8U   OSMutexPIP;                     /* Priority Inheritance Priority or 0xFF if no owner       */
+} OS_MUTEX_DATA;
 
 //MESSAGE QUEUE DATA================================
+typedef struct os_q {                   /* QUEUE CONTROL BLOCK                                         */
+    struct os_q   *OSQPtr;              /* Link to next queue control block in list of free blocks     */
+    void         **OSQStart;            /* Pointer to start of queue data                              */
+    void         **OSQEnd;              /* Pointer to end   of queue data                              */
+    void         **OSQIn;               /* Pointer to where next message will be inserted  in   the Q  */
+    void         **OSQOut;              /* Pointer to where next message will be extracted from the Q  */
+    INT16U         OSQSize;             /* Size of queue (maximum number of entries)                   */
+    INT16U         OSQEntries;          /* Current number of entries in the queue                      */
+} OS_Q;
+
+typedef struct {
+    void          *OSMsg;               /* Pointer to next message to be extracted from queue          */
+    INT16U         OSNMsgs;             /* Number of messages in message queue                         */
+    INT16U         OSQSize;             /* Size of message queue                                       */
+    INT8U          OSEventTbl[OS_EVENT_TBL_SIZE];  /* List of tasks waiting for event to occur         */
+    INT8U          OSEventGrp;          /* Group corresponding to tasks waiting for event to occur     */
+} OS_Q_DATA;
 
 //SEMAPHORE DATA====================================
+typedef struct {
+    INT16U  OSCnt;                          /* 信号量计数                                         */
+    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE];  /* 等待事件发生的任务列表                */
+    INT8U   OSEventGrp;                     /* 对应于等待事件发生的任务的组 */
+} OS_SEM_DATA;
 
 //TASK STACK DATA===================================
 typedef struct {
@@ -194,7 +262,7 @@ typedef struct {
 
 //TASK CONTROL BLOCK================================
 typedef struct os_tcb{
-    OS_STACK        *OSTCBStkPtr;               //指向当前任务栈的栈顶指针
+    OS_STK        *OSTCBStkPtr;               //指向当前任务栈的栈顶指针
     //双向链表
     struct os_tcb   *OSTCBPrev;                 //指向上一个TCB任务控制块的指针
     struct os_tcb   *OSTCBNext;                 //指向下一个TCB任务控制块的指针
@@ -226,7 +294,7 @@ extern INT8S             OSCPUUsage;               // CPU 使用率百分比
 extern INT32U            OSIdleCtrMax;             // 空闲计数器在 1 秒内可以达到的最大值     
 extern INT32U            OSIdleCtrRun;             // 运行时空闲计数器在 1 秒内达到的值  
 extern BOOLEAN           OSStatRdy;                // 指示统计任务已就绪的标志  
-extern OS_STACK          OSTaskStatStk[OS_TASK_STAT_STK_SIZE];      // 统计任务堆栈          
+extern OS_STK            OSTaskStatStk[OS_TASK_STAT_STK_SIZE];      // 统计任务堆栈          
 
 extern INT8U             OSIntNesting;             // 中断嵌套级别                         
 extern INT8U             OSIntExitY;
@@ -245,7 +313,7 @@ extern INT8U             OSTaskCtr;                       // 已创建的任务�
 
 extern volatile  INT32U  OSIdleCtr;                                 // 空闲计数器                   
 
-extern OS_STACK          OSTaskIdleStk[OS_TASK_IDLE_STK_SIZE];      // 空闲任务堆栈                
+extern OS_STK            OSTaskIdleStk[OS_TASK_IDLE_STK_SIZE];      // 空闲任务堆栈                
 
 
 extern OS_TCB           *OSTCBCur;                            // 指向当前运行 TCB 的指针         
@@ -266,16 +334,193 @@ extern OS_Q              OSQTbl[OS_MAX_QS];        // 队列控制块表
 extern volatile  INT32U  OSTime;                   // 系统时间的当前值 (以节拍为单位)         
 
 
-extern  INT8U             OSMapTbl[];                 // 优先级->位掩码 查找表                 
-extern  INT8U             OSUnMapTbl[];               // 优先级->索引    查找表                 
+extern  INT8U            OSMapTbl[];                 // 优先级->位掩码 查找表                 
+extern  INT8U            OSUnMapTbl[];               // 优先级->索引   查找表                 
 
 //EVENT FLAGS MANAGEMENT=============================
+#if (OS_VERSION >= 251) && (OS_FLAG_EN > 0) && (OS_MAX_FLAGS > 0)
+
+#if OS_FLAG_ACCEPT_EN > 0
+OS_FLAGS      OSFlagAccept(OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U wait_type, INT8U *err);
+#endif
+
+OS_FLAG_GRP  *OSFlagCreate(OS_FLAGS flags, INT8U *err);
+
+#if OS_FLAG_DEL_EN > 0
+OS_FLAG_GRP  *OSFlagDel(OS_FLAG_GRP *pgrp, INT8U opt, INT8U *err);
+#endif
+
+OS_FLAGS      OSFlagPend(OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U wait_type, INT16U timeout, INT8U *err);
+OS_FLAGS      OSFlagPost(OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U operation, INT8U *err);
+
+#if OS_FLAG_QUERY_EN > 0
+OS_FLAGS      OSFlagQuery(OS_FLAG_GRP *pgrp, INT8U *err);
+#endif
+#endif
+
 //MESSAGE MAILBOX MANAGEMENT=========================
+#if OS_MBOX_EN > 0
+
+#if OS_MBOX_ACCEPT_EN > 0
+void         *OSMboxAccept(OS_EVENT *pevent);
+#endif
+
+OS_EVENT     *OSMboxCreate(void *msg);
+
+#if OS_MBOX_DEL_EN > 0
+OS_EVENT     *OSMboxDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
+#endif
+
+void         *OSMboxPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
+
+#if OS_MBOX_POST_EN > 0
+INT8U         OSMboxPost(OS_EVENT *pevent, void *msg);
+#endif
+
+#if OS_MBOX_POST_OPT_EN > 0
+INT8U         OSMboxPostOpt(OS_EVENT *pevent, void *msg, INT8U opt);
+#endif
+
+#if OS_MBOX_QUERY_EN > 0
+INT8U         OSMboxQuery(OS_EVENT *pevent, OS_MBOX_DATA *pdata);
+#endif
+#endif
+
 //MEMORY MANAGEMENT==================================
+#if (OS_MEM_EN > 0) && (OS_MAX_MEM_PART > 0)
+
+OS_MEM       *OSMemCreate(void *addr, INT32U nblks, INT32U blksize, INT8U *err);
+void         *OSMemGet(OS_MEM *pmem, INT8U *err);
+INT8U         OSMemPut(OS_MEM *pmem, void *pblk);
+
+#if OS_MEM_QUERY_EN > 0
+INT8U         OSMemQuery(OS_MEM *pmem, OS_MEM_DATA *pdata);
+#endif
+
+#endif
+
 //MUTUAL EXCLUSION SEMAPHORE MANAGEMENT==============
+#if OS_MUTEX_EN > 0
+
+#if OS_MUTEX_ACCEPT_EN > 0
+INT8U         OSMutexAccept(OS_EVENT *pevent, INT8U *err);
+#endif
+
+OS_EVENT     *OSMutexCreate(INT8U prio, INT8U *err);
+
+#if OS_MUTEX_DEL_EN > 0
+OS_EVENT     *OSMutexDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
+#endif
+
+void          OSMutexPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
+INT8U         OSMutexPost(OS_EVENT *pevent);
+
+#if OS_MUTEX_QUERY_EN > 0
+INT8U         OSMutexQuery(OS_EVENT *pevent, OS_MUTEX_DATA *pdata);
+#endif
+
+#endif
+
 //MESSAGE QUEUE MANAGEMENT===========================
+#if (OS_Q_EN > 0) && (OS_MAX_QS > 0)
+
+#if OS_Q_ACCEPT_EN > 0
+void         *OSQAccept(OS_EVENT *pevent);
+#endif
+
+OS_EVENT     *OSQCreate(void **start, INT16U size);
+
+#if OS_Q_DEL_EN > 0
+OS_EVENT     *OSQDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
+#endif
+
+#if OS_Q_FLUSH_EN > 0
+INT8U         OSQFlush(OS_EVENT *pevent);
+#endif
+
+void         *OSQPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
+
+#if OS_Q_POST_EN > 0
+INT8U         OSQPost(OS_EVENT *pevent, void *msg);
+#endif
+
+#if OS_Q_POST_FRONT_EN > 0
+INT8U         OSQPostFront(OS_EVENT *pevent, void *msg);
+#endif
+
+#if OS_Q_POST_OPT_EN > 0
+INT8U         OSQPostOpt(OS_EVENT *pevent, void *msg, INT8U opt);
+#endif
+
+#if OS_Q_QUERY_EN > 0
+INT8U         OSQQuery(OS_EVENT *pevent, OS_Q_DATA *pdata);
+#endif
+
+#endif
+
 //SEMAPHORE MANAGEMENT===============================
+#if OS_SEM_EN > 0
+
+#if OS_SEM_ACCEPT_EN > 0
+INT16U        OSSemAccept(OS_EVENT *pevent);
+#endif
+
+OS_EVENT     *OSSemCreate(INT16U cnt);
+
+#if OS_SEM_DEL_EN > 0
+OS_EVENT     *OSSemDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
+#endif
+
+void          OSSemPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
+INT8U         OSSemPost(OS_EVENT *pevent);
+
+#if OS_SEM_QUERY_EN > 0
+INT8U         OSSemQuery(OS_EVENT *pevent, OS_SEM_DATA *pdata);
+#endif
+
+#endif
+
+
 //TASK MANAGEMENT====================================
+#if OS_TASK_CHANGE_PRIO_EN > 0
+INT8U         OSTaskChangePrio(INT8U oldprio, INT8U newprio);
+#endif
+
+#if OS_TASK_CREATE_EN > 0
+INT8U         OSTaskCreate(void (* task)(void *pd), 
+						   void *  pdata1, OS_STK *  ptos, INT8U  prio);
+#endif
+
+#if OS_TASK_CREATE_EXT_EN > 0
+INT8U         OSTaskCreateExt(void  (*task)(void *pd),
+                              void   *pdata,
+                              OS_STK *ptos,
+                              INT8U   prio,
+                              INT16U  id,
+                              OS_STK *pbos,
+                              INT32U  stk_size,
+                              void   *pext,
+                              INT16U  opt);
+#endif
+
+#if OS_TASK_DEL_EN > 0
+INT8U         OSTaskDel(INT8U prio);
+INT8U         OSTaskDelReq(INT8U prio);
+#endif
+
+#if OS_TASK_SUSPEND_EN > 0
+INT8U         OSTaskResume(INT8U prio);
+INT8U         OSTaskSuspend(INT8U prio);
+#endif
+
+#if OS_TASK_CREATE_EXT_EN > 0
+INT8U         OSTaskStkChk(INT8U prio, OS_STK_DATA *pdata);
+#endif
+
+#if OS_TASK_QUERY_EN > 0
+INT8U         OSTaskQuery(INT8U prio, OS_TCB *pdata);
+#endif
+
 //TIME MANAGEMENT====================================
 void          OSTimeDly(INT16U ticks);
 INT8U         OSTimeDlyHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U milli);
@@ -285,17 +530,43 @@ void          OSTimeSet(INT32U ticks);
 void          OSTimeTick(void);
 
 //MISCELLANEOUS======================================
+void          OSInit(void);
+void          OSIntEnter(void);
+void          OSIntExit(void);
+void          OSSchedLock(void);
+void          OSSchedUnlock(void);
+void          OSStart(void);
+void          OSStatInit(void);
+
 //FUNC Prototype=====================================
 void    OSCtxSw(void);
 void    OSTickISR(void);//还没定义
+
 //EVENT FLAGS========================================
+
+
 //MESSAGE MAILBOXES==================================
+
+
 //MEMORY MANAGEMENT==================================
+
+
 //MUTUAL EXCLUSION SEMAPHORES========================
+
+
 //MESSAGE QUEUES=====================================
+
+
 //SEMAPHORES=========================================
+
+
 //TASK MANAGEMENT====================================
+
+
 //TIME MANAGEMENT====================================
+
+
 //MISCELLANEOUS======================================
+
 
 #endif // __OS_H__
