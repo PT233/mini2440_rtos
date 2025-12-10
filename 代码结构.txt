@@ -1,0 +1,1737 @@
+main
+	OSInit();✅
+        OSInitHookBegin();
+            {未定义}
+        OS_InitMisc();    
+            {
+            OSTime        = 0L;                                          /* Clear the 32-bit system clock            */
+            OSIntNesting  = 0;                                           /* Clear the interrupt nesting counter      */
+            OSLockNesting = 0;                                           /* Clear the scheduling lock counter        */
+            OSTaskCtr     = 0;                                           /* Clear the number of tasks                */
+            OSRunning     = FALSE;                                       /* Indicate that multitasking not started   */
+            OSCtxSwCtr    = 0;                                           /* Clear the context switch counter         */
+            OSIdleCtr     = 0L;                                          /* Clear the 32-bit idle counter            */
+            OSIdleCtrRun  = 0L;
+            OSIdleCtrMax  = 0L;
+            OSStatRdy     = FALSE;
+            }
+        OS_InitRdyList(); 
+            {
+            INT16U   i;
+            INT8U   *prdytbl;
+            OSRdyGrp      = 0x00;                                        /* Clear the ready list                     */
+            prdytbl       = &OSRdyTbl[0];
+            for (i = 0; i < OS_RDY_TBL_SIZE; i++) {
+                *prdytbl++ = 0x00;
+            }
+            OSPrioCur     = 0;
+            OSPrioHighRdy = 0;
+            OSTCBHighRdy  = (OS_TCB *)0;                                 
+            OSTCBCur      = (OS_TCB *)0;
+            }
+        OS_InitTCBList();   
+            {    
+            INT8U    i;
+            OS_TCB  *ptcb1;
+            OS_TCB  *ptcb2;
+            OSTCBList     = (OS_TCB *)0;                                 /* TCB Initialization                       */
+            for (i = 0; i < (OS_LOWEST_PRIO + 1); i++) {                 /* Clear the priority table                 */
+                OSTCBPrioTbl[i] = (OS_TCB *)0;
+            }
+            ptcb1 = &OSTCBTbl[0];
+            ptcb2 = &OSTCBTbl[1];
+            for (i = 0; i < (OS_MAX_TASKS + OS_N_SYS_TASKS - 1); i++) {  /* Init. list of free TCBs                  */
+                ptcb1->OSTCBNext = ptcb2;
+                ptcb1++;
+                ptcb2++;
+            }
+            ptcb1->OSTCBNext = (OS_TCB *)0;                              /* Last OS_TCB                              */
+            OSTCBFreeList    = &OSTCBTbl[0];
+            }
+        OS_InitEventList();   
+            {
+                INT16U     i;
+                OS_EVENT  *pevent1;
+                OS_EVENT  *pevent2;
+                pevent1 = &OSEventTbl[0];
+                pevent2 = &OSEventTbl[1];
+                for (i = 0; i < (OS_MAX_EVENTS - 1); i++) {                  /* Init. list of free EVENT control blocks  */
+                    pevent1->OSEventType = OS_EVENT_TYPE_UNUSED;
+                    pevent1->OSEventPtr  = pevent2;
+                    pevent1++;
+                    pevent2++;
+                }
+                pevent1->OSEventType = OS_EVENT_TYPE_UNUSED;
+                pevent1->OSEventPtr  = (OS_EVENT *)0;
+                OSEventFreeList      = &OSEventTbl[0];
+            }
+        OS_FlagInit();   {
+            #if OS_MAX_FLAGS == 1
+                OSFlagFreeList                 = (OS_FLAG_GRP *)&OSFlagTbl[0];  /* Only ONE event flag group!      */
+                OSFlagFreeList->OSFlagType     = OS_EVENT_TYPE_UNUSED;
+                OSFlagFreeList->OSFlagWaitList = (void *)0;
+            #endif
+
+            #if OS_MAX_FLAGS >= 2
+                INT8U        i;
+                OS_FLAG_GRP *pgrp1;
+                OS_FLAG_GRP *pgrp2;
+
+
+                pgrp1 = &OSFlagTbl[0];
+                pgrp2 = &OSFlagTbl[1];
+                for (i = 0; i < (OS_MAX_FLAGS - 1); i++) {                      /* Init. list of free EVENT FLAGS  */
+                    pgrp1->OSFlagType     = OS_EVENT_TYPE_UNUSED;
+                    pgrp1->OSFlagWaitList = (void *)pgrp2;
+                    pgrp1++;
+                    pgrp2++;
+                }
+                pgrp1->OSFlagWaitList = (void *)0;
+                OSFlagFreeList        = (OS_FLAG_GRP *)&OSFlagTbl[0];
+            #endif
+            }
+        OS_MemInit();    {
+            #if OS_MAX_MEM_PART == 1
+                OSMemFreeList                = (OS_MEM *)&OSMemTbl[0]; /* Point to beginning of free list          */
+                OSMemFreeList->OSMemFreeList = (void *)0;              /* Initialize last node                     */
+                OSMemFreeList->OSMemAddr     = (void *)0;              /* Store start address of memory partition  */
+                OSMemFreeList->OSMemNFree    = 0;                      /* No free blocks                           */
+                OSMemFreeList->OSMemNBlks    = 0;                      /* No blocks                                */
+                OSMemFreeList->OSMemBlkSize  = 0;                      /* Zero size                                */
+            #endif
+
+            #if OS_MAX_MEM_PART >= 2
+                OS_MEM  *pmem;
+                INT16U   i;
+
+
+                pmem = (OS_MEM *)&OSMemTbl[0];                    /* Point to memory control block (MCB)           */
+                for (i = 0; i < (OS_MAX_MEM_PART - 1); i++) {     /* Init. list of free memory partitions          */
+                    pmem->OSMemFreeList = (void *)&OSMemTbl[i+1]; /* Chain list of free partitions                 */
+                    pmem->OSMemAddr     = (void *)0;              /* Store start address of memory partition       */
+                    pmem->OSMemNFree    = 0;                      /* No free blocks                                */
+                    pmem->OSMemNBlks    = 0;                      /* No blocks                                     */
+                    pmem->OSMemBlkSize  = 0;                      /* Zero size                                     */
+                    pmem++;
+                }
+                pmem->OSMemFreeList = (void *)0;                  /* Initialize last node                          */
+                pmem->OSMemAddr     = (void *)0;                  /* Store start address of memory partition       */
+                pmem->OSMemNFree    = 0;                          /* No free blocks                                */
+                pmem->OSMemNBlks    = 0;                          /* No blocks                                     */
+                pmem->OSMemBlkSize  = 0;                          /* Zero size                                     */
+
+                OSMemFreeList       = (OS_MEM *)&OSMemTbl[0];     /* Point to beginning of free list               */
+            #endif
+            }
+        OS_QInit();      {
+            #if OS_MAX_QS == 1
+                OSQFreeList         = &OSQTbl[0];            /* Only ONE queue!                                    */
+                OSQFreeList->OSQPtr = (OS_Q *)0;
+            #endif
+            #if OS_MAX_QS >= 2
+                INT16U  i;
+                OS_Q   *pq1;
+                OS_Q   *pq2;
+                pq1 = &OSQTbl[0];
+                pq2 = &OSQTbl[1];
+                for (i = 0; i < (OS_MAX_QS - 1); i++) {      /* Init. list of free QUEUE control blocks            */
+                    pq1->OSQPtr = pq2;
+                    pq1++;
+                    pq2++;
+                }
+                pq1->OSQPtr = (OS_Q *)0;
+                OSQFreeList = &OSQTbl[0];
+            #endif
+            }    
+        OS_InitTaskIdle();    {
+                (void)OSTaskCreate(OS_TaskIdle,
+                                (void *)0,
+                                &OSTaskIdleStk[OS_TASK_IDLE_STK_SIZE - 1],
+                                OS_IDLE_PRIO);
+                    {
+                        OS_CPU_SR  cpu_sr;
+                        OS_STK   *psp;
+                        INT8U      err;
+                        if (prio > OS_LOWEST_PRIO) {             /* Make sure priority is within allowable range           */
+                            return (OS_PRIO_INVALID);
+                        }
+                        OS_ENTER_CRITICAL();
+                        if (OSTCBPrioTbl[prio] == (OS_TCB *)0) { /* Make sure task doesn't already exist at this priority  */
+                            OSTCBPrioTbl[prio] = (OS_TCB *)1;    /* Reserve the priority to prevent others from doing ...  */
+                                                                /* ... the same thing until task is created.              */
+                            OS_EXIT_CRITICAL();
+                            psp = (OS_STK *)OSTaskStkInit(task, pdata1, ptos, 0);    
+                                {
+                                OS_STK * stk;
+
+                                opt    = opt;                           /* 'opt' is not used, prevent warning                      */
+                                stk = ptos;
+
+                                *stk++ = 19;
+                                *stk++ = (INT16U)task & 0xff;	//Simulate function call.
+                                *stk++ = (INT16U)task >> 8;
+
+                                *stk++ = (INT16U)task & 0xff;	//Simulate interrupt.
+                                *stk++ = (INT16U)task >> 8;
+                                *stk++ = 0x00;	//ACC.
+                                *stk++ = 0x11;	//B.
+                                *stk++ = 0x22;	//PSW.
+                                *stk++ = 0x33;	//DPH.
+                                *stk++ = 0x44;	//DPL.
+                                *stk++ = 0x77;	//R7.
+                                *stk++ = 0x66;	//R6.
+                                *stk++ = 0x55;	//R5.
+                                *stk++ = 0x44;	//R4.
+                                *stk++ = (INT32U)pdata1 >> 16;	//R3, Mem type.
+                                *stk++ = (INT16U)pdata1 >> 8;		//R2, MSB.
+                                *stk++ = (INT16U)pdata1 & 0xff;	//R1, LSB.
+                                *stk++ = 0x00;	//R0.
+                                *stk++ = ((INT16U)ptos + TASK_STK_SIZE * sizeof(OS_STK)) >> 8;		//?C_XBP
+                                *stk = ((INT16U)ptos + TASK_STK_SIZE * sizeof(OS_STK)) & 0xff;
+
+                                return ptos;   
+                                }
+                            err = OS_TCBInit(prio, psp, (OS_STK *)0, 0, 0, (void *)0, 0);
+                                {
+                                OS_CPU_SR  cpu_sr;
+                                OS_TCB   *ptcb;
+                                OS_ENTER_CRITICAL();
+                                ptcb = OSTCBFreeList;                                  /* Get a free TCB from the free TCB list    */
+                                if (ptcb != (OS_TCB *)0) {
+                                    OSTCBFreeList        = ptcb->OSTCBNext;            /* Update pointer to free TCB list          */
+                                    OS_EXIT_CRITICAL();
+                                    ptcb->OSTCBStkPtr    = (OS_STK RUNSISI_IDATA*)ptos;/* Load Stack pointer in TCB                */
+                                    ptcb->OSTCBPrio      = (INT8U)prio;                /* Load task priority into TCB              */
+                                    ptcb->OSTCBStat      = OS_STAT_RDY;                /* Task is ready to run                     */
+                                    ptcb->OSTCBDly       = 0;                          /* Task is not delayed                      */
+
+                                    ptcb->OSTCBDelReq    = OS_NO_ERR;
+
+                                    ptcb->OSTCBY         = prio >> 3;                  /* Pre-compute X, Y, BitX and BitY          */
+                                    ptcb->OSTCBBitY      = OSMapTbl[ptcb->OSTCBY];
+                                    ptcb->OSTCBX         = prio & 0x07;
+                                    ptcb->OSTCBBitX      = OSMapTbl[ptcb->OSTCBX];
+
+                                    ptcb->OSTCBEventPtr  = (OS_EVENT *)0;              /* Task is not pending on an event          */
+
+                                    ptcb->OSTCBFlagNode  = (OS_FLAG_NODE *)0;          /* Task is not pending on an event flag     */
+
+                                    ptcb->OSTCBMsg       = (void *)0;                  /* No message received                      */
+
+                                    OSTCBInitHook(ptcb);
+
+                                    OSTaskCreateHook(ptcb);                            /* Call user defined hook                   */
+                                    OS_ENTER_CRITICAL();
+                                    OSTCBPrioTbl[prio] = ptcb;
+                                    ptcb->OSTCBNext    = OSTCBList;                    /* Link into TCB chain                      */
+                                    ptcb->OSTCBPrev    = (OS_TCB *)0;
+                                    if (OSTCBList != (OS_TCB *)0) {
+                                        OSTCBList->OSTCBPrev = ptcb;
+                                    }
+                                    OSTCBList               = ptcb;
+                                    OSRdyGrp               |= ptcb->OSTCBBitY;         /* Make task ready to run                   */
+                                    OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+                                    OS_EXIT_CRITICAL();
+                                    return (OS_NO_ERR);
+                                
+                                    OS_EXIT_CRITICAL();
+                                    return (OS_NO_MORE_TCB);
+
+                                }
+                            if (err == OS_NO_ERR) {
+                                OS_ENTER_CRITICAL();
+                                OSTaskCtr++;                                        /* Increment the #tasks counter        */
+                                OS_EXIT_CRITICAL();
+                                if (OSRunning == TRUE) {         /* Find highest priority task if multitasking has started */
+                                    OS_Sched();
+                                        {
+                                            OS_CPU_SR  cpu_sr;  
+                                            INT8U      y;
+
+                                            OS_ENTER_CRITICAL();
+                                            if ((OSIntNesting == 0) && (OSLockNesting == 0)) { /* 仅当所有 ISR 完成且未锁定时调度    */
+                                                y             = OSUnMapTbl[OSRdyGrp];          /* 获取指向就绪运行的 HPT 的指针              */
+                                                OSPrioHighRdy = (INT8U)((y << 3) + OSUnMapTbl[OSRdyTbl[y]]);
+                                                if (OSPrioHighRdy != OSPrioCur) {              /* 如果当前任务是最高优先级就绪任务，则不进行上下文切换     */
+                                                    OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
+                                                    OSCtxSwCtr++;                              /* 递增上下文切换计数器             */
+                                                    OS_TASK_SW();                              /* 执行上下文切换                     */
+                                                }
+                                            }
+                                            OS_EXIT_CRITICAL();
+                                        }  
+                                }
+                            } else {
+                                OS_ENTER_CRITICAL();
+                                OSTCBPrioTbl[prio] = (OS_TCB *)0;/* Make this priority available to others                 */
+                                OS_EXIT_CRITICAL();
+                            }
+                            return (err);
+                        }
+                        OS_EXIT_CRITICAL();
+                        return (OS_PRIO_EXIST);
+                        }
+                }
+            }
+        OS_InitTaskStat();    {
+            (void)OSTaskCreate(OS_TaskStat,
+                       (void *)0,                                      /* No args passed to OS_TaskStat()*/
+                       &OSTaskStatStk[OS_TASK_STAT_STK_SIZE - 1],      /* Set Top-Of-Stack               */
+                       OS_STAT_PRIO);}
+        OSInitHookEnd();          
+            {}
+    BSP_Init();
+        Uart_Init(50000000,115200);// PCLK=50000000, Baud=115200
+        Beep_Init();
+        LED_Init();
+        Key_Init(); 
+        InitTimer4();
+    OSTaskCreate(Task_Start, (void *)0, &StartStk[TASK_STK_SIZE - 1], 2);{
+        void Task_Start(void *pdata)
+        {
+            INT8U err;
+            (void)pdata;
+            // 1. 创建所有 OS 对象
+            SemBeep      = OSSemCreate(0);
+                    #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
+                        OS_CPU_SR  cpu_sr;
+                    #endif    
+                        OS_EVENT  *pevent;
+
+
+                        if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+                            return ((OS_EVENT *)0);                            /* ... can't CREATE from an ISR             */
+                        }
+                        OS_ENTER_CRITICAL();
+                        pevent = OSEventFreeList;                              /* Get next free event control block        */
+                        if (OSEventFreeList != (OS_EVENT *)0) {                /* See if pool of free ECB pool was empty   */
+                            OSEventFreeList = (OS_EVENT *)OSEventFreeList->OSEventPtr;
+                        }
+                        OS_EXIT_CRITICAL();
+                        if (pevent != (OS_EVENT *)0) {                         /* Get an event control block               */
+                            pevent->OSEventType = OS_EVENT_TYPE_SEM;
+                            pevent->OSEventCnt  = cnt;                         /* Set semaphore value                      */
+                            pevent->OSEventPtr  = (void *)0;                   /* Unlink from ECB free list                */
+                            OS_EventWaitListInit(pevent);                      /* Initialize to 'nobody waiting' on sem.   */
+                        }
+                        return (pevent);    
+            MboxLed      = OSMboxCreate((void *)0); 
+                {
+                #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                    OS_CPU_SR  cpu_sr;
+                #endif    
+                    OS_EVENT  *pevent;
+
+
+                    if (OSIntNesting > 0) {                      /* See if called from ISR ...                         */
+                        return ((OS_EVENT *)0);                  /* ... can't CREATE from an ISR                       */
+                    }
+                    OS_ENTER_CRITICAL();
+                    pevent = OSEventFreeList;                    /* Get next free event control block                  */
+                    if (OSEventFreeList != (OS_EVENT *)0) {      /* See if pool of free ECB pool was empty             */
+                        OSEventFreeList = (OS_EVENT *)OSEventFreeList->OSEventPtr;
+                    }
+                    OS_EXIT_CRITICAL();
+                    if (pevent != (OS_EVENT *)0) {
+                        pevent->OSEventType = OS_EVENT_TYPE_MBOX;
+                        pevent->OSEventCnt  = 0;
+                        pevent->OSEventPtr  = msg;               /* Deposit message in event control block             */
+                        OS_EventWaitListInit(pevent);
+                    }
+                    return (pevent);                             /* Return pointer to event control block              */
+                }       
+            DataQueue    = OSQCreate(&QMsgTbl[0], 10); 
+                {
+                #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                    OS_CPU_SR  cpu_sr;
+                #endif
+                    OS_EVENT  *pevent;
+                    OS_Q      *pq;
+
+
+                    if (OSIntNesting > 0) {                      /* See if called from ISR ...                         */
+                        return ((OS_EVENT *)0);                  /* ... can't CREATE from an ISR                       */
+                    }
+                    OS_ENTER_CRITICAL();
+                    pevent = OSEventFreeList;                    /* Get next free event control block                  */
+                    if (OSEventFreeList != (OS_EVENT *)0) {      /* See if pool of free ECB pool was empty             */
+                        OSEventFreeList = (OS_EVENT *)OSEventFreeList->OSEventPtr;
+                    }
+                    OS_EXIT_CRITICAL();
+                    if (pevent != (OS_EVENT *)0) {               /* See if we have an event control block              */
+                        OS_ENTER_CRITICAL();
+                        pq = OSQFreeList;                        /* Get a free queue control block                     */
+                        if (pq != (OS_Q *)0) {                   /* Were we able to get a queue control block ?        */
+                            OSQFreeList         = OSQFreeList->OSQPtr;    /* Yes, Adjust free list pointer to next free*/
+                            OS_EXIT_CRITICAL();
+                            pq->OSQStart        = start;                  /*      Initialize the queue                 */
+                            pq->OSQEnd          = &start[size];
+                            pq->OSQIn           = start;
+                            pq->OSQOut          = start;
+                            pq->OSQSize         = size;
+                            pq->OSQEntries      = 0;
+                            pevent->OSEventType = OS_EVENT_TYPE_Q;
+                            pevent->OSEventCnt  = 0;
+                            pevent->OSEventPtr  = pq;
+                            OS_EventWaitListInit(pevent);                 /*      Initalize the wait list              */
+                        } else {
+                            pevent->OSEventPtr = (void *)OSEventFreeList; /* No,  Return event control block on error  */
+                            OSEventFreeList    = pevent;
+                            OS_EXIT_CRITICAL();
+                            pevent = (OS_EVENT *)0;
+                        }
+                    }
+                    return (pevent);
+                }     
+            UartMutex    = OSMutexCreate(1, &err);
+                {           
+                #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
+                    OS_CPU_SR  cpu_sr;
+                #endif    
+                    OS_EVENT  *pevent;
+
+
+                    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+                        *err = OS_ERR_CREATE_ISR;                          /* ... can't CREATE mutex from an ISR       */
+                        return ((OS_EVENT *)0);
+                    }
+                #if OS_ARG_CHK_EN > 0
+                    if (prio >= OS_LOWEST_PRIO) {                          /* Validate PIP                             */
+                        *err = OS_PRIO_INVALID;
+                        return ((OS_EVENT *)0);
+                    }
+                #endif
+                    OS_ENTER_CRITICAL();
+                    if (OSTCBPrioTbl[prio] != (OS_TCB *)0) {               /* Mutex priority must not already exist    */
+                        OS_EXIT_CRITICAL();                                /* Task already exist at priority ...       */
+                        *err = OS_PRIO_EXIST;                              /* ... inheritance priority                 */
+                        return ((OS_EVENT *)0);                            
+                    }
+                    OSTCBPrioTbl[prio] = (OS_TCB *)1;                      /* Reserve the table entry                  */
+                    pevent             = OSEventFreeList;                  /* Get next free event control block        */
+                    if (pevent == (OS_EVENT *)0) {                         /* See if an ECB was available              */
+                        OSTCBPrioTbl[prio] = (OS_TCB *)0;                  /* No, Release the table entry              */
+                        OS_EXIT_CRITICAL();
+                        *err               = OS_ERR_PEVENT_NULL;           /* No more event control blocks             */
+                        return (pevent);
+                    }
+                    OSEventFreeList     = (OS_EVENT *)OSEventFreeList->OSEventPtr;   /* Adjust the free list           */
+                    OS_EXIT_CRITICAL();
+                    pevent->OSEventType = OS_EVENT_TYPE_MUTEX;
+                    pevent->OSEventCnt  = (prio << 8) | OS_MUTEX_AVAILABLE;/* Resource is available                    */
+                    pevent->OSEventPtr  = (void *)0;                       /* No task owning the mutex                 */
+                    OS_EventWaitListInit(pevent);
+                    *err                = OS_NO_ERR;
+                    return (pevent);
+                }             
+            SysModeFlag  = OSFlagCreate(MODE_NORMAL, &err); 
+                {
+                #if OS_CRITICAL_METHOD == 3                         /* Allocate storage for CPU status register        */
+                    OS_CPU_SR    cpu_sr;
+                #endif
+                    OS_FLAG_GRP *pgrp;
+
+
+                    if (OSIntNesting > 0) {                         /* See if called from ISR ...                      */
+                        *err = OS_ERR_CREATE_ISR;                   /* ... can't CREATE from an ISR                    */
+                        return ((OS_FLAG_GRP *)0);
+                    }
+                    OS_ENTER_CRITICAL();
+                    pgrp = OSFlagFreeList;                          /* Get next free event flag                        */
+                    if (pgrp != (OS_FLAG_GRP *)0) {                 /* See if we have event flag groups available      */
+                                                                    /* Adjust free list                                */
+                        OSFlagFreeList       = (OS_FLAG_GRP *)OSFlagFreeList->OSFlagWaitList;
+                        pgrp->OSFlagType     = OS_EVENT_TYPE_FLAG;  /* Set to event flag group type                    */
+                        pgrp->OSFlagFlags    = flags;               /* Set to desired initial value                    */
+                        pgrp->OSFlagWaitList = (void *)0;           /* Clear list of tasks waiting on flags            */
+                        OS_EXIT_CRITICAL();
+                        *err                 = OS_NO_ERR;
+                    } else {
+                        OS_EXIT_CRITICAL();
+                        *err                 = OS_FLAG_GRP_DEPLETED;
+                    }
+                    return (pgrp);                                  /* Return pointer to event flag group              */
+                }
+            MemPartition = OSMemCreate(&MemStorage[0][0], 10, 64, &err); 
+                {
+                #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
+                    OS_CPU_SR  cpu_sr;
+                #endif    
+                    OS_MEM    *pmem;
+                    INT8U     *pblk;
+                    void     **plink;
+                    INT32U     i;
+
+
+                #if OS_ARG_CHK_EN > 0
+                    if (addr == (void *)0) {                          /* Must pass a valid address for the memory part. */
+                        *err = OS_MEM_INVALID_ADDR;
+                        return ((OS_MEM *)0);
+                    }
+                    if (nblks < 2) {                                  /* Must have at least 2 blocks per partition      */
+                        *err = OS_MEM_INVALID_BLKS;
+                        return ((OS_MEM *)0);
+                    }
+                    if (blksize < sizeof(void *)) {                   /* Must contain space for at least a pointer      */
+                        *err = OS_MEM_INVALID_SIZE;
+                        return ((OS_MEM *)0);
+                    }
+                #endif
+                    OS_ENTER_CRITICAL();
+                    pmem = OSMemFreeList;                             /* Get next free memory partition                */
+                    if (OSMemFreeList != (OS_MEM *)0) {               /* See if pool of free partitions was empty      */
+                        OSMemFreeList = (OS_MEM *)OSMemFreeList->OSMemFreeList;
+                    }
+                    OS_EXIT_CRITICAL();
+                    if (pmem == (OS_MEM *)0) {                        /* See if we have a memory partition             */
+                        *err = OS_MEM_INVALID_PART;
+                        return ((OS_MEM *)0);
+                    }
+                    plink = (void **)addr;                            /* Create linked list of free memory blocks      */
+                    pblk  = (INT8U *)addr + blksize;
+                    for (i = 0; i < (nblks - 1); i++) {
+                        *plink = (void *)pblk;
+                        plink  = (void **)pblk;
+                        pblk   = pblk + blksize;
+                    }
+                    *plink              = (void *)0;                  /* Last memory block points to NULL              */
+                    pmem->OSMemAddr     = addr;                       /* Store start address of memory partition       */
+                    pmem->OSMemFreeList = addr;                       /* Initialize pointer to pool of free blocks     */
+                    pmem->OSMemNFree    = nblks;                      /* Store number of free blocks in MCB            */
+                    pmem->OSMemNBlks    = nblks;
+                    pmem->OSMemBlkSize  = blksize;                    /* Store block size of each memory blocks        */
+                    *err                = OS_NO_ERR;
+                    return (pmem);
+                }
+            // 2. 初始化统计任务
+            OSStatInit();
+                {
+                    OS_CPU_SR  cpu_sr;   
+                    OSTimeDly(2);
+                        {
+                            OS_CPU_SR  cpu_sr;
+                            if (ticks > 0) {                                                      /* 0 means no delay!         */
+                                OS_ENTER_CRITICAL();
+                                if ((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0) {  /* Delay current task        */
+                                    OSRdyGrp &= ~OSTCBCur->OSTCBBitY;
+                                }
+                                OSTCBCur->OSTCBDly = ticks;                                       /* Load ticks in TCB         */
+                                OS_EXIT_CRITICAL();
+                                OS_Sched();                                                       /* Find next task to run!    */
+                            }
+                        }
+                    OS_ENTER_CRITICAL();
+                    OSIdleCtr    = 0L;                           /* Clear idle counter                                 */
+                    OS_EXIT_CRITICAL();
+                    OSTimeDly(OS_TICKS_PER_SEC);//                 /* Determine MAX. idle counter value for 1 second     */
+                    OS_ENTER_CRITICAL();
+                    OSIdleCtrMax = OSIdleCtr;                    /* Store maximum idle counter count in 1 second       */
+                    OSStatRdy    = TRUE;
+                    OS_EXIT_CRITICAL();
+                }
+            // 3. 打印启动 Log
+            OSMutexPend(UartMutex, 0, &err);
+                {
+                #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
+                    OS_CPU_SR  cpu_sr;
+                #endif    
+                    INT8U      pip;                                        /* Priority Inheritance Priority (PIP)      */
+                    INT8U      mprio;                                      /* Mutex owner priority                     */
+                    BOOLEAN    rdy;                                        /* Flag indicating task was ready           */
+                    OS_TCB    *ptcb;
+
+
+                    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+                        *err = OS_ERR_PEND_ISR;                            /* ... can't PEND from an ISR               */
+                        return;
+                    }
+                #if OS_ARG_CHK_EN > 0
+                    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+                        *err = OS_ERR_PEVENT_NULL;
+                        return;
+                    }
+                    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      /* Validate event block type                */
+                        *err = OS_ERR_EVENT_TYPE;
+                        return;
+                    }
+                #endif
+                    OS_ENTER_CRITICAL();								   /* Is Mutex available?                      */
+                    if ((INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE) {
+                        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;       /* Yes, Acquire the resource                */
+                        pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;         /*      Save priority of owning task        */
+                        pevent->OSEventPtr  = (void *)OSTCBCur;            /*      Point to owning task's OS_TCB       */
+                        OS_EXIT_CRITICAL();
+                        *err  = OS_NO_ERR;
+                        return;
+                    }
+                    pip   = (INT8U)(pevent->OSEventCnt >> 8);                     /* No, Get PIP from mutex            */
+                    mprio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);  /*     Get priority of mutex owner   */
+                    ptcb  = (OS_TCB *)(pevent->OSEventPtr);                       /*     Point to TCB of mutex owner   */
+                    if (ptcb->OSTCBPrio != pip && mprio > OSTCBCur->OSTCBPrio) {  /*     Need to promote prio of owner?*/
+                        if ((OSRdyTbl[ptcb->OSTCBY] & ptcb->OSTCBBitX) != 0x00) { /*     See if mutex owner is ready   */
+                                                                                /*     Yes, Remove owner from Rdy ...*/
+                                                                                /*          ... list at current prio */
+                            if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) {
+                                OSRdyGrp &= ~ptcb->OSTCBBitY;
+                            }
+                            rdy = TRUE;
+                        } else {
+                            rdy = FALSE;                                          /* No                                */
+                        }
+                        ptcb->OSTCBPrio         = pip;                     /* Change owner task prio to PIP            */
+                        ptcb->OSTCBY            = ptcb->OSTCBPrio >> 3;
+                        ptcb->OSTCBBitY         = OSMapTbl[ptcb->OSTCBY];
+                        ptcb->OSTCBX            = ptcb->OSTCBPrio & 0x07;
+                        ptcb->OSTCBBitX         = OSMapTbl[ptcb->OSTCBX];
+                        if (rdy == TRUE) {                                 /* If task was ready at owner's priority ...*/
+                            OSRdyGrp               |= ptcb->OSTCBBitY;     /* ... make it ready at new priority.       */
+                            OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+                        }
+                        OSTCBPrioTbl[pip]       = (OS_TCB *)ptcb;
+                    }
+                    OSTCBCur->OSTCBStat |= OS_STAT_MUTEX;             /* Mutex not available, pend current task        */
+                    OSTCBCur->OSTCBDly   = timeout;                   /* Store timeout in current task's TCB           */
+                    OS_EventTaskWait(pevent);                         /* Suspend task until event or timeout occurs    */
+                    OS_EXIT_CRITICAL();
+                    OS_Sched();                                        /* Find next highest priority task ready         */
+                    OS_ENTER_CRITICAL();
+                    if (OSTCBCur->OSTCBStat & OS_STAT_MUTEX) {        /* Must have timed out if still waiting for event*/
+                        OS_EventTO(pevent);
+                        OS_EXIT_CRITICAL();
+                        *err = OS_TIMEOUT;                            /* Indicate that we didn't get mutex within TO   */
+                        return;
+                    }
+                    OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;
+                    OS_EXIT_CRITICAL();
+                    *err = OS_NO_ERR;
+                }
+            Uart_Printf("\n[OS] uC/OS-II Started on Mini2440.\n");
+            Uart_Printf("[HW] 4 LEDs, 6 Keys, Buzzer Ready.\n");
+            OSMutexPost(UartMutex);
+                {
+                #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
+                    OS_CPU_SR  cpu_sr;
+                #endif    
+                    INT8U      pip;                                   /* Priority inheritance priority                 */
+                    INT8U      prio;
+
+
+                    if (OSIntNesting > 0) {                           /* See if called from ISR ...                    */
+                        return (OS_ERR_POST_ISR);                     /* ... can't POST mutex from an ISR              */
+                    }
+                #if OS_ARG_CHK_EN > 0
+                    if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
+                        return (OS_ERR_PEVENT_NULL);
+                    }
+                    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) { /* Validate event block type                     */
+                        return (OS_ERR_EVENT_TYPE);
+                    }                                                 
+                #endif
+                    OS_ENTER_CRITICAL();
+                    pip  = (INT8U)(pevent->OSEventCnt >> 8);          /* Get priority inheritance priority of mutex    */
+                    prio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);  /* Get owner's original priority      */
+                    if (OSTCBCur->OSTCBPrio != pip && 
+                        OSTCBCur->OSTCBPrio != prio) {                /* See if posting task owns the MUTEX            */
+                        OS_EXIT_CRITICAL();
+                        return (OS_ERR_NOT_MUTEX_OWNER);
+                    }
+                    if (OSTCBCur->OSTCBPrio == pip) {                 /* Did we have to raise current task's priority? */
+                                                                    /* Yes, Return to original priority              */
+                                                                    /*      Remove owner from ready list at 'pip'    */
+                        if ((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0) {
+                            OSRdyGrp &= ~OSTCBCur->OSTCBBitY;
+                        }
+                        OSTCBCur->OSTCBPrio         = prio;
+                        OSTCBCur->OSTCBY            = prio >> 3;
+                        OSTCBCur->OSTCBBitY         = OSMapTbl[OSTCBCur->OSTCBY];
+                        OSTCBCur->OSTCBX            = prio & 0x07;
+                        OSTCBCur->OSTCBBitX         = OSMapTbl[OSTCBCur->OSTCBX];
+                        OSRdyGrp                   |= OSTCBCur->OSTCBBitY;
+                        OSRdyTbl[OSTCBCur->OSTCBY] |= OSTCBCur->OSTCBBitX;
+                        OSTCBPrioTbl[prio]          = (OS_TCB *)OSTCBCur;
+                    }
+                    OSTCBPrioTbl[pip] = (OS_TCB *)1;                  /* Reserve table entry                           */
+                    if (pevent->OSEventGrp != 0x00) {                 /* Any task waiting for the mutex?               */
+                                                                    /* Yes, Make HPT waiting for mutex ready         */
+                        prio                = OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MUTEX);
+                        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;  /*      Save priority of mutex's new owner       */
+                        pevent->OSEventCnt |= prio;
+                        pevent->OSEventPtr  = OSTCBPrioTbl[prio];     /*      Link to mutex owner's OS_TCB             */
+                        OS_EXIT_CRITICAL();
+                        OS_Sched();                                   /*      Find highest priority task ready to run  */
+                        return (OS_NO_ERR);
+                    }
+                    pevent->OSEventCnt |= OS_MUTEX_AVAILABLE;         /* No,  Mutex is now available                   */
+                    pevent->OSEventPtr  = (void *)0;
+                    OS_EXIT_CRITICAL();
+                    return (OS_NO_ERR);
+                }
+            // 4. 创建应用任务
+            OSTaskCreate(Task_Input, (void *)0, &InputStk[TASK_STK_SIZE - 1], 3);
+            OSTaskCreate(Task_Work, (void *)0, &WorkStk[TASK_STK_SIZE - 1], 4);
+            OSTaskCreate(Task_Display, (void *)0, &DisplayStk[TASK_STK_SIZE - 1], 5);
+            OSTaskCreate(Task_Monitor, (void *)0, &MonitorStk[TASK_STK_SIZE - 1], 6);
+
+            OSTaskDel(OS_PRIO_SELF);
+                {
+                #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                    OS_CPU_SR     cpu_sr;
+                #endif
+
+                #if OS_EVENT_EN > 0
+                    OS_EVENT     *pevent;
+                #endif    
+                #if (OS_VERSION >= 251) && (OS_FLAG_EN > 0) && (OS_MAX_FLAGS > 0)
+                    OS_FLAG_NODE *pnode;
+                #endif
+                    OS_TCB       *ptcb;
+                    BOOLEAN       self;
+
+
+
+                    if (OSIntNesting > 0) {                                     /* See if trying to delete from ISR    */
+                        return (OS_TASK_DEL_ISR);
+                    }
+                #if OS_ARG_CHK_EN > 0
+                    if (prio == OS_IDLE_PRIO) {                                 /* Not allowed to delete idle task     */
+                        return (OS_TASK_DEL_IDLE);
+                    }
+                    if (prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {       /* Task priority valid ?               */
+                        return (OS_PRIO_INVALID);
+                    }
+                #endif
+                    OS_ENTER_CRITICAL();
+                    if (prio == OS_PRIO_SELF) {                                 /* See if requesting to delete self    */
+                        prio = OSTCBCur->OSTCBPrio;                             /* Set priority to delete to current   */
+                    }
+                    ptcb = OSTCBPrioTbl[prio];
+                    if (ptcb != (OS_TCB *)0) {                                       /* Task to delete must exist      */
+                        if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) {  /* Make task not ready            */
+                            OSRdyGrp &= ~ptcb->OSTCBBitY;
+                        }
+                #if OS_EVENT_EN > 0
+                        pevent = ptcb->OSTCBEventPtr;
+                        if (pevent != (OS_EVENT *)0) {                          /* If task is waiting on event         */
+                            if ((pevent->OSEventTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0) { /* ... remove task from */
+                                pevent->OSEventGrp &= ~ptcb->OSTCBBitY;                        /* ... event ctrl block */
+                            }
+                        }
+                #endif
+                #if (OS_VERSION >= 251) && (OS_FLAG_EN > 0) && (OS_MAX_FLAGS > 0)
+                        pnode = ptcb->OSTCBFlagNode;
+                        if (pnode != (OS_FLAG_NODE *)0) {                       /* If task is waiting on event flag    */
+                            OS_FlagUnlink(pnode); 
+                                {
+                                #if OS_TASK_DEL_EN > 0
+                                    OS_TCB       *ptcb;
+                                #endif
+                                    OS_FLAG_GRP  *pgrp;
+                                    OS_FLAG_NODE *pnode_prev;
+                                    OS_FLAG_NODE *pnode_next;
+
+
+                                    pnode_prev = (OS_FLAG_NODE *)pnode->OSFlagNodePrev;
+                                    pnode_next = (OS_FLAG_NODE *)pnode->OSFlagNodeNext;
+                                    if (pnode_prev == (OS_FLAG_NODE *)0) {                      /* Is it first node in wait list?      */
+                                        pgrp                 = (OS_FLAG_GRP *)pnode->OSFlagNodeFlagGrp;
+                                        pgrp->OSFlagWaitList = (void *)pnode_next;              /*      Update list for new 1st node   */
+                                        if (pnode_next != (OS_FLAG_NODE *)0) {
+                                            pnode_next->OSFlagNodePrev = (OS_FLAG_NODE *)0;     /*      Link new 1st node PREV to NULL */
+                                        }
+                                    } else {                                                    /* No,  A node somewhere in the list   */
+                                        pnode_prev->OSFlagNodeNext = pnode_next;                /*      Link around the node to unlink */
+                                        if (pnode_next != (OS_FLAG_NODE *)0) {                  /*      Was this the LAST node?        */
+                                            pnode_next->OSFlagNodePrev = pnode_prev;            /*      No, Link around current node   */
+                                        }
+                                    }
+                                #if OS_TASK_DEL_EN > 0
+                                    ptcb                = (OS_TCB *)pnode->OSFlagNodeTCB;
+                                    ptcb->OSTCBFlagNode = (OS_FLAG_NODE *)0;
+                                #endif
+                                }                                
+                        }
+                #endif
+                        ptcb->OSTCBDly  = 0;                                    /* Prevent OSTimeTick() from updating  */
+                        ptcb->OSTCBStat = OS_STAT_RDY;                          /* Prevent task from being resumed     */
+                        if (OSLockNesting < 255) {
+                            OSLockNesting++;
+                        }
+                        OS_EXIT_CRITICAL();                                     /* Enabling INT. ignores next instruc. */
+                        OS_Dummy();                                             /* ... Dummy ensures that INTs will be */
+                        OS_ENTER_CRITICAL();                                    /* ... disabled HERE!                  */
+                        if (OSLockNesting > 0) {
+                            OSLockNesting--;
+                        }
+                        OSTaskDelHook(ptcb); 
+                            {}                                   /* Call user defined hook              */
+                        OSTaskCtr--;                                            /* One less task being managed         */
+                        OSTCBPrioTbl[prio] = (OS_TCB *)0;                       /* Clear old priority entry            */
+                        if (ptcb->OSTCBPrev == (OS_TCB *)0) {                   /* Remove from TCB chain               */
+                            ptcb->OSTCBNext->OSTCBPrev = (OS_TCB *)0;
+                            OSTCBList                  = ptcb->OSTCBNext;
+                        } else {
+                            ptcb->OSTCBPrev->OSTCBNext = ptcb->OSTCBNext;
+                            ptcb->OSTCBNext->OSTCBPrev = ptcb->OSTCBPrev;
+                        }
+                        ptcb->OSTCBNext = OSTCBFreeList;                        /* Return TCB to free TCB list         */
+                        OSTCBFreeList   = ptcb;
+                        OS_EXIT_CRITICAL();
+                        OS_Sched();
+                            {
+                            #if OS_CRITICAL_METHOD == 3                            /* Allocate storage for CPU status register     */
+                                OS_CPU_SR  cpu_sr;
+                            #endif    
+                                INT8U      y;
+
+
+                                OS_ENTER_CRITICAL();
+                                if ((OSIntNesting == 0) && (OSLockNesting == 0)) { /* Sched. only if all ISRs done & not locked    */
+                                    y             = OSUnMapTbl[OSRdyGrp];          /* Get pointer to HPT ready to run              */
+                                    OSPrioHighRdy = (INT8U)((y << 3) + OSUnMapTbl[OSRdyTbl[y]]);
+                                    if (OSPrioHighRdy != OSPrioCur) {              /* No Ctx Sw if current task is highest rdy     */
+                                        OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
+                                        OSCtxSwCtr++;                              /* Increment context switch counter             */
+                                        OS_TASK_SW();                              /* Perform a context switch                     */
+                                    }
+                                }
+                                OS_EXIT_CRITICAL();
+                            }                                                                    /* Find new highest priority task      */
+                        return (OS_NO_ERR);
+                    }
+                    OS_EXIT_CRITICAL();
+                    return (OS_TASK_DEL_ERR);
+                }
+        }
+
+        void Task_Input(void *pdata)
+        {
+            INT8U err;
+            int key;
+            DATA_PKT *p_mem_pkt;
+            DATA_PKT static_pkt;
+            static INT8U work_task_suspended = 0;
+            (void)pdata;
+
+            for (;;) {
+                key = Key_Scan(); // 扫描按键
+
+                if (key != 0) {
+                    // 按键按下，打印 Log
+                    OSMutexPend(UartMutex, 0, &err);
+                        {
+                        #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
+                            OS_CPU_SR  cpu_sr;
+                        #endif    
+                            INT8U      pip;                                        /* Priority Inheritance Priority (PIP)      */
+                            INT8U      mprio;                                      /* Mutex owner priority                     */
+                            BOOLEAN    rdy;                                        /* Flag indicating task was ready           */
+                            OS_TCB    *ptcb;
+
+
+                            if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+                                *err = OS_ERR_PEND_ISR;                            /* ... can't PEND from an ISR               */
+                                return;
+                            }
+                        #if OS_ARG_CHK_EN > 0
+                            if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+                                *err = OS_ERR_PEVENT_NULL;
+                                return;
+                            }
+                            if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      /* Validate event block type                */
+                                *err = OS_ERR_EVENT_TYPE;
+                                return;
+                            }
+                        #endif
+                            OS_ENTER_CRITICAL();								   /* Is Mutex available?                      */
+                            if ((INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE) {
+                                pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;       /* Yes, Acquire the resource                */
+                                pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;         /*      Save priority of owning task        */
+                                pevent->OSEventPtr  = (void *)OSTCBCur;            /*      Point to owning task's OS_TCB       */
+                                OS_EXIT_CRITICAL();
+                                *err  = OS_NO_ERR;
+                                return;
+                            }
+                            pip   = (INT8U)(pevent->OSEventCnt >> 8);                     /* No, Get PIP from mutex            */
+                            mprio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);  /*     Get priority of mutex owner   */
+                            ptcb  = (OS_TCB *)(pevent->OSEventPtr);                       /*     Point to TCB of mutex owner   */
+                            if (ptcb->OSTCBPrio != pip && mprio > OSTCBCur->OSTCBPrio) {  /*     Need to promote prio of owner?*/
+                                if ((OSRdyTbl[ptcb->OSTCBY] & ptcb->OSTCBBitX) != 0x00) { /*     See if mutex owner is ready   */
+                                                                                        /*     Yes, Remove owner from Rdy ...*/
+                                                                                        /*          ... list at current prio */
+                                    if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) {
+                                        OSRdyGrp &= ~ptcb->OSTCBBitY;
+                                    }
+                                    rdy = TRUE;
+                                } else {
+                                    rdy = FALSE;                                          /* No                                */
+                                }
+                                ptcb->OSTCBPrio         = pip;                     /* Change owner task prio to PIP            */
+                                ptcb->OSTCBY            = ptcb->OSTCBPrio >> 3;
+                                ptcb->OSTCBBitY         = OSMapTbl[ptcb->OSTCBY];
+                                ptcb->OSTCBX            = ptcb->OSTCBPrio & 0x07;
+                                ptcb->OSTCBBitX         = OSMapTbl[ptcb->OSTCBX];
+                                if (rdy == TRUE) {                                 /* If task was ready at owner's priority ...*/
+                                    OSRdyGrp               |= ptcb->OSTCBBitY;     /* ... make it ready at new priority.       */
+                                    OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+                                }
+                                OSTCBPrioTbl[pip]       = (OS_TCB *)ptcb;
+                            }
+                            OSTCBCur->OSTCBStat |= OS_STAT_MUTEX;             /* Mutex not available, pend current task        */
+                            OSTCBCur->OSTCBDly   = timeout;                   /* Store timeout in current task's TCB           */
+                            OS_EventTaskWait(pevent);
+                                {
+                                    OSTCBCur->OSTCBEventPtr = pevent;            /* Store pointer to event control block in TCB        */
+                                    if ((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00) {   /* Task no longer ready      */
+                                        OSRdyGrp &= ~OSTCBCur->OSTCBBitY;        /* Clear event grp bit if this was only task pending  */
+                                    }
+                                    pevent->OSEventTbl[OSTCBCur->OSTCBY] |= OSTCBCur->OSTCBBitX;          /* Put task in waiting list  */
+                                    pevent->OSEventGrp                   |= OSTCBCur->OSTCBBitY;
+                                }                                
+                            OS_EXIT_CRITICAL();
+                            OS_Sched();                                        /* Find next highest priority task ready         */
+                            OS_ENTER_CRITICAL();
+                            if (OSTCBCur->OSTCBStat & OS_STAT_MUTEX) {        /* Must have timed out if still waiting for event*/
+                                OS_EventTO(pevent);
+                                    {
+                                        if ((pevent->OSEventTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00) {
+                                            pevent->OSEventGrp &= ~OSTCBCur->OSTCBBitY;
+                                        }
+                                        OSTCBCur->OSTCBStat     = OS_STAT_RDY;       /* Set status to ready                                */
+                                        OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;     /* No longer waiting for event                        */
+                                    }                               
+                                OS_EXIT_CRITICAL();
+                                *err = OS_TIMEOUT;                            /* Indicate that we didn't get mutex within TO   */
+                                return;
+                            }
+                            OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;
+                            OS_EXIT_CRITICAL();
+                            *err = OS_NO_ERR;
+                        }                    
+                    Uart_Printf("[KEY] K%d Pressed -> ", key);
+                    OSMutexPost(UartMutex);
+                        {
+                        #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
+                            OS_CPU_SR  cpu_sr;
+                        #endif    
+                            INT8U      pip;                                   /* Priority inheritance priority                 */
+                            INT8U      prio;
+
+
+                            if (OSIntNesting > 0) {                           /* See if called from ISR ...                    */
+                                return (OS_ERR_POST_ISR);                     /* ... can't POST mutex from an ISR              */
+                            }
+                        #if OS_ARG_CHK_EN > 0
+                            if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
+                                return (OS_ERR_PEVENT_NULL);
+                            }
+                            if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) { /* Validate event block type                     */
+                                return (OS_ERR_EVENT_TYPE);
+                            }                                                 
+                        #endif
+                            OS_ENTER_CRITICAL();
+                            pip  = (INT8U)(pevent->OSEventCnt >> 8);          /* Get priority inheritance priority of mutex    */
+                            prio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);  /* Get owner's original priority      */
+                            if (OSTCBCur->OSTCBPrio != pip && 
+                                OSTCBCur->OSTCBPrio != prio) {                /* See if posting task owns the MUTEX            */
+                                OS_EXIT_CRITICAL();
+                                return (OS_ERR_NOT_MUTEX_OWNER);
+                            }
+                            if (OSTCBCur->OSTCBPrio == pip) {                 /* Did we have to raise current task's priority? */
+                                                                            /* Yes, Return to original priority              */
+                                                                            /*      Remove owner from ready list at 'pip'    */
+                                if ((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0) {
+                                    OSRdyGrp &= ~OSTCBCur->OSTCBBitY;
+                                }
+                                OSTCBCur->OSTCBPrio         = prio;
+                                OSTCBCur->OSTCBY            = prio >> 3;
+                                OSTCBCur->OSTCBBitY         = OSMapTbl[OSTCBCur->OSTCBY];
+                                OSTCBCur->OSTCBX            = prio & 0x07;
+                                OSTCBCur->OSTCBBitX         = OSMapTbl[OSTCBCur->OSTCBX];
+                                OSRdyGrp                   |= OSTCBCur->OSTCBBitY;
+                                OSRdyTbl[OSTCBCur->OSTCBY] |= OSTCBCur->OSTCBBitX;
+                                OSTCBPrioTbl[prio]          = (OS_TCB *)OSTCBCur;
+                            }
+                            OSTCBPrioTbl[pip] = (OS_TCB *)1;                  /* Reserve table entry                           */
+                            if (pevent->OSEventGrp != 0x00) {                 /* Any task waiting for the mutex?               */
+                                                                            /* Yes, Make HPT waiting for mutex ready         */
+                                prio                = OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MUTEX);
+                                pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;  /*      Save priority of mutex's new owner       */
+                                pevent->OSEventCnt |= prio;
+                                pevent->OSEventPtr  = OSTCBPrioTbl[prio];     /*      Link to mutex owner's OS_TCB             */
+                                OS_EXIT_CRITICAL();
+                                OS_Sched();                                   /*      Find highest priority task ready to run  */
+                                return (OS_NO_ERR);
+                            }
+                            pevent->OSEventCnt |= OS_MUTEX_AVAILABLE;         /* No,  Mutex is now available                   */
+                            pevent->OSEventPtr  = (void *)0;
+                            OS_EXIT_CRITICAL();
+                            return (OS_NO_ERR);
+                        }                       
+
+                    switch (key) {
+                        // K1: 触发蜂鸣器 (Sem)
+                        case 1:
+                            Uart_Printf("Signal Beep\n");
+                            OSSemPost(SemBeep); 
+                                {
+                                #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
+                                    OS_CPU_SR  cpu_sr;                               
+                                #endif    
+
+
+                                #if OS_ARG_CHK_EN > 0
+                                    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+                                        return (OS_ERR_PEVENT_NULL);
+                                    }
+                                    if (pevent->OSEventType != OS_EVENT_TYPE_SEM) {        /* Validate event block type                */
+                                        return (OS_ERR_EVENT_TYPE);
+                                    }
+                                #endif
+                                    OS_ENTER_CRITICAL();
+                                    if (pevent->OSEventGrp != 0x00) {                      /* See if any task waiting for semaphore    */
+                                        OS_EventTaskRdy(pevent, (void *)0, OS_STAT_SEM);   /* Ready highest prio task waiting on event */
+                                        OS_EXIT_CRITICAL();
+                                        OS_Sched();                                        /* Find highest priority task ready to run  */
+                                        return (OS_NO_ERR);
+                                    }
+                                    if (pevent->OSEventCnt < 65535) {                 /* Make sure semaphore will not overflow         */
+                                        pevent->OSEventCnt++;                         /* Increment semaphore count to register event   */
+                                        OS_EXIT_CRITICAL();
+                                        return (OS_NO_ERR);
+                                    }
+                                    OS_EXIT_CRITICAL();                               /* Semaphore value has reached its maximum       */
+                                    return (OS_SEM_OVF);
+                                }
+                            break;
+
+                        // K2: 控制 LED1 翻转 (Mbox)
+                        case 2:
+                            Uart_Printf("Send Mbox to LED\n");
+                            OSMboxPost(MboxLed, (void *)0x01); // 发送指令 1
+                                {
+                                #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                                    OS_CPU_SR  cpu_sr;
+                                #endif    
+                                    
+                                    
+                                #if OS_ARG_CHK_EN > 0
+                                    if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
+                                        return (OS_ERR_PEVENT_NULL);
+                                    }
+                                    if (msg == (void *)0) {                           /* Make sure we are not posting a NULL pointer   */
+                                        return (OS_ERR_POST_NULL_PTR);
+                                    }
+                                    if (pevent->OSEventType != OS_EVENT_TYPE_MBOX) {  /* Validate event block type                     */
+                                        return (OS_ERR_EVENT_TYPE);
+                                    }
+                                #endif
+                                    OS_ENTER_CRITICAL();
+                                    if (pevent->OSEventGrp != 0x00) {                 /* See if any task pending on mailbox            */
+                                        OS_EventTaskRdy(pevent, msg, OS_STAT_MBOX);   /* Ready highest priority task waiting on event  */
+                                        OS_EXIT_CRITICAL();
+                                        OS_Sched();                                   /* Find highest priority task ready to run       */
+                                        return (OS_NO_ERR);
+                                    }
+                                    if (pevent->OSEventPtr != (void *)0) {            /* Make sure mailbox doesn't already have a msg  */
+                                        OS_EXIT_CRITICAL();
+                                        return (OS_MBOX_FULL);
+                                    }
+                                    pevent->OSEventPtr = msg;                         /* Place message in mailbox                      */
+                                    OS_EXIT_CRITICAL();
+                                    return (OS_NO_ERR);
+                                }                            
+                            break;
+
+                        // K3: 发送静态数据到队列 (Queue)
+                        case 3:
+                            Uart_Printf("Send Static Queue\n");
+                            static_pkt.Type  = 0;
+                            static_pkt.Value = OSTimeGet(); // 发送当前时间
+                                INT32U  OSTimeGet (void)
+                                {
+                                #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                                    OS_CPU_SR  cpu_sr;
+                                #endif    
+                                    INT32U     ticks;
+                                    OS_ENTER_CRITICAL();
+                                    ticks = OSTime;
+                                    OS_EXIT_CRITICAL();
+                                    return (ticks);
+                                }                            
+                            OSQPost(DataQueue, &static_pkt);
+                                {
+                                #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                                    OS_CPU_SR  cpu_sr;
+                                #endif
+                                    OS_Q      *pq;
+
+
+                                #if OS_ARG_CHK_EN > 0
+                                    if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
+                                        return (OS_ERR_PEVENT_NULL);
+                                    }
+                                    if (msg == (void *)0) {                           /* Make sure we are not posting a NULL pointer   */
+                                        return (OS_ERR_POST_NULL_PTR);
+                                    }
+                                    if (pevent->OSEventType != OS_EVENT_TYPE_Q) {     /* Validate event block type                     */
+                                        return (OS_ERR_EVENT_TYPE);
+                                    }
+                                #endif
+                                    OS_ENTER_CRITICAL();
+                                    if (pevent->OSEventGrp != 0x00) {                 /* See if any task pending on queue              */
+                                        OS_EventTaskRdy(pevent, msg, OS_STAT_Q);      /* Ready highest priority task waiting on event  */
+                                        OS_EXIT_CRITICAL();
+                                        OS_Sched();                                   /* Find highest priority task ready to run       */
+                                        return (OS_NO_ERR);
+                                    }
+                                    pq = (OS_Q *)pevent->OSEventPtr;                  /* Point to queue control block                  */
+                                    if (pq->OSQEntries >= pq->OSQSize) {              /* Make sure queue is not full                   */
+                                        OS_EXIT_CRITICAL();
+                                        return (OS_Q_FULL);
+                                    }
+                                    *pq->OSQIn++ = msg;                               /* Insert message into queue                     */
+                                    pq->OSQEntries++;                                 /* Update the nbr of entries in the queue        */
+                                    if (pq->OSQIn == pq->OSQEnd) {                    /* Wrap IN ptr if we are at end of queue         */
+                                        pq->OSQIn = pq->OSQStart;
+                                    }
+                                    OS_EXIT_CRITICAL();
+                                    return (OS_NO_ERR);
+                                }                            
+                            break;
+
+                        // K4: 申请动态内存并发送 (Mem + Queue)
+                        case 4:
+                            Uart_Printf("Alloc Mem & Send\n");
+                            // [OS_MEM] 申请内存
+                            p_mem_pkt = (DATA_PKT *)OSMemGet(MemPartition, &err);
+                                {
+                                #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
+                                    OS_CPU_SR  cpu_sr;
+                                #endif    
+                                    void      *pblk;
+
+
+                                #if OS_ARG_CHK_EN > 0
+                                    if (pmem == (OS_MEM *)0) {                        /* Must point to a valid memory partition         */
+                                        *err = OS_MEM_INVALID_PMEM;
+                                        return ((OS_MEM *)0);
+                                    }
+                                #endif
+                                    OS_ENTER_CRITICAL();
+                                    if (pmem->OSMemNFree > 0) {                       /* See if there are any free memory blocks       */
+                                        pblk                = pmem->OSMemFreeList;    /* Yes, point to next free memory block          */
+                                        pmem->OSMemFreeList = *(void **)pblk;         /*      Adjust pointer to new free list          */
+                                        pmem->OSMemNFree--;                           /*      One less memory block in this partition  */
+                                        OS_EXIT_CRITICAL();
+                                        *err = OS_NO_ERR;                             /*      No error                                 */
+                                        return (pblk);                                /*      Return memory block to caller            */
+                                    }
+                                    OS_EXIT_CRITICAL();
+                                    *err = OS_MEM_NO_FREE_BLKS;                       /* No,  Notify caller of empty memory partition  */
+                                    return ((void *)0);                               /*      Return NULL pointer to caller            */
+                                }                           
+                            if (err == OS_NO_ERR) {
+                                p_mem_pkt->Type = 1; // 标记为动态内存
+                                p_mem_pkt->Value = 0xDEADBEEF; // 测试数据
+                                OSQPost(DataQueue, p_mem_pkt);
+                                    {略}
+                            } 
+                            else {
+                                Uart_Printf("Mem Full!\n");
+                            }
+                            break;
+
+                        // K5: 挂起/恢复 Work 任务 (Task Suspend/Resume)
+                        case 5:
+                            if (work_task_suspended) {
+                                Uart_Printf("Resume Work Task\n");
+                                OSTaskResume(4); // 恢复 Prio 4
+                                    {
+                                    #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                                        OS_CPU_SR  cpu_sr;
+                                    #endif
+                                        OS_TCB    *ptcb;
+
+
+                                    #if OS_ARG_CHK_EN > 0
+                                        if (prio >= OS_LOWEST_PRIO) {                               /* Make sure task priority is valid    */
+                                            return (OS_PRIO_INVALID);
+                                        }
+                                    #endif
+                                        OS_ENTER_CRITICAL();
+                                        ptcb = OSTCBPrioTbl[prio];
+                                        if (ptcb == (OS_TCB *)0) {                                  /* Task to suspend must exist          */
+                                            OS_EXIT_CRITICAL();
+                                            return (OS_TASK_RESUME_PRIO);
+                                        }
+                                        if ((ptcb->OSTCBStat & OS_STAT_SUSPEND) != OS_STAT_RDY) {              /* Task must be suspended   */
+                                            if (((ptcb->OSTCBStat &= ~OS_STAT_SUSPEND) == OS_STAT_RDY) &&      /* Remove suspension        */
+                                                (ptcb->OSTCBDly  == 0)) {                                     /* Must not be delayed      */
+                                                OSRdyGrp               |= ptcb->OSTCBBitY;                     /* Make task ready to run   */
+                                                OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+                                                OS_EXIT_CRITICAL();
+                                                OS_Sched();
+                                            } else {
+                                                OS_EXIT_CRITICAL();
+                                            }
+                                            return (OS_NO_ERR);
+                                        }
+                                        OS_EXIT_CRITICAL();
+                                        return (OS_TASK_NOT_SUSPENDED);
+                                    }                               
+                                work_task_suspended = 0;
+                            } 
+                            else {
+                                Uart_Printf("Suspend Work Task\n");
+                                OSTaskSuspend(4); // 挂起 Prio 4
+                                    {
+                                    #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                                        OS_CPU_SR  cpu_sr;
+                                    #endif
+                                        BOOLEAN    self;
+                                        OS_TCB    *ptcb;
+
+
+                                    #if OS_ARG_CHK_EN > 0
+                                        if (prio == OS_IDLE_PRIO) {                                 /* Not allowed to suspend idle task    */
+                                            return (OS_TASK_SUSPEND_IDLE);
+                                        }
+                                        if (prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {       /* Task priority valid ?               */
+                                            return (OS_PRIO_INVALID);
+                                        }
+                                    #endif
+                                        OS_ENTER_CRITICAL();
+                                        if (prio == OS_PRIO_SELF) {                                 /* See if suspend SELF                 */
+                                            prio = OSTCBCur->OSTCBPrio;
+                                            self = TRUE;
+                                        } else if (prio == OSTCBCur->OSTCBPrio) {                   /* See if suspending self              */
+                                            self = TRUE;
+                                        } else {
+                                            self = FALSE;                                           /* No suspending another task          */
+                                        }
+                                        ptcb = OSTCBPrioTbl[prio];
+                                        if (ptcb == (OS_TCB *)0) {                                  /* Task to suspend must exist          */
+                                            OS_EXIT_CRITICAL();
+                                            return (OS_TASK_SUSPEND_PRIO);
+                                        }
+                                        if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) { /* Make task not ready                 */
+                                            OSRdyGrp &= ~ptcb->OSTCBBitY;
+                                        }
+                                        ptcb->OSTCBStat |= OS_STAT_SUSPEND;                         /* Status of task is 'SUSPENDED'       */
+                                        OS_EXIT_CRITICAL();
+                                        if (self == TRUE) {                                         /* Context switch only if SELF         */
+                                            OS_Sched();
+                                        }
+                                        return (OS_NO_ERR);
+                                    }
+                                work_task_suspended = 1;
+                            }
+                            break;
+
+                        // K6: 切换系统模式 (Flag)
+                        case 6:
+                            OSFlagPost(SysModeFlag, MODE_NORMAL | MODE_TURBO, OS_FLAG_CLR, &err); // 清除
+                                {
+                                #if OS_CRITICAL_METHOD == 3                          /* Allocate storage for CPU status register       */
+                                    OS_CPU_SR     cpu_sr;
+                                #endif
+                                    OS_FLAG_NODE *pnode;
+                                    BOOLEAN       sched;
+                                    OS_FLAGS      flags_cur;
+                                    OS_FLAGS      flags_rdy;
+
+
+                                #if OS_ARG_CHK_EN > 0
+                                    if (pgrp == (OS_FLAG_GRP *)0) {                  /* Validate 'pgrp'                                */
+                                        *err = OS_FLAG_INVALID_PGRP;
+                                        return ((OS_FLAGS)0);
+                                    }
+                                    if (pgrp->OSFlagType != OS_EVENT_TYPE_FLAG) {    /* Make sure we are pointing to an event flag grp */
+                                        *err = OS_ERR_EVENT_TYPE;
+                                        return ((OS_FLAGS)0);
+                                    }
+                                #endif
+                                /*$PAGE*/
+                                    OS_ENTER_CRITICAL();
+                                    switch (opt) {
+                                        case OS_FLAG_CLR:
+                                            pgrp->OSFlagFlags &= ~flags;            /* Clear the flags specified in the group         */
+                                            break;
+
+                                        case OS_FLAG_SET:
+                                            pgrp->OSFlagFlags |=  flags;            /* Set   the flags specified in the group         */
+                                            break;
+
+                                        default:
+                                            OS_EXIT_CRITICAL();                     /* INVALID option                                 */
+                                            *err = OS_FLAG_INVALID_OPT;
+                                            return ((OS_FLAGS)0);
+                                    }
+                                    sched = FALSE;                                   /* Indicate that we don't need rescheduling       */
+                                    pnode = (OS_FLAG_NODE *)pgrp->OSFlagWaitList;
+                                    while (pnode != (OS_FLAG_NODE *)0) {             /* Go through all tasks waiting on event flag(s)  */
+                                        switch (pnode->OSFlagNodeWaitType) {
+                                            case OS_FLAG_WAIT_SET_ALL:               /* See if all req. flags are set for current node */
+                                                flags_rdy = pgrp->OSFlagFlags & pnode->OSFlagNodeFlags;
+                                                if (flags_rdy == pnode->OSFlagNodeFlags) {
+                                                    if (OS_FlagTaskRdy(pnode, flags_rdy) == TRUE) { /* Make task RTR, event(s) Rx'd   */
+                                                        sched = TRUE;                               /* When done we will reschedule   */
+                                                    }
+                                                }
+                                                break;
+
+                                            case OS_FLAG_WAIT_SET_ANY:               /* See if any flag set                            */
+                                                flags_rdy = pgrp->OSFlagFlags & pnode->OSFlagNodeFlags;
+                                                if (flags_rdy != (OS_FLAGS)0) {
+                                                    if (OS_FlagTaskRdy(pnode, flags_rdy) == TRUE) { /* Make task RTR, event(s) Rx'd   */
+                                                        sched = TRUE;                               /* When done we will reschedule   */
+                                                    }
+                                                }
+                                                break;
+
+                                #if OS_FLAG_WAIT_CLR_EN > 0
+                                            case OS_FLAG_WAIT_CLR_ALL:               /* See if all req. flags are set for current node */
+                                                flags_rdy = ~pgrp->OSFlagFlags & pnode->OSFlagNodeFlags;
+                                                if (flags_rdy == pnode->OSFlagNodeFlags) {
+                                                    if (OS_FlagTaskRdy(pnode, flags_rdy) == TRUE) { /* Make task RTR, event(s) Rx'd   */
+                                                        sched = TRUE;                               /* When done we will reschedule   */
+                                                    }
+                                                }
+                                                break;
+
+                                            case OS_FLAG_WAIT_CLR_ANY:               /* See if any flag set                            */
+                                                flags_rdy = ~pgrp->OSFlagFlags & pnode->OSFlagNodeFlags;
+                                                if (flags_rdy != (OS_FLAGS)0) {
+                                                    if (OS_FlagTaskRdy(pnode, flags_rdy) == TRUE) { /* Make task RTR, event(s) Rx'd   */
+                                                        sched = TRUE;                               /* When done we will reschedule   */
+                                                    }
+                                                }
+                                                break;
+                                #endif
+                                        }
+                                        pnode = (OS_FLAG_NODE *)pnode->OSFlagNodeNext; /* Point to next task waiting for event flag(s) */
+                                    }
+                                    OS_EXIT_CRITICAL();
+                                    if (sched == TRUE) {
+                                        OS_Sched();
+                                    }
+                                    OS_ENTER_CRITICAL();
+                                    flags_cur = pgrp->OSFlagFlags;
+                                    OS_EXIT_CRITICAL();
+                                    *err      = OS_NO_ERR;
+                                    return (flags_cur);
+                                }                              
+                            OSFlagPost(SysModeFlag, MODE_TURBO, OS_FLAG_SET, &err); // 设为 Turbo
+                            Uart_Printf("Set Mode: TURBO\n");
+                            break;
+                    }
+                    
+                    OSTimeDlyHMSM(0,0,0,20); // 去抖
+                        {
+                            INT32U ticks;
+                            INT16U loops;
+
+
+                            if (hours > 0 || minutes > 0 || seconds > 0 || milli > 0) {
+                                if (minutes > 59) {
+                                    return (OS_TIME_INVALID_MINUTES);    /* Validate arguments to be within range              */
+                                }
+                                if (seconds > 59) {
+                                    return (OS_TIME_INVALID_SECONDS);
+                                }
+                                if (milli > 999) {
+                                    return (OS_TIME_INVALID_MILLI);
+                                }
+                                                                        /* Compute the total number of clock ticks required.. */
+                                                                        /* .. (rounded to the nearest tick)                   */
+                                ticks = ((INT32U)hours * 3600L + (INT32U)minutes * 60L + (INT32U)seconds) * OS_TICKS_PER_SEC
+                                    + OS_TICKS_PER_SEC * ((INT32U)milli + 500L / OS_TICKS_PER_SEC) / 1000L;
+                                loops = (INT16U)(ticks / 65536L);        /* Compute the integral number of 65536 tick delays   */
+                                ticks = ticks % 65536L;                  /* Obtain  the fractional number of ticks             */
+                                OSTimeDly((INT16U)ticks);
+                                while (loops > 0) {
+                                    OSTimeDly(32768);
+                                    OSTimeDly(32768);
+                                    loops--;
+                                }
+                                return (OS_NO_ERR);
+                            }
+                            return (OS_TIME_ZERO_DLY);
+                        }                      
+                    while(Key_Scan() != 0) {
+                        OSTimeDlyHMSM(0,0,0,5);
+                    } // 等待释放
+                }
+                OSTimeDlyHMSM(0,0,0,50); // 50ms 扫描一次
+            }
+        }
+
+        void Task_Work(void *pdata)
+        {
+            INT8U err;
+            DATA_PKT *p_pkt;
+            (void)pdata;
+
+            for (;;) {
+                // 死等队列消息
+                p_pkt = (DATA_PKT *)OSQPend(DataQueue, 0, &err);
+                    {
+                    #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                        OS_CPU_SR  cpu_sr;
+                    #endif
+                        void      *msg;
+                        OS_Q      *pq;
+
+
+                        if (OSIntNesting > 0) {                      /* See if called from ISR ...                         */
+                            *err = OS_ERR_PEND_ISR;                  /* ... can't PEND from an ISR                         */
+                            return ((void *)0);
+                        }
+                    #if OS_ARG_CHK_EN > 0
+                        if (pevent == (OS_EVENT *)0) {               /* Validate 'pevent'                                  */
+                            *err = OS_ERR_PEVENT_NULL;
+                            return ((void *)0);
+                        }
+                        if (pevent->OSEventType != OS_EVENT_TYPE_Q) {/* Validate event block type                          */
+                            *err = OS_ERR_EVENT_TYPE;
+                            return ((void *)0);
+                        }
+                    #endif
+                        OS_ENTER_CRITICAL();
+                        pq = (OS_Q *)pevent->OSEventPtr;             /* Point at queue control block                       */
+                        if (pq->OSQEntries > 0) {                    /* See if any messages in the queue                   */
+                            msg = *pq->OSQOut++;                     /* Yes, extract oldest message from the queue         */
+                            pq->OSQEntries--;                        /* Update the number of entries in the queue          */
+                            if (pq->OSQOut == pq->OSQEnd) {          /* Wrap OUT pointer if we are at the end of the queue */
+                                pq->OSQOut = pq->OSQStart;
+                            }
+                            OS_EXIT_CRITICAL();
+                            *err = OS_NO_ERR;
+                            return (msg);                            /* Return message received                            */
+                        }
+                        OSTCBCur->OSTCBStat |= OS_STAT_Q;            /* Task will have to pend for a message to be posted  */
+                        OSTCBCur->OSTCBDly   = timeout;              /* Load timeout into TCB                              */
+                        OS_EventTaskWait(pevent);                    /* Suspend task until event or timeout occurs         */
+                        OS_EXIT_CRITICAL();
+                        OS_Sched();                                  /* Find next highest priority task ready to run       */
+                        OS_ENTER_CRITICAL();
+                        msg = OSTCBCur->OSTCBMsg;
+                        if (msg != (void *)0) {                      /* Did we get a message?                              */
+                            OSTCBCur->OSTCBMsg      = (void *)0;     /* Extract message from TCB (Put there by QPost)      */
+                            OSTCBCur->OSTCBStat     = OS_STAT_RDY;
+                            OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0; /* No longer waiting for event                        */
+                            OS_EXIT_CRITICAL();
+                            *err                    = OS_NO_ERR;
+                            return (msg);                            /* Return message received                            */
+                        }
+                        OS_EventTO(pevent);                          /* Timed out                                          */
+                        OS_EXIT_CRITICAL();
+                        *err = OS_TIMEOUT;                           /* Indicate a timeout occured                         */
+                        return ((void *)0);                          /* No message received                                */
+                    }
+                if (err == OS_NO_ERR) {
+                    OSMutexPend(UartMutex, 0, &err);
+                    {略}
+                    Uart_Printf("[Work] Recv: Type=%d, Val=0x%X\n", p_pkt->Type, p_pkt->Value);
+                    OSMutexPost(UartMutex);
+                    {略}
+                    // 如果是动态申请的内存，必须释放！
+                    if (p_pkt->Type == 1) {
+                        OSMemPut(MemPartition, (void *)p_pkt);
+                            {
+                            #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                                OS_CPU_SR  cpu_sr;
+                            #endif    
+                                
+                                
+                            #if OS_ARG_CHK_EN > 0
+                                if (pmem == (OS_MEM *)0) {                   /* Must point to a valid memory partition             */
+                                    return (OS_MEM_INVALID_PMEM);
+                                }
+                                if (pblk == (void *)0) {                     /* Must release a valid block                         */
+                                    return (OS_MEM_INVALID_PBLK);
+                                }
+                            #endif
+                                OS_ENTER_CRITICAL();
+                                if (pmem->OSMemNFree >= pmem->OSMemNBlks) {  /* Make sure all blocks not already returned          */
+                                    OS_EXIT_CRITICAL();
+                                    return (OS_MEM_FULL);
+                                }
+                                *(void **)pblk      = pmem->OSMemFreeList;   /* Insert released block into free block list         */
+                                pmem->OSMemFreeList = pblk;
+                                pmem->OSMemNFree++;                          /* One more memory block in this partition            */
+                                OS_EXIT_CRITICAL();
+                                return (OS_NO_ERR);                          /* Notify caller that memory block was released       */
+                            }
+                        Uart_Printf("[Work] Mem Freed.\n");
+                    }
+                }
+            }
+        }
+
+        void Task_Display(void *pdata)
+        {
+            INT8U err;
+            void *msg;
+            static int led1_state = 0;
+            (void)pdata;
+
+            for (;;) {
+                // --- 1. 检查蜂鸣器 (非阻塞 Accept) ---
+                if (OSSemAccept(SemBeep) > 0) {
+                    INT16U  OSSemAccept (OS_EVENT *pevent){
+                    #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
+                        OS_CPU_SR  cpu_sr;
+                    #endif    
+                        INT16U     cnt;
+
+                    #if OS_ARG_CHK_EN > 0
+                        if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
+                            return (0);
+                        }
+                        if (pevent->OSEventType != OS_EVENT_TYPE_SEM) {   /* Validate event block type                     */
+                            return (0);
+                        }
+                    #endif
+                        OS_ENTER_CRITICAL();
+                        cnt = pevent->OSEventCnt;
+                        if (cnt > 0) {                                    /* See if resource is available                  */
+                            pevent->OSEventCnt--;                         /* Yes, decrement semaphore and notify caller    */
+                        }
+                        OS_EXIT_CRITICAL();
+                        return (cnt);                                     /* Return semaphore count                        */
+                    }
+                    Beep_Ctrl(1);
+                    OSTimeDlyHMSM(0,0,0,10); // 响 100ms
+                    Beep_Ctrl(0);
+                }
+
+                // --- 2. 检查 LED 邮箱 (非阻塞 Accept) ---
+                msg = OSMboxAccept(MboxLed);
+                    {
+                    #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                        OS_CPU_SR  cpu_sr;
+                    #endif    
+                        void      *msg;
+
+
+                    #if OS_ARG_CHK_EN > 0
+                        if (pevent == (OS_EVENT *)0) {                        /* Validate 'pevent'                         */
+                            return ((void *)0);
+                        }
+                        if (pevent->OSEventType != OS_EVENT_TYPE_MBOX) {      /* Validate event block type                 */
+                            return ((void *)0);
+                        }
+                    #endif
+                        OS_ENTER_CRITICAL();
+                        msg                = pevent->OSEventPtr;
+                        pevent->OSEventPtr = (void *)0;                       /* Clear the mailbox                         */
+                        OS_EXIT_CRITICAL();
+                        return (msg);                                         /* Return the message received (or NULL)     */
+                    }
+                if (msg != (void *)0) {
+                    // 收到翻转指令
+                    led1_state = !led1_state;
+                }
+
+                // --- 3. 根据标志位更新 LED2/3/4 ---
+                OS_FLAGS flags = OSFlagQuery(SysModeFlag, &err);
+                    {
+                    #if OS_CRITICAL_METHOD == 3                       /* Allocate storage for CPU status register          */
+                        OS_CPU_SR  cpu_sr;
+                    #endif
+                        OS_FLAGS   flags;
+
+
+                    #if OS_ARG_CHK_EN > 0
+                        if (pgrp == (OS_FLAG_GRP *)0) {               /* Validate 'pgrp'                                   */
+                            *err = OS_FLAG_INVALID_PGRP;
+                            return ((OS_FLAGS)0);
+                        }
+                        if (pgrp->OSFlagType != OS_EVENT_TYPE_FLAG) { /* Validate event block type                         */
+                            *err = OS_ERR_EVENT_TYPE;
+                            return ((OS_FLAGS)0);
+                        }
+                    #endif
+                        OS_ENTER_CRITICAL();
+                        flags = pgrp->OSFlagFlags;
+                        OS_EXIT_CRITICAL();
+                        *err = OS_NO_ERR;
+                        return (flags);                               /* Return the current value of the event flags       */
+                    }
+                int led_mask = 0;
+                if (led1_state) led_mask |= 1; // LED1
+                
+                if (flags & MODE_TURBO) {
+                    // Turbo 模式：LED 2,3,4 跑马灯
+                    static int shift = 0;
+                    led_mask |= (2 << shift);
+                    shift = (shift + 1) % 3;
+                } 
+                else {
+                    // Normal 模式：LED 2 亮
+                    led_mask |= 2;
+                }
+
+                LED_Set(led_mask);
+                OSTimeDlyHMSM(0,0,0,10); // 刷新率 10Hz
+            }
+        }
+
+        void Task_Monitor(void *pdata)
+        {
+            INT8U err;
+            OS_MEM_DATA mem_data;
+            OS_Q_DATA   q_data;
+            (void)pdata;
+
+            for (;;) {
+                OSTimeDlyHMSM(0,0,10,0); // 每 10 秒打印一次
+
+                // 1. 查询内存剩余
+                OSMemQuery(MemPartition, &mem_data);
+                    {
+                    #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                        OS_CPU_SR  cpu_sr;
+                    #endif    
+                        
+                        
+                    #if OS_ARG_CHK_EN > 0
+                        if (pmem == (OS_MEM *)0) {                   /* Must point to a valid memory partition             */
+                            return (OS_MEM_INVALID_PMEM);
+                        }
+                        if (pdata == (OS_MEM_DATA *)0) {             /* Must release a valid storage area for the data     */
+                            return (OS_MEM_INVALID_PDATA);
+                        }
+                    #endif
+                        OS_ENTER_CRITICAL();
+                        pdata->OSAddr     = pmem->OSMemAddr;
+                        pdata->OSFreeList = pmem->OSMemFreeList;
+                        pdata->OSBlkSize  = pmem->OSMemBlkSize;
+                        pdata->OSNBlks    = pmem->OSMemNBlks;
+                        pdata->OSNFree    = pmem->OSMemNFree;
+                        OS_EXIT_CRITICAL();
+                        pdata->OSNUsed    = pdata->OSNBlks - pdata->OSNFree;
+                        return (OS_NO_ERR);
+                    }
+                // 2. 查询队列堆积
+                OSQQuery(DataQueue, &q_data);
+                    {
+                    #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                        OS_CPU_SR  cpu_sr;
+                    #endif
+                        OS_Q      *pq;
+                        INT8U     *psrc;
+                        INT8U     *pdest;
+
+
+                    #if OS_ARG_CHK_EN > 0
+                        if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+                            return (OS_ERR_PEVENT_NULL);
+                        }
+                        if (pevent->OSEventType != OS_EVENT_TYPE_Q) {          /* Validate event block type                */
+                            return (OS_ERR_EVENT_TYPE);
+                        }
+                    #endif
+                        OS_ENTER_CRITICAL();
+                        pdata->OSEventGrp = pevent->OSEventGrp;                /* Copy message queue wait list           */
+                        psrc              = &pevent->OSEventTbl[0];
+                        pdest             = &pdata->OSEventTbl[0];
+                    #if OS_EVENT_TBL_SIZE > 0
+                        *pdest++          = *psrc++;
+                    #endif
+
+                    #if OS_EVENT_TBL_SIZE > 1
+                        *pdest++          = *psrc++;
+                    #endif
+
+                    #if OS_EVENT_TBL_SIZE > 2
+                        *pdest++          = *psrc++;
+                    #endif
+
+                    #if OS_EVENT_TBL_SIZE > 3
+                        *pdest++          = *psrc++;
+                    #endif
+
+                    #if OS_EVENT_TBL_SIZE > 4
+                        *pdest++          = *psrc++;
+                    #endif
+
+                    #if OS_EVENT_TBL_SIZE > 5
+                        *pdest++          = *psrc++;
+                    #endif
+
+                    #if OS_EVENT_TBL_SIZE > 6
+                        *pdest++          = *psrc++;
+                    #endif
+
+                    #if OS_EVENT_TBL_SIZE > 7
+                        *pdest            = *psrc;
+                    #endif
+                        pq = (OS_Q *)pevent->OSEventPtr;
+                        if (pq->OSQEntries > 0) {
+                            pdata->OSMsg = *pq->OSQOut;                        /* Get next message to return if available  */
+                        } else {
+                            pdata->OSMsg = (void *)0;
+                        }
+                        pdata->OSNMsgs = pq->OSQEntries;
+                        pdata->OSQSize = pq->OSQSize;
+                        OS_EXIT_CRITICAL();
+                        return (OS_NO_ERR);
+                    }
+
+                // 3. 打印报表
+                OSMutexPend(UartMutex, 0, &err);
+                Uart_Printf("\n--- System Monitor ---\n");
+                Uart_Printf("CPU Usage: %d%%\n", OSCPUUsage);
+                Uart_Printf("Mem Free : %d blocks\n", mem_data.OSNFree);
+                Uart_Printf("Q Msg    : %d waiting\n", q_data.OSNMsgs);
+                
+                // 4.演示 OSTaskQuery (查自己)
+                OSTaskQuery(OS_PRIO_SELF, &TCBData);
+                {
+                #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
+                    OS_CPU_SR  cpu_sr;
+                #endif
+                    OS_TCB    *ptcb;
+
+
+                #if OS_ARG_CHK_EN > 0
+                    if (prio > OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {   /* Task priority valid ?                    */
+                        return (OS_PRIO_INVALID);
+                    }
+                #endif
+                    OS_ENTER_CRITICAL();
+                    if (prio == OS_PRIO_SELF) {                            /* See if suspend SELF                      */
+                        prio = OSTCBCur->OSTCBPrio;
+                    }
+                    ptcb = OSTCBPrioTbl[prio];
+                    if (ptcb == (OS_TCB *)0) {                             /* Task to query must exist                 */
+                        OS_EXIT_CRITICAL();
+                        return (OS_PRIO_ERR);
+                    }
+                    memcpy(pdata, ptcb, sizeof(OS_TCB));                   /* Copy TCB into user storage area          */
+                    OS_EXIT_CRITICAL();
+                    return (OS_NO_ERR);
+                }
+                Uart_Printf("My Stack: %p\n", TCBData.OSTCBStkPtr);
+                OSMutexPost(UartMutex);
+            }
+        }}
+    OSStart();{
+        INT8U y;
+        INT8U x;
+
+        if (OSRunning == FALSE) {
+            y             = OSUnMapTbl[OSRdyGrp];        /* Find highest priority's task priority number   */
+            x             = OSUnMapTbl[OSRdyTbl[y]];
+            OSPrioHighRdy = (INT8U)((y << 3) + x);
+            OSPrioCur     = OSPrioHighRdy;
+            OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy]; /* Point to highest priority task ready to run    */
+            OSTCBCur      = OSTCBHighRdy;
+            OSStartHighRdy();                            /* Execute target specific code to start task     */
+            }
+        }
+
+
+    

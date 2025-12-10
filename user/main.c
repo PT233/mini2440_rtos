@@ -1,29 +1,28 @@
 /*
 *********************************************************************************************************
-* uC/OS-II Mini2440 硬件全功能深度演示 (Hardware + Full API)
+* uC/OS-II 
 * 平台: Mini2440 (S3C2440)
-* 资源: UART0, LED1-4, K1-6, Buzzer, Timer4
 *********************************************************************************************************
 */
 
 #include "includes.h"
 
 /* --- 堆栈定义 --- */
-#define     TASK_STK_SIZE    512
+#define     TASK_STK_SIZE 512
 OS_STK      StartStk[TASK_STK_SIZE];
-OS_STK      InputStk[TASK_STK_SIZE];    // 负责扫描按键 (生产者)
-OS_STK      WorkStk[TASK_STK_SIZE];     // 负责处理逻辑 (消费者)
-OS_STK      DisplayStk[TASK_STK_SIZE];  // 负责 LED/Beep 反馈
-OS_STK      MonitorStk[TASK_STK_SIZE];  // 负责 Query 和 打印
+OS_STK      InputStk[TASK_STK_SIZE];    
+OS_STK      WorkStk[TASK_STK_SIZE];     
+OS_STK      DisplayStk[TASK_STK_SIZE];  
+OS_STK      MonitorStk[TASK_STK_SIZE];  
 
 /* --- OS 对象 --- */
-OS_EVENT    *SemBeep;           // [Sem] 蜂鸣器信号量
-OS_EVENT    *MboxLed;           // [Mbox] LED 控制指令
-OS_EVENT    *DataQueue;         // [Queue] 数据传输队列
+OS_EVENT    *SemBeep;           // 蜂鸣器信号量
+OS_EVENT    *MboxLed;           // LED 控制指令
+OS_EVENT    *DataQueue;         // 数据传输队列
 void        *QMsgTbl[10];       // 队列存储区
-OS_EVENT    *UartMutex;         // [Mutex] 串口互斥锁
-OS_FLAG_GRP *SysModeFlag;       // [Flag] 系统模式标志
-OS_MEM      *MemPartition;      // [Mem] 内存分区
+OS_EVENT    *UartMutex;         // 串口互斥锁
+OS_FLAG_GRP *SysModeFlag;       // 系统模式标志
+OS_MEM      *MemPartition;      // 内存分区
 INT8U       MemStorage[10][64]; // 物理内存：10块，每块64字节
 
 /* --- 标志位定义 --- */
@@ -74,18 +73,18 @@ void Task_Start(void *pdata)
     SysModeFlag  = OSFlagCreate(MODE_NORMAL, &err); // 默认普通模式
     MemPartition = OSMemCreate(&MemStorage[0][0], 10, 64, &err); // 内存池
 
-    // 2. 初始化统计任务 (为了计算 CPU 使用率)
+    // 2. 初始化统计任务
     OSStatInit();
 
     // 3. 打印启动 Log
     OSMutexPend(UartMutex, 0, &err);
-    Uart_Printf("\n[OS] uC/OS-II Started on Mini2440!\n");
+    Uart_Printf("\n[OS] uC/OS-II Started on Mini2440.\n");
     Uart_Printf("[HW] 4 LEDs, 6 Keys, Buzzer Ready.\n");
     OSMutexPost(UartMutex);
 
     // 4. 创建应用任务
-    OSTaskCreate(Task_Input,   (void *)0, &InputStk[TASK_STK_SIZE - 1],   3);
-    OSTaskCreate(Task_Work,    (void *)0, &WorkStk[TASK_STK_SIZE - 1],    4);
+    OSTaskCreate(Task_Input, (void *)0, &InputStk[TASK_STK_SIZE - 1], 3);
+    OSTaskCreate(Task_Work, (void *)0, &WorkStk[TASK_STK_SIZE - 1], 4);
     OSTaskCreate(Task_Display, (void *)0, &DisplayStk[TASK_STK_SIZE - 1], 5);
     OSTaskCreate(Task_Monitor, (void *)0, &MonitorStk[TASK_STK_SIZE - 1], 6);
 
@@ -146,7 +145,8 @@ void Task_Input(void *pdata)
                         p_mem_pkt->Type = 1; // 标记为动态内存
                         p_mem_pkt->Value = 0xDEADBEEF; // 测试数据
                         OSQPost(DataQueue, p_mem_pkt);
-                    } else {
+                    } 
+                    else {
                         Uart_Printf("Mem Full!\n");
                     }
                     break;
@@ -157,7 +157,8 @@ void Task_Input(void *pdata)
                         Uart_Printf("Resume Work Task\n");
                         OSTaskResume(4); // 恢复 Prio 4
                         work_task_suspended = 0;
-                    } else {
+                    } 
+                    else {
                         Uart_Printf("Suspend Work Task\n");
                         OSTaskSuspend(4); // 挂起 Prio 4
                         work_task_suspended = 1;
@@ -172,10 +173,12 @@ void Task_Input(void *pdata)
                     break;
             }
             
-            OSTimeDly(20); // 去抖
-            while(Key_Scan() != 0) OSTimeDly(5); // 等待释放
+            OSTimeDlyHMSM(0,0,0,20); // 去抖
+            while(Key_Scan() != 0) {
+                OSTimeDlyHMSM(0,0,0,5);
+            } // 等待释放
         }
-        OSTimeDly(5); // 50ms 扫描一次
+        OSTimeDlyHMSM(0,0,0,50); // 50ms 扫描一次
     }
 }
 
@@ -226,7 +229,7 @@ void Task_Display(void *pdata)
         // --- 1. 检查蜂鸣器 (非阻塞 Accept) ---
         if (OSSemAccept(SemBeep) > 0) {
             Beep_Ctrl(1);
-            OSTimeDly(10); // 响 100ms
+            OSTimeDlyHMSM(0,0,0,10); // 响 100ms
             Beep_Ctrl(0);
         }
 
@@ -248,14 +251,14 @@ void Task_Display(void *pdata)
             static int shift = 0;
             led_mask |= (2 << shift);
             shift = (shift + 1) % 3;
-        } else {
+        } 
+        else {
             // Normal 模式：LED 2 亮
             led_mask |= 2;
         }
 
         LED_Set(led_mask);
-        
-        OSTimeDly(10); // 刷新率 10Hz
+        OSTimeDlyHMSM(0,0,0,10); // 刷新率 10Hz
     }
 }
 
@@ -273,7 +276,7 @@ void Task_Monitor(void *pdata)
     (void)pdata;
 
     for (;;) {
-        OSTimeDly(200); // 每 2 秒打印一次
+        OSTimeDlyHMSM(0,0,10,0); // 每 10 秒打印一次
 
         // 1. 查询内存剩余
         OSMemQuery(MemPartition, &mem_data);
