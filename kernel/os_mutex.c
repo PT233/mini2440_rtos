@@ -14,7 +14,16 @@
 
 #include "includes.h"
 
+/*
+*********************************************************************************************************
+*                                            LOCAL CONSTANTS
+*********************************************************************************************************
+*/
 
+#define  OS_MUTEX_KEEP_LOWER_8   0x00FF
+#define  OS_MUTEX_KEEP_UPPER_8   0xFF00
+
+#define  OS_MUTEX_AVAILABLE      0x00FF
 
 /*
 *********************************************************************************************************
@@ -61,7 +70,46 @@ INT8U  OSMutexAccept (OS_EVENT *pevent, INT8U *err)
 */
 OS_EVENT  *OSMutexCreate (INT8U prio, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;
+    OS_EVENT  *pevent;
+
+    // 1. 参数检查：不能在中断中调用
+    if (OSIntNesting > 0) {
+        *err = OS_ERR_CREATE_ISR;
+        return ((OS_EVENT *)0);
+    }
+    if (prio >= OS_LOWEST_PRIO) { // 注意：通常Mutex优先级不能等于最低优先级
+        *err = OS_PRIO_INVALID;
+        return ((OS_EVENT *)0);
+    }
+    OS_ENTER_CRITICAL();
+    if (OSTCBPrioTbl[prio] != (OS_TCB *)0) { 
+        OS_EXIT_CRITICAL();
+        *err = OS_PRIO_EXIST;  // 报错：优先级已被占用
+        return ((OS_EVENT *)0);
+    }
+    pevent = OSEventFreeList;
+    if (pevent == (OS_EVENT *)0) {
+        OS_EXIT_CRITICAL();
+        *err = OS_ERR_PEVENT_NULL; 
+        return ((OS_EVENT *)0);
+    }
+    OSEventFreeList = (OS_EVENT *)OSEventFreeList->OSEventPtr;
+    OSTCBPrioTbl[prio] = (OS_TCB *)1; 
+    OS_EXIT_CRITICAL();
+    pevent->OSEventType = OS_EVENT_TYPE_MUTEX;
+    
+    // 互斥锁的 Cnt 比较特殊：
+    // 高8位 = PIP (优先级继承优先级)
+    // 低8位 = 0xFF (表示锁是可用的，Available)
+    pevent->OSEventCnt  = (prio << 8) | OS_MUTEX_AVAILABLE; 
+    
+    pevent->OSEventPtr  = (void *)0; // 互斥锁不需要 Ptr 指向别的
+    
+    OS_EventWaitListInit(pevent);    // 清空等待列表
+
+    *err = OS_NO_ERR;
+    return (pevent);
 }
 
 /*
@@ -108,7 +156,74 @@ OS_EVENT  *OSMutexDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 */
 void  OSMutexPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR   cpu_sr;
+    INT8U       pip; //Priority Inheritance Priority
+    INT8U       mprio;//Mutex owner Priority
+    BOOLEAN     rdy;
+    OS_TCB      *ptcb;
+
+    if(OSIntNesting > 0){
+        *err = OS_ERR_PEND_ISR;
+        return;
+    }
+    if(pevent == (OS_EVENT *)0){
+        *err = OS_ERR_PEVENT_NULL;
+        return;
+    }
+    if(pevent->OSEventType != OS_EVENT_TYPE_MUTEX){
+        *err = OS_ERR_EVENT_TYPE;
+        return;
+    }
+
+    OS_ENTER_CRITICAL();
+    if((INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE){
+        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;
+        pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;
+        pevent->OSEventPtr = (void *)OSTCBCur;
+        OS_EXIT_CRITICAL();
+        *err = OS_NO_ERR;
+        return;
+    }
+    pip = (INT8U)(pevent->OSEventCnt >> 8);
+    mprio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);
+    ptcb = (OS_TCB *)(pevent->OSEventPtr);
+    //解决三者堵门问题(优先级A>B>C, C占用cpu, B想抢占C, 但堵了A的门)
+    if((ptcb->OSTCBPrio != pip) && (mprio > OSTCBCur->OSTCBPrio)){
+        if((OSRdyTbl[ptcb->OSTCBY]) & (ptcb->OSTCBBitX) != 0x00){
+            if((OSRdyTbl[ptcb->OSTCBY]) & ~(ptcb->OSTCBBitX) == 0x00){
+                OSRdyGrp &= ~(ptcb->OSTCBBitY);
+            }
+            rdy = TRUE;
+        }
+        else{
+            rdy = FALSE;
+        }
+        ptcb->OSTCBPrio = pip;
+        ptcb->OSTCBY = (ptcb->OSTCBPrio) >> 3;
+        ptcb->OSTCBBitY = OSMapTbl[ptcb->OSTCBY];
+        ptcb->OSTCBX = (ptcb->OSTCBPrio) & 7;
+        ptcb->OSTCBBitX = OSMapTbl[ptcb->OSTCBX];
+        if(rdy == TRUE){
+            OSRdyGrp |= ptcb->OSTCBBitY;
+            OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX; 
+        }
+        OSTCBPrioTbl[pip] = (OS_TCB *)ptcb;
+    }
+    OSTCBCur->OSTCBStat |= OS_STAT_MUTEX;
+    OSTCBCur->OSTCBDly = timeout;
+    OS_EventTaskWait(pevent);//还没完成
+    OS_EXIT_CRITICAL();
+    OS_Sched();
+    OS_ENTER_CRITICAL();
+    if(OSTCBCur->OSTCBStat & OS_STAT_MUTEX){
+        OS_EventTO(pevent);//还没完成
+        OS_EXIT_CRITICAL();
+        *err = OS_TIMEOUT;
+        return;
+    }
+    OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;
+    OS_EXIT_CRITICAL();
+    *err = OS_NO_ERR;
 }
 
 /*

@@ -38,6 +38,47 @@
 OS_MEM  *OSMemCreate (void *addr, INT32U nblks, INT32U blksize, INT8U *err)
 {
     // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    OS_MEM  *pmem;
+    INT8U   *pblk;
+    void    **plink;
+
+    if(addr == (void *)0){
+        *err = OS_MEM_INVALID_ADDR;
+        return ((OS_MEM *)0);
+    }
+    if(nblks < 2){
+        *err = OS_MEM_NO_FREE_BLKS;
+        return ((OS_MEM *)0);
+    }
+    if(blksize < sizeof(void *)){
+        *err = OS_MEM_INVALID_SIZE;
+        return ((OS_MEM *)0);
+    }
+    OS_ENTER_CRITICAL();
+    pmem = OSMemFreeList;
+    if(OSMemFreeList != (OS_MEM *)0){
+        OSMemFreeList = (OS_MEM *)OSMemFreeList->OSMemFreeList;
+    }
+    OS_EXIT_CRITICAL();
+    if(pmem == (OS_MEM *)0){
+        *err = OS_MEM_INVALID_PART;
+        return ((OS_MEM *)0);
+    }
+    plink = (void **)addr;
+    pblk = (INT8U *)addr + blksize;
+    for(INT32U i = 0; i < (nblks - 1); i++){
+        *plink = (void *)pblk;
+        plink = (void **)pblk;
+        pblk = pblk +blksize;
+    }
+    *plink = (void *)0;
+    pmem->OSMemAddr = addr;
+    pmem->OSMemFreeList = addr;
+    pmem->OSMemNFree = nblks;
+    pmem->OSMemBlkSize = blksize;
+    *err = OS_NO_ERR;
+    return(pmem);
 }
 
 /*

@@ -7,15 +7,15 @@
 
 #include "includes.h"
 
-/* --- 堆栈定义 --- */
-#define     TASK_STK_SIZE 512
+/*  堆栈定义  */
+
 OS_STK      StartStk[TASK_STK_SIZE];
 OS_STK      InputStk[TASK_STK_SIZE];    
 OS_STK      WorkStk[TASK_STK_SIZE];     
 OS_STK      DisplayStk[TASK_STK_SIZE];  
 OS_STK      MonitorStk[TASK_STK_SIZE];  
 
-/* --- OS 对象 --- */
+/*  OS 对象  */
 OS_EVENT    *SemBeep;           // 蜂鸣器信号量
 OS_EVENT    *MboxLed;           // LED 控制指令
 OS_EVENT    *DataQueue;         // 数据传输队列
@@ -25,17 +25,17 @@ OS_FLAG_GRP *SysModeFlag;       // 系统模式标志
 OS_MEM      *MemPartition;      // 内存分区
 INT8U       MemStorage[10][64]; // 物理内存：10块，每块64字节
 
-/* --- 标志位定义 --- */
+/*  标志位定义  */
 #define     MODE_NORMAL  (1 << 0)
 #define     MODE_TURBO   (1 << 1)
 
-/* --- 数据结构 --- */
+/*  数据结构  */
 typedef struct {
     INT8U  Type;    // 0:静态消息, 1:动态内存消息
     INT32U Value;
 } DATA_PKT;
 
-/* --- 函数声明 --- */
+/*  函数声明  */
 void Task_Start(void *pdata);
 void Task_Input(void *pdata);
 void Task_Work(void *pdata);
@@ -57,7 +57,7 @@ void main(void)
 
 /*
 *********************************************************************************************************
-* 启动任务 (Prio 2)
+* 开始任务 (Prio 2)
 *********************************************************************************************************
 */
 void Task_Start(void *pdata)
@@ -78,8 +78,7 @@ void Task_Start(void *pdata)
 
     // 3. 打印启动 Log
     OSMutexPend(UartMutex, 0, &err);
-    Uart_Printf("\n[OS] uC/OS-II Started on Mini2440.\n");
-    Uart_Printf("[HW] 4 LEDs, 6 Keys, Buzzer Ready.\n");
+    Uart_Printf("\n uC/OS-II Started on Mini2440. \n");
     OSMutexPost(UartMutex);
 
     // 4. 创建应用任务
@@ -93,7 +92,7 @@ void Task_Start(void *pdata)
 
 /*
 *********************************************************************************************************
-* 输入任务 (Prio 3) - 相当于 ISR 的下半部
+* 输入任务 (Prio 3)
 * 职责：扫描按键 -> 分发 OS 事件
 *********************************************************************************************************
 */
@@ -226,21 +225,21 @@ void Task_Display(void *pdata)
     (void)pdata;
 
     for (;;) {
-        // --- 1. 检查蜂鸣器 (非阻塞 Accept) ---
+        //  1. 检查蜂鸣器 (非阻塞 Accept) 
         if (OSSemAccept(SemBeep) > 0) {
             Beep_Ctrl(1);
             OSTimeDlyHMSM(0,0,0,10); // 响 100ms
             Beep_Ctrl(0);
         }
 
-        // --- 2. 检查 LED 邮箱 (非阻塞 Accept) ---
+        //  2. 检查 LED 邮箱 (非阻塞 Accept) 
         msg = OSMboxAccept(MboxLed);
         if (msg != (void *)0) {
             // 收到翻转指令
             led1_state = !led1_state;
         }
 
-        // --- 3. 根据标志位更新 LED2/3/4 ---
+        //  3. 根据标志位更新 LED2/3/4 
         OS_FLAGS flags = OSFlagQuery(SysModeFlag, &err);
         
         int led_mask = 0;
@@ -286,7 +285,7 @@ void Task_Monitor(void *pdata)
 
         // 3. 打印报表
         OSMutexPend(UartMutex, 0, &err);
-        Uart_Printf("\n--- System Monitor ---\n");
+        Uart_Printf("\n System Monitor \n");
         Uart_Printf("CPU Usage: %d%%\n", OSCPUUsage);
         Uart_Printf("Mem Free : %d blocks\n", mem_data.OSNFree);
         Uart_Printf("Q Msg    : %d waiting\n", q_data.OSNMsgs);

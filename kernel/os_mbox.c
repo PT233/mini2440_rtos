@@ -14,7 +14,7 @@
 
 #include "includes.h"
 
-
+void OS_EventWaitListInit(OS_EVENT *pevent);
 
 /*
 *********************************************************************************************************
@@ -60,7 +60,25 @@ void  *OSMboxAccept (OS_EVENT *pevent)
 */
 OS_EVENT  *OSMboxCreate (void *msg)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    OS_EVENT *pevent;
+
+    if(OSIntNesting > 0){
+        return((OS_EVENT *)0);
+    }
+    OS_ENTER_CRITICAL();
+    pevent = OSEventFreeList;
+    if(OSEventFreeList != (OS_EVENT *)0){
+        OSEventFreeList = (OS_EVENT *)OSEventFreeList->OSEventPtr;
+    }
+    OS_EXIT_CRITICAL();
+    if(pevent != (OS_EVENT *)0){
+        pevent->OSEventType = OS_EVENT_TYPE_MBOX;
+        pevent->OSEventCnt = 0;    // 计数器没用，清零！
+        pevent->OSEventPtr = msg;  // 把信件的地址存入指针槽
+        OS_EventWaitListInit(pevent);
+    }
+    return(pevent);
 }
 
 /*

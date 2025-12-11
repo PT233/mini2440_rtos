@@ -56,8 +56,25 @@ INT16U  OSSemAccept (OS_EVENT *pevent)
 */
 OS_EVENT  *OSSemCreate (INT16U cnt)
 {
-    // 在此输入代码
-    
+    OS_CPU_SR cpu_sr;
+    OS_EVENT  *pevent;
+    //如果在中断中无法关中断
+    if(OSIntNesting > 0){
+        return((OS_EVENT *)0);
+    }
+    OS_ENTER_CRITICAL();
+    pevent = OSEventFreeList;                                     //把 OSEventFreeList 指向的地址（节点A）保存到pevent中
+    if(OSEventFreeList != (OS_EVENT *)0){
+        OSEventFreeList = (OS_EVENT *)OSEventFreeList->OSEventPtr;//把 OSEventFreeList 更新为节点A指向的下一个节点（节点B）
+    }
+    OS_EXIT_CRITICAL();
+    if(pevent != (OS_EVENT *)0){
+        pevent->OSEventType = OS_EVENT_TYPE_SEM;
+        pevent->OSEventCnt = cnt;       // 存入计数值（比如 5，表示有5个资源）
+        pevent->OSEventPtr = (void *)0; // 指针没用，必须清空！
+        OS_EventWaitListInit(pevent);//pevent->OSEventGrp\pevent->OSEventTbl在这里面初始化
+    }
+    return (pevent);
 }
 
 /*

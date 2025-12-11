@@ -6,5 +6,6 @@
 #include "os_uart.h"
 #include "os_timer.h"
 
+#define     TASK_STK_SIZE 512
 
 #endif // __INCLUDES_H__

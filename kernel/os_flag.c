@@ -57,6 +57,28 @@ OS_FLAGS  OSFlagAccept (OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U wait_type, INT8
 OS_FLAG_GRP  *OSFlagCreate (OS_FLAGS flags, INT8U *err)
 {
     // 在此输入代码
+    OS_CPU_SR    cpu_sr;
+    OS_FLAG_GRP  *pflag;
+
+    if(OSIntNesting > 0){
+        *err = OS_ERR_CREATE_ISR;
+        return ((OS_FLAG_GRP *)0);
+    }
+    OS_ENTER_CRITICAL();
+    pflag = OSFlagFreeList;
+    if(pflag != (OS_FLAG_GRP *)0){
+        OSFlagFreeList = (OS_FLAG_GRP *)OSFlagFreeList->OSFlagWaitList;
+        OS_EXIT_CRITICAL();
+        pflag->OSFlagType = OS_EVENT_TYPE_FLAG;
+        pflag->OSFlagFlags = flags;
+        pflag->OSFlagWaitList = (void *)0;
+        *err = OS_NO_ERR;
+    }
+    else{
+        OS_EXIT_CRITICAL();
+        *err =OS_FLAG_GRP_DEPLETED;
+    }
+    return(pflag);
 }
 
 /*

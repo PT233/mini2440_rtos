@@ -53,7 +53,7 @@ INT8U OSTaskChangePrio(INT8U oldprio, INT8U newprio){
     ptcb->OSTCBY = newprio >> 3;
     ptcb->OSTCBX = newprio & 7;
     ptcb->OSTCBBitY = OSMapTbl[ptcb->OSTCBY];
-    ptcb->OSTCBBitX = OSUnMapTbl[ptcb->OSTCBX];
+    ptcb->OSTCBBitX = OSMapTbl[ptcb->OSTCBX];
 
 
     if(ptcb->OSTCBEventPtr != 0){
@@ -96,14 +96,14 @@ INT8U OSTaskCreate(int (*task)(int* pdata), void *pata1, void *ptos, INT8U prio)
     if(OSTCBPrioTbl[prio] == (OS_TCB *)0){
         OSTCBPrioTbl[prio] = (OS_TCB *)1;
         OS_EXIT_CRITICAL();
-        psp = (OS_STK *)OSTaskStkInit(task, pata1, ptos, 0);//还没完成
-        err = OS_TCBInit(prio, psp, (OS_STK *)0,0,0,(void *)0,0);//还没完成
+        psp = (OS_STK *)OSTaskStkInit(task, pata1, ptos, 0);
+        err = OS_TCBInit(prio, psp, (OS_STK *)0,0,0,(void *)0,0);
         if(err == OS_NO_ERR){
             OS_ENTER_CRITICAL();
             OSTaskCtr++;
             OS_EXIT_CRITICAL();
             if(OSRunning == TRUE){
-                OS_Sched();//还没完成
+                OS_Sched();
             }
         }
         else{

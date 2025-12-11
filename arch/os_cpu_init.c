@@ -39,9 +39,31 @@
 * - 确保堆栈指针对齐（通常 8 字节对齐以支持 AAPCS）。
 *********************************************************************************************************
 */
-OS_STK *OSTaskStkInit (void (*task)(void *pd), void *pdata, OS_STK *ptos, INT16U opt)
+OS_STK *OSTaskStkInit (void (*task)(void *pdata), void *pdata1, OS_STK *ptos, INT16U opt)
 {
-    // 在此输入代码
+    OS_STK * stk;
+
+    stk = ptos;                         /* Load stack pointer */
+
+    /* Registers: PC, LR, R12-R0, CPSR */
+    *stk = (OS_STK)task;              /* PC */
+    *(--stk) = (OS_STK)task;          /* LR */
+    *(--stk) = 0;                       /* R12 */
+    *(--stk) = 0;                       /* R11 */
+    *(--stk) = 0;                       /* R10 */
+    *(--stk) = 0;                       /* R9 */
+    *(--stk) = 0;                       /* R8 */
+    *(--stk) = 0;                       /* R7 */
+    *(--stk) = 0;                       /* R6 */
+    *(--stk) = 0;                       /* R5 */
+    *(--stk) = 0;                       /* R4 */
+    *(--stk) = 0;                       /* R3 */
+    *(--stk) = 0;                       /* R2 */
+    *(--stk) = 0;                       /* R1 */
+    *(--stk) = (OS_STK )pdata1;       /* R0 */
+    *(--stk) = (OS_STK)0x00000013;    /* CPSR (SVC mode, Enable IRQ/FIQ) */
+
+    return (stk);   
 }
 
 /*

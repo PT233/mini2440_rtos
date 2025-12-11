@@ -34,7 +34,16 @@
 */
 void  OSTimeDly (INT16U ticks)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    if(ticks > 0){
+        OS_ENTER_CRITICAL();
+        if((OSRdyTbl[OSTCBCur->OSTCBY] &= ~(OSTCBCur->OSTCBBitX)) == 0){
+            OSRdyGrp &= ~(OSTCBCur->OSTCBBitY);
+        }
+        OSTCBCur->OSTCBDly = ticks;
+        OS_EXIT_CRITICAL();
+        OS_Sched();
+    }
 }
 
 /*

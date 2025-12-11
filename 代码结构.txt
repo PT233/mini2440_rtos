@@ -1,8 +1,8 @@
 main
-	OSInit();✅
-        OSInitHookBegin();
+	OSInit();
+        OSInitHookBegin();✅
             {未定义}
-        OS_InitMisc();    
+        OS_InitMisc();✅    
             {
             OSTime        = 0L;                                          /* Clear the 32-bit system clock            */
             OSIntNesting  = 0;                                           /* Clear the interrupt nesting counter      */
@@ -15,7 +15,7 @@ main
             OSIdleCtrMax  = 0L;
             OSStatRdy     = FALSE;
             }
-        OS_InitRdyList(); 
+        OS_InitRdyList();✅ 
             {
             INT16U   i;
             INT8U   *prdytbl;
@@ -29,7 +29,7 @@ main
             OSTCBHighRdy  = (OS_TCB *)0;                                 
             OSTCBCur      = (OS_TCB *)0;
             }
-        OS_InitTCBList();   
+        OS_InitTCBList();✅   
             {    
             INT8U    i;
             OS_TCB  *ptcb1;
@@ -48,7 +48,7 @@ main
             ptcb1->OSTCBNext = (OS_TCB *)0;                              /* Last OS_TCB                              */
             OSTCBFreeList    = &OSTCBTbl[0];
             }
-        OS_InitEventList();   
+        OS_InitEventList();✅   
             {
                 INT16U     i;
                 OS_EVENT  *pevent1;
@@ -65,7 +65,7 @@ main
                 pevent1->OSEventPtr  = (OS_EVENT *)0;
                 OSEventFreeList      = &OSEventTbl[0];
             }
-        OS_FlagInit();   {
+        OS_FlagInit();✅   {
             #if OS_MAX_FLAGS == 1
                 OSFlagFreeList                 = (OS_FLAG_GRP *)&OSFlagTbl[0];  /* Only ONE event flag group!      */
                 OSFlagFreeList->OSFlagType     = OS_EVENT_TYPE_UNUSED;
@@ -76,7 +76,6 @@ main
                 INT8U        i;
                 OS_FLAG_GRP *pgrp1;
                 OS_FLAG_GRP *pgrp2;
-
 
                 pgrp1 = &OSFlagTbl[0];
                 pgrp2 = &OSFlagTbl[1];
@@ -90,7 +89,7 @@ main
                 OSFlagFreeList        = (OS_FLAG_GRP *)&OSFlagTbl[0];
             #endif
             }
-        OS_MemInit();    {
+        OS_MemInit();✅    {
             #if OS_MAX_MEM_PART == 1
                 OSMemFreeList                = (OS_MEM *)&OSMemTbl[0]; /* Point to beginning of free list          */
                 OSMemFreeList->OSMemFreeList = (void *)0;              /* Initialize last node                     */
@@ -123,7 +122,7 @@ main
                 OSMemFreeList       = (OS_MEM *)&OSMemTbl[0];     /* Point to beginning of free list               */
             #endif
             }
-        OS_QInit();      {
+        OS_QInit();✅      {
             #if OS_MAX_QS == 1
                 OSQFreeList         = &OSQTbl[0];            /* Only ONE queue!                                    */
                 OSQFreeList->OSQPtr = (OS_Q *)0;
@@ -143,11 +142,11 @@ main
                 OSQFreeList = &OSQTbl[0];
             #endif
             }    
-        OS_InitTaskIdle();    {
+        OS_InitTaskIdle();✅    {
                 (void)OSTaskCreate(OS_TaskIdle,
                                 (void *)0,
                                 &OSTaskIdleStk[OS_TASK_IDLE_STK_SIZE - 1],
-                                OS_IDLE_PRIO);
+                                OS_IDLE_PRIO);✅
                     {
                         OS_CPU_SR  cpu_sr;
                         OS_STK   *psp;
@@ -160,7 +159,7 @@ main
                             OSTCBPrioTbl[prio] = (OS_TCB *)1;    /* Reserve the priority to prevent others from doing ...  */
                                                                 /* ... the same thing until task is created.              */
                             OS_EXIT_CRITICAL();
-                            psp = (OS_STK *)OSTaskStkInit(task, pdata1, ptos, 0);    
+                            psp = (OS_STK *)OSTaskStkInit(task, pdata1, ptos, 0); ✅   
                                 {
                                 OS_STK * stk;
 
@@ -243,7 +242,7 @@ main
                                 OSTaskCtr++;                                        /* Increment the #tasks counter        */
                                 OS_EXIT_CRITICAL();
                                 if (OSRunning == TRUE) {         /* Find highest priority task if multitasking has started */
-                                    OS_Sched();
+                                    OS_Sched();✅
                                         {
                                             OS_CPU_SR  cpu_sr;  
                                             INT8U      y;
@@ -273,14 +272,14 @@ main
                         }
                 }
             }
-        OS_InitTaskStat();    {
+        OS_InitTaskStat();✅    {
             (void)OSTaskCreate(OS_TaskStat,
                        (void *)0,                                      /* No args passed to OS_TaskStat()*/
                        &OSTaskStatStk[OS_TASK_STAT_STK_SIZE - 1],      /* Set Top-Of-Stack               */
                        OS_STAT_PRIO);}
-        OSInitHookEnd();          
+        OSInitHookEnd();✅          
             {}
-    BSP_Init();
+    BSP_Init();✅
         Uart_Init(50000000,115200);// PCLK=50000000, Baud=115200
         Beep_Init();
         LED_Init();
@@ -292,13 +291,11 @@ main
             INT8U err;
             (void)pdata;
             // 1. 创建所有 OS 对象
-            SemBeep      = OSSemCreate(0);
+            SemBeep      = OSSemCreate(0);✅
                     #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
                         OS_CPU_SR  cpu_sr;
                     #endif    
                         OS_EVENT  *pevent;
-
-
                         if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
                             return ((OS_EVENT *)0);                            /* ... can't CREATE from an ISR             */
                         }
@@ -312,10 +309,47 @@ main
                             pevent->OSEventType = OS_EVENT_TYPE_SEM;
                             pevent->OSEventCnt  = cnt;                         /* Set semaphore value                      */
                             pevent->OSEventPtr  = (void *)0;                   /* Unlink from ECB free list                */
-                            OS_EventWaitListInit(pevent);                      /* Initialize to 'nobody waiting' on sem.   */
+                            OS_EventWaitListInit(pevent);✅                      /* Initialize to 'nobody waiting' on sem.   */
+                                {
+                                    INT8U  *ptbl;
+                                    pevent->OSEventGrp = 0x00;                   /* No task waiting on event                           */
+                                    ptbl               = &pevent->OSEventTbl[0];
+
+                                #if OS_EVENT_TBL_SIZE > 0
+                                    *ptbl++            = 0x00;
+                                #endif
+
+                                #if OS_EVENT_TBL_SIZE > 1
+                                    *ptbl++            = 0x00;
+                                #endif
+
+                                #if OS_EVENT_TBL_SIZE > 2
+                                    *ptbl++            = 0x00;
+                                #endif
+
+                                #if OS_EVENT_TBL_SIZE > 3
+                                    *ptbl++            = 0x00;
+                                #endif
+
+                                #if OS_EVENT_TBL_SIZE > 4
+                                    *ptbl++            = 0x00;
+                                #endif
+
+                                #if OS_EVENT_TBL_SIZE > 5
+                                    *ptbl++            = 0x00;
+                                #endif
+
+                                #if OS_EVENT_TBL_SIZE > 6
+                                    *ptbl++            = 0x00;
+                                #endif
+
+                                #if OS_EVENT_TBL_SIZE > 7
+                                    *ptbl              = 0x00;
+                                #endif
+                                }                       
                         }
                         return (pevent);    
-            MboxLed      = OSMboxCreate((void *)0); 
+            MboxLed      = OSMboxCreate((void *)0)✅; 
                 {
                 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                     OS_CPU_SR  cpu_sr;
@@ -336,11 +370,11 @@ main
                         pevent->OSEventType = OS_EVENT_TYPE_MBOX;
                         pevent->OSEventCnt  = 0;
                         pevent->OSEventPtr  = msg;               /* Deposit message in event control block             */
-                        OS_EventWaitListInit(pevent);
+                        OS_EventWaitListInit(pevent);✅
                     }
                     return (pevent);                             /* Return pointer to event control block              */
                 }       
-            DataQueue    = OSQCreate(&QMsgTbl[0], 10); 
+            DataQueue    = OSQCreate(&QMsgTbl[0], 10);✅ 
                 {
                 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                     OS_CPU_SR  cpu_sr;
@@ -373,7 +407,7 @@ main
                             pevent->OSEventType = OS_EVENT_TYPE_Q;
                             pevent->OSEventCnt  = 0;
                             pevent->OSEventPtr  = pq;
-                            OS_EventWaitListInit(pevent);                 /*      Initalize the wait list              */
+                            OS_EventWaitListInit(pevent); ✅                /*      Initalize the wait list              */
                         } else {
                             pevent->OSEventPtr = (void *)OSEventFreeList; /* No,  Return event control block on error  */
                             OSEventFreeList    = pevent;
@@ -383,13 +417,12 @@ main
                     }
                     return (pevent);
                 }     
-            UartMutex    = OSMutexCreate(1, &err);
+            UartMutex    = OSMutexCreate(1, &err);✅
                 {           
                 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
                     OS_CPU_SR  cpu_sr;
                 #endif    
                     OS_EVENT  *pevent;
-
 
                     if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
                         *err = OS_ERR_CREATE_ISR;                          /* ... can't CREATE mutex from an ISR       */
@@ -420,11 +453,11 @@ main
                     pevent->OSEventType = OS_EVENT_TYPE_MUTEX;
                     pevent->OSEventCnt  = (prio << 8) | OS_MUTEX_AVAILABLE;/* Resource is available                    */
                     pevent->OSEventPtr  = (void *)0;                       /* No task owning the mutex                 */
-                    OS_EventWaitListInit(pevent);
+                    OS_EventWaitListInit(pevent);✅
                     *err                = OS_NO_ERR;
                     return (pevent);
                 }             
-            SysModeFlag  = OSFlagCreate(MODE_NORMAL, &err); 
+            SysModeFlag  = OSFlagCreate(MODE_NORMAL, &err); ✅
                 {
                 #if OS_CRITICAL_METHOD == 3                         /* Allocate storage for CPU status register        */
                     OS_CPU_SR    cpu_sr;
@@ -452,7 +485,7 @@ main
                     }
                     return (pgrp);                                  /* Return pointer to event flag group              */
                 }
-            MemPartition = OSMemCreate(&MemStorage[0][0], 10, 64, &err); 
+            MemPartition = OSMemCreate(&MemStorage[0][0], 10, 64, &err);✅ 
                 {
                 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
                     OS_CPU_SR  cpu_sr;
@@ -504,10 +537,10 @@ main
                     return (pmem);
                 }
             // 2. 初始化统计任务
-            OSStatInit();
+            OSStatInit()✅;
                 {
                     OS_CPU_SR  cpu_sr;   
-                    OSTimeDly(2);
+                    OSTimeDly(2);✅
                         {
                             OS_CPU_SR  cpu_sr;
                             if (ticks > 0) {                                                      /* 0 means no delay!         */
@@ -517,7 +550,7 @@ main
                                 }
                                 OSTCBCur->OSTCBDly = ticks;                                       /* Load ticks in TCB         */
                                 OS_EXIT_CRITICAL();
-                                OS_Sched();                                                       /* Find next task to run!    */
+                                OS_Sched();✅                                                       /* Find next task to run!    */
                             }
                         }
                     OS_ENTER_CRITICAL();
@@ -530,7 +563,7 @@ main
                     OS_EXIT_CRITICAL();
                 }
             // 3. 打印启动 Log
-            OSMutexPend(UartMutex, 0, &err);
+            OSMutexPend(UartMutex, 0, &err);✅
                 {
                 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
                     OS_CPU_SR  cpu_sr;
@@ -591,12 +624,27 @@ main
                     }
                     OSTCBCur->OSTCBStat |= OS_STAT_MUTEX;             /* Mutex not available, pend current task        */
                     OSTCBCur->OSTCBDly   = timeout;                   /* Store timeout in current task's TCB           */
-                    OS_EventTaskWait(pevent);                         /* Suspend task until event or timeout occurs    */
+                    OS_EventTaskWait(pevent);✅
+                        {
+                            OSTCBCur->OSTCBEventPtr = pevent;            /* Store pointer to event control block in TCB        */
+                            if ((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00) {   /* Task no longer ready      */
+                                OSRdyGrp &= ~OSTCBCur->OSTCBBitY;        /* Clear event grp bit if this was only task pending  */
+                            }
+                            pevent->OSEventTbl[OSTCBCur->OSTCBY] |= OSTCBCur->OSTCBBitX;          /* Put task in waiting list  */
+                            pevent->OSEventGrp                   |= OSTCBCur->OSTCBBitY;
+                        }
                     OS_EXIT_CRITICAL();
                     OS_Sched();                                        /* Find next highest priority task ready         */
                     OS_ENTER_CRITICAL();
                     if (OSTCBCur->OSTCBStat & OS_STAT_MUTEX) {        /* Must have timed out if still waiting for event*/
-                        OS_EventTO(pevent);
+                        OS_EventTO(pevent);✅
+                            {
+                                if ((pevent->OSEventTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00) {
+                                    pevent->OSEventGrp &= ~OSTCBCur->OSTCBBitY;
+                                }
+                                OSTCBCur->OSTCBStat     = OS_STAT_RDY;       /* Set status to ready                                */
+                                OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;     /* No longer waiting for event                        */
+                            }
                         OS_EXIT_CRITICAL();
                         *err = OS_TIMEOUT;                            /* Indicate that we didn't get mutex within TO   */
                         return;
@@ -606,7 +654,6 @@ main
                     *err = OS_NO_ERR;
                 }
             Uart_Printf("\n[OS] uC/OS-II Started on Mini2440.\n");
-            Uart_Printf("[HW] 4 LEDs, 6 Keys, Buzzer Ready.\n");
             OSMutexPost(UartMutex);
                 {
                 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
@@ -1718,7 +1765,7 @@ main
                 OSMutexPost(UartMutex);
             }
         }}
-    OSStart();{
+    OSStart();✅{
         INT8U y;
         INT8U x;
 

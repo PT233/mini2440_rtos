@@ -25,22 +25,22 @@
 INT8U  const  OSMapTbl[]   = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
 INT8U  const  OSUnMapTbl[] = {
-    0, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x00 to 0x0F                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x10 to 0x1F                             */
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x20 to 0x2F                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x30 to 0x3F                             */
-    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x40 to 0x4F                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x50 to 0x5F                             */
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x60 to 0x6F                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x70 to 0x7F                             */
-    7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x80 to 0x8F                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x90 to 0x9F                             */
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xA0 to 0xAF                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xB0 to 0xBF                             */
-    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xC0 to 0xCF                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xD0 to 0xDF                             */
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xE0 to 0xEF                             */
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0        /* 0xF0 to 0xFF                             */
+    0, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x00 to 0x0F       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x10 to 0x1F       */
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x20 to 0x2F       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x30 to 0x3F       */
+    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x40 to 0x4F       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x50 to 0x5F       */
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x60 to 0x6F       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x70 to 0x7F       */
+    7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x80 to 0x8F       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x90 to 0x9F       */
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xA0 to 0xAF       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xB0 to 0xBF       */
+    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xC0 to 0xCF       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xD0 to 0xDF       */
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0xE0 to 0xEF       */
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0        /* 0xF0 to 0xFF       */
 };
 
 /*
@@ -220,6 +220,16 @@ void  OSSchedUnlock (void)
 void  OSStart (void)
 {
     // 在此输入代码
+    INT8U x, y;
+    if(OSRunning == FALSE){
+        y = OSUnMapTbl[OSRdyGrp];
+        x = OSUnMapTbl[OSRdyTbl[y]];
+        OSPrioHighRdy = (INT8U)((y << 3) + x);
+        OSPrioCur = OSPrioHighRdy;
+        OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
+        OSTCBCur = OSTCBHighRdy;
+        OSStartHighRdy(); //由os_context_switch.s定义
+    }
 }
 
 /*
@@ -243,7 +253,16 @@ void  OSStart (void)
 */
 void  OSStatInit (void)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;   
+    OSTimeDly(2);
+    OS_ENTER_CRITICAL();
+    OSIdleCtr = 0L;                          
+    OS_EXIT_CRITICAL();
+    OSTimeDly(OS_TICKS_PER_SEC);
+    OS_ENTER_CRITICAL();
+    OSIdleCtrMax = OSIdleCtr; 
+    OSStatRdy = TRUE;
+    OS_EXIT_CRITICAL();
 }
 
 /*
@@ -353,7 +372,13 @@ INT8U  OS_EventTaskRdy (OS_EVENT *pevent, void *msg, INT8U msk)
 */
 void  OS_EventTaskWait (OS_EVENT *pevent)
 {
-    // 在此输入代码
+    OSTCBCur->OSTCBEventPtr = pevent;
+
+    if((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00){
+        OSRdyGrp &= ~OSTCBCur->OSTCBBitY;
+    }
+    pevent->OSEventTbl[OSTCBCur->OSTCBY] |= OSTCBCur->OSTCBBitX;
+    pevent->OSEventGrp |= OSTCBCur->OSTCBBitY;
 }
 
 /*
@@ -376,6 +401,11 @@ void  OS_EventTaskWait (OS_EVENT *pevent)
 void  OS_EventTO (OS_EVENT *pevent)
 {
     // 在此输入代码
+    if((pevent->OSEventTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0x00){
+        pevent->OSEventGrp &= ~OSTCBCur->OSTCBBitY; 
+    }
+    OSTCBCur->OSTCBStat = OS_STAT_RDY;
+    OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;
 }
 
 /*
@@ -397,6 +427,41 @@ void  OS_EventTO (OS_EVENT *pevent)
 void  OS_EventWaitListInit (OS_EVENT *pevent)
 {
     // 在此输入代码
+    INT8U  *ptbl;
+    pevent->OSEventGrp = 0x00;
+    ptbl = &pevent->OSEventTbl[0];
+
+    #if OS_EVENT_TBL_SIZE > 0
+        *ptbl++ = 0x00;
+    #endif
+
+    #if OS_EVENT_TBL_SIZE > 1
+        *ptbl++ = 0x00;
+    #endif
+
+    #if OS_EVENT_TBL_SIZE > 2
+        *ptbl++ = 0x00;
+    #endif
+
+    #if OS_EVENT_TBL_SIZE > 3
+        *ptbl++ = 0x00;
+    #endif
+
+    #if OS_EVENT_TBL_SIZE > 4
+        *ptbl++ = 0x00;
+    #endif
+
+    #if OS_EVENT_TBL_SIZE > 5
+        *ptbl++ = 0x00;
+    #endif
+
+    #if OS_EVENT_TBL_SIZE > 6
+        *ptbl++ = 0x00;
+    #endif
+
+    #if OS_EVENT_TBL_SIZE > 7
+        *ptbl   = 0x00;
+    #endif
 }
 
 /*
@@ -563,7 +628,7 @@ static  void  OS_InitTCBList (void)
     OS_TCB      *ptcb1, *ptcb2;
 
     OSTCBList = (OS_TCB *)0;
-    for (INT16U i = 0; i < (OS_LOWEST_PRIO + 1); i++) {                 /* Clear the priority table                 */
+    for (INT16U i = 0; i < (OS_LOWEST_PRIO + 1); i++) {      /* Clear the priority table      */
         OSTCBPrioTbl[i] = (OS_TCB *)0;
     }
     ptcb1 = &OSTCBPrioTbl[0];
@@ -603,6 +668,20 @@ static  void  OS_InitTCBList (void)
 void  OS_Sched (void)
 {
     // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    INT8U     y;
+
+    OS_ENTER_CRITICAL();
+    if((OSIntNesting == 0) && (OSLockNesting == 0)){
+        y = OSUnMapTbl[OSRdyGrp];
+        OSPrioHighRdy = (INT8U)((y << 3) + OSUnMapTbl[OSRdyTbl[y]]);
+        if(OSPrioHighRdy != OSPrioCur){
+            OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
+            OSCtxSwCtr++;
+            OS_TASK_SW();
+        }
+    }
+    OS_EXIT_CRITICAL();
 }
 
 /*
@@ -669,16 +748,54 @@ void  OS_TaskStat (void *p_data)
 * - Mini2440 堆栈是向下增长的，确保 OSTCBStkPtr 指向堆栈顶端（高地址）。
 *********************************************************************************************************
 */
-INT8U  OS_TCBInit ( INT8U prio,
-                    OS_STK *ptos, 
-                    OS_STK *pbos, 
-                    INT16U id, 
-                    INT32U stk_size, 
-                    void *pext, 
-                    INT16U opt)
+
+INT8U  OS_TCBInit (INT8U  prio, OS_STK  * ptos, 
+				   OS_STK * pbos, INT16U  id, 
+				   INT32U  stk_size, void * pext, INT16U  opt)
 {
-    // 在此输入代码
-    OS_CPU_SR   cpu_sr;
-    OS_TCB      *ptcb;
-    
+    OS_CPU_SR  cpu_sr; 
+    OS_TCB   *ptcb;
+
+    OS_ENTER_CRITICAL();
+    ptcb = OSTCBFreeList;                                  
+    if (ptcb != (OS_TCB *)0) {
+        OSTCBFreeList        = ptcb->OSTCBNext;            
+        OS_EXIT_CRITICAL();
+        ptcb->OSTCBStkPtr    = (OS_STK *)ptos;            
+        ptcb->OSTCBPrio      = (INT8U)prio;                
+        ptcb->OSTCBStat      = OS_STAT_RDY;                
+        ptcb->OSTCBDly       = 0;                          
+
+        ptcb->OSTCBDelReq    = OS_NO_ERR;
+
+        ptcb->OSTCBY         = prio >> 3;                  
+        ptcb->OSTCBBitY      = OSMapTbl[ptcb->OSTCBY];
+        ptcb->OSTCBX         = prio & 0x07;
+        ptcb->OSTCBBitX      = OSMapTbl[ptcb->OSTCBX];
+
+        ptcb->OSTCBEventPtr  = (OS_EVENT *)0;            
+
+        ptcb->OSTCBFlagNode  = (OS_FLAG_NODE *)0;          
+
+        ptcb->OSTCBMsg       = (void *)0;                  
+
+        OSTCBInitHook(ptcb);
+
+        OSTaskCreateHook(ptcb);                            
+        
+        OS_ENTER_CRITICAL();
+        OSTCBPrioTbl[prio] = ptcb;
+        ptcb->OSTCBNext    = OSTCBList;                    
+        ptcb->OSTCBPrev    = (OS_TCB *)0;
+        if (OSTCBList != (OS_TCB *)0) {
+            OSTCBList->OSTCBPrev = ptcb;
+        }
+        OSTCBList               = ptcb;
+        OSRdyGrp               |= ptcb->OSTCBBitY;         
+        OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+        OS_EXIT_CRITICAL();
+        return (OS_NO_ERR);
+    }
+    OS_EXIT_CRITICAL();
+    return (OS_NO_MORE_TCB);
 }

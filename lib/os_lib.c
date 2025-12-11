@@ -16,8 +16,7 @@
 */
 void *memset(void *s, int c, unsigned int count)
 {
-    char *xs = (char *)s;
-    
+    char *xs = (char *)s; 
     while (count--) {
         *xs++ = c;
     }

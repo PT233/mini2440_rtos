@@ -58,6 +58,46 @@ void  *OSQAccept (OS_EVENT *pevent)
 OS_EVENT  *OSQCreate (void **start, INT16U size)
 {
     // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    OS_EVENT  *pevent;
+    OS_Q      *pq;
+
+    if(OSIntNesting > 0){
+        return ((OS_EVENT *)0);
+    }
+    OS_ENTER_CRITICAL();
+    pevent = OSEventFreeList;
+    if(OSEventFreeList != (OS_EVENT *)0){
+        OSEventFreeList = (OS_EVENT *)OSEventFreeList->OSEventPtr;
+    }
+    OS_EXIT_CRITICAL();
+
+    if(pevent != (OS_EVENT *)0){
+        OS_ENTER_CRITICAL();
+        pq = OSQFreeList;
+        if(pq != (OS_Q *)0){
+            OSQFreeList = (OS_Q *)OSQFreeList->OSQPtr;
+            OS_EXIT_CRITICAL();
+            pq->OSQStart = start;
+            pq->OSQEnd = &start[size];
+            pq->OSQIn = start;
+            pq->OSQOut = start;
+            pq->OSQSize = size;
+            pq->OSQEntries = 0;
+
+            pevent->OSEventType = OS_EVENT_TYPE_Q;
+            pevent->OSEventCnt = 0;
+            pevent->OSEventPtr = pq;//二重指针
+            OS_EventWaitListInit(pevent);
+        }
+        else{
+            pevent->OSEventPtr = (void *)OSEventFreeList;
+            OSEventFreeList = pevent;
+            OS_EXIT_CRITICAL();
+            pevent = (OS_EVENT *)0;
+        }
+    }
+    return (pevent);
 }
 
 /*
