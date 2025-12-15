@@ -1,0 +1,14 @@
+; *************************************************************
+; *** Scatter-Loading Description File for S3C2440 ***
+; *************************************************************
+
+LR_ROM1 0x00000000 0x00200000  {    ; load region (2MB)
+  ER_ROM1 0x00000000 0x00200000  {  ; load address = execution address
+   *.o (RESET, +First)
+   *(InRoot$$Sections)
+   .ANY (+RO)
+  }
+  RW_RAM1 0x40000000 0x00001000  {  ; RW data (4KB Internal SRAM)
+   .ANY (+RW +ZI)
+  }
+}
