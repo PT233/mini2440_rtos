@@ -1,6 +1,7 @@
 #include "2440addr.h"
 #include "os_cpu.h"
 #include "os_uart.h"
+#include "os_timer.h"
 
 // 1.蜂鸣器控制：1响，0停
 void Beep_Ctrl(int on)
@@ -14,12 +15,11 @@ void Beep_Init(void){
     rGPBCON |=  (1<<0);
     Beep_Ctrl(0);
 }
-// 2.LED 控制：mask 的 bit0-3 对应 LED1-4
-// Mini2440 LED 是低电平点亮
+// 2.LED 控制：mask 的 bit0-3 对应 LED1-4，低电平点亮
 void LED_Set(int mask)
 {
     INT32U val = rGPBDAT;
-    val |= (0xF << 5); // 先全部关 (置1)
+    val |= (0xF << 5); // 先全部关
     
     // 如果 bit0 是 1 (亮)，则 GPB5 置 0
     if (mask & 1) {val &= ~(1<<5);}

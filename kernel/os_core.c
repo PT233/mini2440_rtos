@@ -1,8 +1,8 @@
 #include "includes.h"
 
-const INT8U OSMapTbl[]   = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+INT8U OSMapTbl[]   = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
-const INT8U OSUnMapTbl[] = {
+INT8U OSUnMapTbl[] = {
     0, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x00 to 0x0F */
     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x10 to 0x1F */
     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,       /* 0x20 to 0x2F */
@@ -30,6 +30,111 @@ static  void  OS_InitTaskStat(void);
 static  void  OS_InitTCBList(void);
 
 
+/*
+*******************************************************************************
+*                       OS_InitMisc()
+*
+* Description: Initialize miscellaneous variables
+*
+* Arguments  : none
+*
+* Returns    : none
+*******************************************************************************
+*/
+static void OS_InitMisc(void)
+{
+    OSTime        = 0L;                     /* Clear system clock                    */
+    OSIntNesting  = 0;                      /* Clear interrupt nesting counter       */
+    OSLockNesting = 0;                      /* Clear scheduling lock counter         */
+    OSTaskCtr     = 0;                      /* Clear task counter                    */
+    OSRunning     = FALSE;                  /* Kernel not started                    */
+    OSCtxSwCtr    = 0;                      /* Clear context switch counter          */
+    OSIdleCtr     = 0L;                     /* Clear idle counter                    */
+    OSIdleCtrRun  = 0L;                     /* Clear run idle counter                */
+    OSIdleCtrMax  = 0L;                     /* Clear max idle counter                */
+    OSStatRdy     = FALSE;                  /* Statistics task not ready             */
+    OSCPUUsage    = 0;                      /* Clear CPU usage                       */
+}
+
+/*
+*******************************************************************************
+*                       OS_InitRdyList()
+*
+* Description: Initialize the ready list
+*
+* Arguments  : none
+*
+* Returns    : none
+*******************************************************************************
+*/
+static void OS_InitRdyList(void)
+{
+    INT16U i;
+    INT8U *prdytbl;
+
+    OSRdyGrp  = 0x00;                       /* Clear ready list group                */
+    prdytbl   = &OSRdyTbl[0];
+    for (i = 0; i < OS_RDY_TBL_SIZE; i++) {
+        *prdytbl++ = 0x00;                  /* Clear ready list table                */
+    }
+    OSPrioCur     = 0;                      /* Set current priority to lowest        */
+    OSPrioHighRdy = 0;                      /* Set highest ready priority            */
+    OSTCBHighRdy  = (OS_TCB *)0;            /* No task ready yet                     */
+    OSTCBCur      = (OS_TCB *)0;            /* No current task yet                   */
+}
+
+/*
+*******************************************************************************
+*                       OS_InitEventList()
+*
+* Description: Initialize event control blocks
+*
+* Arguments  : none
+*
+* Returns    : none
+*******************************************************************************
+*/
+static void OS_InitEventList(void)
+{
+    INT16U i;
+    OS_EVENT *pevent;
+    OS_EVENT *pevent2;
+
+    /* Initialize event free list */
+    pevent = &OSEventTbl[0];
+    pevent2 = &OSEventTbl[1];
+    for (i = 0; i < OS_MAX_EVENTS - 1; i++) {
+        pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+        pevent->OSEventPtr = (void *)pevent2;
+        pevent++;
+        pevent2++;
+    }
+    pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+    pevent->OSEventPtr = (void *)0;
+    OSEventFreeList = &OSEventTbl[0];
+
+    /* Initialize flag free list */
+    OS_FlagInit();
+}
+
+/*
+*******************************************************************************
+*                       OS_InitTaskIdle()
+*
+* Description: Create the idle task
+*
+* Arguments  : none
+*
+* Returns    : none
+*******************************************************************************
+*/
+static void OS_InitTaskIdle(void)
+{
+    (void)OSTaskCreate(OS_TaskIdle,
+                       (void *)0,
+                       &OSTaskIdleStk[OS_TASK_IDLE_STK_SIZE - 1],
+                       OS_IDLE_PRIO);
+}
 
 void  OSInit(void)
 {
@@ -39,7 +144,7 @@ void  OSInit(void)
     OS_InitTCBList();                /* 初始化 OS_TCB 的空闲列表 */
     OS_InitEventList();              /* 初始化事件标志结构 */
     OS_MemInit();                    /* 初始化内存管理 */
-    OS_QueueInit();                  /* 初始化消息队列结构 */
+    OS_QInit();                      /* 初始化消息队列结构 */
     OS_InitTaskIdle();               /* 创建空闲任务 */
     OS_InitTaskStat();               /* 创建统计任务 */
     OSInitHookEnd();                 /* 调用特定于端口的初始化代码 */

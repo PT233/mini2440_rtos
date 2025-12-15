@@ -4,10 +4,6 @@
 // Adapted from Memcfg.inc
 // ************************************************
 
-// Memory Area
-// GCS6 32bit(64MB) SDRAM(0x3000_0000-0x33ff_ffff)
-
-
 // BWSCON
 .equ DW8,  (0x0)
 .equ DW16, (0x1)

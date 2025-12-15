@@ -285,9 +285,9 @@ void  OSMutexPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
         
         //  动作 1：把C从“旧家”赶出来 
         // 检查C是不是“就绪”状态（在 Rdy 表里）
-        if((OSRdyTbl[ptcb->OSTCBY]) & (ptcb->OSTCBBitX) != 0x00){
+        if(((OSRdyTbl[ptcb->OSTCBY]) & (ptcb->OSTCBBitX)) != 0x00){
             // 如果这一行只有C一个人，就把整行的标志位清零
-            if((OSRdyTbl[ptcb->OSTCBY]) & ~(ptcb->OSTCBBitX) == 0x00){
+            if(((OSRdyTbl[ptcb->OSTCBY]) & ~(ptcb->OSTCBBitX)) == 0x00){
                 OSRdyGrp &= ~(ptcb->OSTCBBitY);
             }
             rdy = TRUE; // 标记：他本来是醒着的
@@ -423,8 +423,6 @@ INT8U  OSMutexPost (OS_EVENT *pevent)//考虑加上err
 INT8U  OSMutexQuery (OS_EVENT *pevent, OS_MUTEX_DATA *pdata)
 {
     OS_CPU_SR  cpu_sr;
-    INT8U     *psrc;
-    INT8U     *pdest;
 
     if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
         return (OS_ERR_QUERY_ISR);                         /* ... can't QUERY mutex from an ISR        */
@@ -444,39 +442,7 @@ INT8U  OSMutexQuery (OS_EVENT *pevent, OS_MUTEX_DATA *pdata)
         pdata->OSValue = 0;
     }
     pdata->OSEventGrp  = pevent->OSEventGrp;               /* Copy wait list                           */
-    psrc               = &pevent->OSEventTbl[0];
-    pdest              = &pdata->OSEventTbl[0];
-#if OS_EVENT_TBL_SIZE > 0
-    *pdest++           = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 1
-    *pdest++           = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 2
-    *pdest++           = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 3
-    *pdest++           = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 4
-    *pdest++           = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 5
-    *pdest++           = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 6
-    *pdest++           = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 7
-    *pdest             = *psrc;
-#endif
+    memcpy(&pdata->OSEventTbl[0], &pevent->OSEventTbl[0], sizeof(pdata->OSEventTbl));
     OS_EXIT_CRITICAL();
     return (OS_NO_ERR);
 }

@@ -304,6 +304,7 @@ INT8U  OSMboxPost (OS_EVENT *pevent, void *msg)
 INT8U  OSMboxPostOpt (OS_EVENT *pevent, void *msg, INT8U opt)
 {
     //不实现
+    return (OS_NO_ERR);
 }
 
 /*
@@ -324,8 +325,6 @@ INT8U  OSMboxPostOpt (OS_EVENT *pevent, void *msg, INT8U opt)
 INT8U  OSMboxQuery (OS_EVENT *pevent, OS_MBOX_DATA *pdata)
 {
     OS_CPU_SR  cpu_sr;  
-    INT8U     *psrc;
-    INT8U     *pdest;
 
     if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
         return (OS_ERR_PEVENT_NULL);
@@ -335,40 +334,7 @@ INT8U  OSMboxQuery (OS_EVENT *pevent, OS_MBOX_DATA *pdata)
     }
     OS_ENTER_CRITICAL();
     pdata->OSEventGrp = pevent->OSEventGrp;                /* Copy message mailbox wait list           */
-    psrc              = &pevent->OSEventTbl[0];
-    pdest             = &pdata->OSEventTbl[0];
-
-#if OS_EVENT_TBL_SIZE > 0
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 1
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 2
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 3
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 4
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 5
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 6
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 7
-    *pdest            = *psrc;
-#endif
+    memcpy(&pdata->OSEventTbl[0], &pevent->OSEventTbl[0], sizeof(pdata->OSEventTbl));
     pdata->OSMsg = pevent->OSEventPtr;                     /* Get message from mailbox                 */
     OS_EXIT_CRITICAL();
     return (OS_NO_ERR);

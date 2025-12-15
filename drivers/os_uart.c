@@ -1,4 +1,4 @@
-#include "2440addr.h"
+#include "includes.h"
 
 // 初始化 UART0
 void Uart_Init(int pclk, int baud)
@@ -34,9 +34,138 @@ void Uart_SendByte(char c)
     rUTXH0 = c;                    // 发送字符
 }
 
-// 发送字符串
-void Uart_Printf(char *pt)
+// 简单的整数转字符串
+static void int_to_str(int num, char *str, int pad_width)
 {
-    while(*pt)
-        Uart_SendByte(*pt++);
+    char buf[16];
+    int i = 0, is_neg = 0;
+    
+    if (num < 0) {
+        is_neg = 1;
+        num = -num;
+    }
+    
+    if (num == 0) {
+        buf[i++] = '0';
+    } else {
+        while (num > 0) {
+            buf[i++] = '0' + (num % 10);
+            num /= 10;
+        }
+    }
+    
+    if (is_neg) {
+        str[0] = '-';
+        for (int j = 0; j < i; j++) {
+            str[j + 1] = buf[i - 1 - j];
+        }
+        str[i + 1] = '\0';
+    } else {
+        for (int j = 0; j < i; j++) {
+            str[j] = buf[i - 1 - j];
+        }
+        str[i] = '\0';
+    }
+}
+
+// 简单的十六进制转字符串
+static void hex_to_str(unsigned int num, char *str)
+{
+    char buf[16];
+    int i = 0;
+    const char *hex = "0123456789abcdef";
+    
+    if (num == 0) {
+        str[0] = '0';
+        str[1] = '\0';
+        return;
+    }
+    
+    while (num > 0) {
+        buf[i++] = hex[num & 0xf];
+        num >>= 4;
+    }
+    
+    for (int j = 0; j < i; j++) {
+        str[j] = buf[i - 1 - j];
+    }
+    str[i] = '\0';
+}
+
+// 简单的格式化打印函数，支持 %d, %x, %c, %s, %%
+void Uart_Printf(const char *fmt, ...)
+{
+    va_list args;
+    char buf[256];
+    char tmp[32];
+    char *p = buf;
+    const char *s = fmt;
+    int len = 0;
+    
+    va_start(args, fmt);
+    
+    while (*s && len < 255) {
+        if (*s == '%') {
+            s++;
+            if (*s == '%') {
+                // %% -> %
+                *p++ = '%';
+                len++;
+            } else if (*s == 'd') {
+                // 整数
+                int val = va_arg(args, int);
+                int_to_str(val, tmp, 0);
+                int i = 0;
+                while (tmp[i] && len < 255) {
+                    *p++ = tmp[i++];
+                    len++;
+                }
+            } else if (*s == 'x') {
+                // 十六进制
+                unsigned int val = va_arg(args, unsigned int);
+                hex_to_str(val, tmp);
+                int i = 0;
+                while (tmp[i] && len < 255) {
+                    *p++ = tmp[i++];
+                    len++;
+                }
+            } else if (*s == 'c') {
+                // 字符
+                char c = va_arg(args, int);
+                *p++ = c;
+                len++;
+            } else if (*s == 's') {
+                // 字符串
+                const char *str = va_arg(args, const char *);
+                while (*str && len < 255) {
+                    *p++ = *str++;
+                    len++;
+                }
+            } else {
+                *p++ = *s;
+                len++;
+            }
+            s++;
+        } else if (*s == '\n') {
+            *p++ = '\r';
+            len++;
+            if (len < 255) {
+                *p++ = '\n';
+                len++;
+            }
+            s++;
+        } else {
+            *p++ = *s++;
+            len++;
+        }
+    }
+    
+    *p = '\0';
+    va_end(args);
+    
+    // 输出缓冲区中的内容
+    int i = 0;
+    while (buf[i] != '\0') {
+        Uart_SendByte(buf[i++]);
+    }
 }

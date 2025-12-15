@@ -435,11 +435,11 @@ OS_FLAGS  OSFlagPost (OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U opt, INT8U *err)
             pgrp->OSFlagFlags |=  flags;            /* Set   the flags specified in the group         */
             break;
 
-        default:
-            OS_EXIT_CRITICAL();                     /* INVALID option                                 */
+        default:                                    /* INVALID option                                 */
             *err = OS_FLAG_INVALID_OPT;
             return ((OS_FLAGS)0);
     }
+    OS_ENTER_CRITICAL();
     sched = FALSE;                                   /* Indicate that we don't need rescheduling       */
     pnode = (OS_FLAG_NODE *)pgrp->OSFlagWaitList;
     while (pnode != (OS_FLAG_NODE *)0) {             /* Go through all tasks waiting on event flag(s)  */

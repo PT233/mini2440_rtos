@@ -47,12 +47,13 @@ void Task_Monitor(void *pdata);
 * 主函数
 *********************************************************************************************************
 */
-void main(void)
+int main(void)
 {
     OSInit();      // 初始化内核
     BSP_Init();    // 初始化硬件
     OSTaskCreate(Task_Start, (void *)0, &StartStk[TASK_STK_SIZE - 1], 2);
     OSStart();     // 多任务启动
+    return 0;
 }
 
 /*
@@ -285,7 +286,7 @@ void Task_Monitor(void *pdata)
 
         // 3. 打印报表
         OSMutexPend(UartMutex, 0, &err);
-        Uart_Printf("\n System Monitor \n");
+        Uart_Printf("\n--- System Monitor ---\n");
         Uart_Printf("CPU Usage: %d%%\n", OSCPUUsage);
         Uart_Printf("Mem Free : %d blocks\n", mem_data.OSNFree);
         Uart_Printf("Q Msg    : %d waiting\n", q_data.OSNMsgs);
@@ -297,6 +298,3 @@ void Task_Monitor(void *pdata)
         OSMutexPost(UartMutex);
     }
 }
-
-
-

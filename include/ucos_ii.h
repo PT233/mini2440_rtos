@@ -286,7 +286,7 @@ extern OS_EVENT          OSEventTbl[OS_MAX_EVENTS];// EVENT 控制块表
 extern OS_FLAG_GRP       OSFlagTbl[OS_MAX_FLAGS];  // 包含事件标志组的表              
 extern OS_FLAG_GRP      *OSFlagFreeList;           // 指向事件标志组空闲列表的指针       
 
-extern INT8S             OSCPUUsage;               // CPU 使用率百分比                          
+extern INT8U             OSCPUUsage;               // CPU 使用率百分比                          
 extern INT32U            OSIdleCtrMax;             // 空闲计数器在 1 秒内可以达到的最大值     
 extern INT32U            OSIdleCtrRun;             // 运行时空闲计数器在 1 秒内达到的值  
 extern BOOLEAN           OSStatRdy;                // 指示统计任务已就绪的标志  

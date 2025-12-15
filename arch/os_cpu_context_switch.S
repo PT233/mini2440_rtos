@@ -1,4 +1,5 @@
 
+    .equ BUSWIDTH, 32            // 内存总线宽度
     .include "2440addr.inc" 
     .include "memcfg.inc"
 

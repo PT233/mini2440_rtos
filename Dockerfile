@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 配置 apt 重试次数，增加下载成功率
 RUN echo "Acquire::Retries \"10\";" > /etc/apt/apt.conf.d/80-retries
 
-# 更换为网易 163 镜像源 (尝试另一个稳定的国内源)
+# 更换为网易 163 镜像源
 RUN sed -i 's/archive.ubuntu.com/mirrors.163.com/g' /etc/apt/sources.list && \
     sed -i 's/security.ubuntu.com/mirrors.163.com/g' /etc/apt/sources.list && \
     sed -i 's/mirrors.tuna.tsinghua.edu.cn/mirrors.163.com/g' /etc/apt/sources.list && \

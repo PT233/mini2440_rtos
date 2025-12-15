@@ -122,7 +122,7 @@ INT8U  OSTaskChangePrio (INT8U oldprio, INT8U newprio)
 * - 对于 Mini2440，传递的 ptos 应该是堆栈的高地址（因为是满递减堆栈）。
 *********************************************************************************************************
 */
-INT8U OSTaskCreate(int (*task)(int* pdata), void *pata1, void *ptos, INT8U prio){
+INT8U OSTaskCreate(void (*task)(void *pd), void *pdata1, OS_STK *ptos, INT8U prio){
     //不考虑ext的情况
     OS_CPU_SR   cpu_sr;
     OS_STK      *psp; //pointer to stack pointer
@@ -135,7 +135,7 @@ INT8U OSTaskCreate(int (*task)(int* pdata), void *pata1, void *ptos, INT8U prio)
     if(OSTCBPrioTbl[prio] == (OS_TCB *)0){
         OSTCBPrioTbl[prio] = (OS_TCB *)1;
         OS_EXIT_CRITICAL();
-        psp = (OS_STK *)OSTaskStkInit(task, pata1, ptos, 0);
+        psp = (OS_STK *)OSTaskStkInit(task, pdata1, ptos, 0);
         err = OS_TCBInit(prio, psp, (OS_STK *)0,0,0,(void *)0,0);
         if(err == OS_NO_ERR){
             OS_ENTER_CRITICAL();
@@ -176,6 +176,7 @@ INT8U OSTaskCreate(int (*task)(int* pdata), void *pata1, void *ptos, INT8U prio)
 INT8U  OSTaskCreateExt (void (*task)(void *pd), void *pdata1, OS_STK *ptos, INT8U prio, INT16U id, OS_STK *pbos, INT32U stk_size, void *pext, INT16U opt)
 {
     //不实现
+    return (OS_NO_ERR);
 }
 
 /*
@@ -203,7 +204,6 @@ INT8U  OSTaskDel (INT8U prio)
     OS_EVENT        *pevent;
     OS_FLAG_NODE    *pnode;
     OS_TCB          *ptcb;
-    BOOLEAN         self;
     
     if (OSIntNesting > 0) {    
         return (OS_TASK_DEL_ISR);
@@ -338,7 +338,7 @@ INT8U  OSTaskResume (INT8U prio)
     OS_CPU_SR cpu_sr;
     OS_TCB *ptcb;
     if(prio >= OS_LOWEST_PRIO){
-        retun (OS_PRIO_INVALID);
+        return (OS_PRIO_INVALID);
     }
     OS_ENTER_CRITICAL();
     ptcb = OSTCBPrioTbl[prio];
@@ -382,6 +382,7 @@ INT8U  OSTaskResume (INT8U prio)
 INT8U  OSTaskStkChk (INT8U prio, OS_STK_DATA *p_data)
 {
     // 不实现
+    return (OS_NO_ERR);
 }
 
 /*
@@ -435,7 +436,7 @@ INT8U  OSTaskSuspend (INT8U prio)
     }
     ptcb->OSTCBStat |= OS_STAT_SUSPEND;
     OS_EXIT_CRITICAL();
-    if(self = TRUE){
+    if(self == TRUE){
         OS_Sched();
     }
     return (OS_NO_ERR);

@@ -433,6 +433,7 @@ INT8U  OSQPostFront (OS_EVENT *pevent, void *msg)
 INT8U  OSQPostOpt (OS_EVENT *pevent, void *msg, INT8U opt)
 {
     //不实现
+    return (OS_NO_ERR);
 }
 
 /*
@@ -455,8 +456,6 @@ INT8U  OSQQuery (OS_EVENT *pevent, OS_Q_DATA *pdata)
 {
     OS_CPU_SR  cpu_sr;
     OS_Q      *pq;
-    INT8U     *psrc;
-    INT8U     *pdest;
 
     if (pevent == (OS_EVENT *)0) {                         
         return (OS_ERR_PEVENT_NULL);
@@ -467,39 +466,7 @@ INT8U  OSQQuery (OS_EVENT *pevent, OS_Q_DATA *pdata)
 
     OS_ENTER_CRITICAL();
     pdata->OSEventGrp = pevent->OSEventGrp;                
-    psrc              = &pevent->OSEventTbl[0];
-    pdest             = &pdata->OSEventTbl[0];
-#if OS_EVENT_TBL_SIZE > 0
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 1
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 2
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 3
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 4
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 5
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 6
-    *pdest++          = *psrc++;
-#endif
-
-#if OS_EVENT_TBL_SIZE > 7
-    *pdest            = *psrc;
-#endif
+    memcpy(&pdata->OSEventTbl[0], &pevent->OSEventTbl[0], sizeof(pdata->OSEventTbl));
     pq = (OS_Q *)pevent->OSEventPtr;
     if (pq->OSQEntries > 0) {
         pdata->OSMsg = *pq->OSQOut;                       

@@ -134,3 +134,8 @@ void  OSTCBInitHook (OS_TCB *ptcb)
     // 在此输入代码
     ptcb = ptcb;
 }
+
+void  OSTaskIdleHook (void)
+{
+    // Called when idle task runs
+}

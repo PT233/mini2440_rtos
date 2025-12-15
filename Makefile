@@ -29,12 +29,13 @@ ASFLAGS  = -mcpu=arm920t -g $(INCLUDES) -Wa,-Iinclude -Wa,-Iarch/inc
 LDFLAGS  = -T link.ld
 
 # 源文件列表
-SRCS_ASM = $(wildcard arch/src/*.S)
+SRCS_ASM = $(wildcard arch/*.S)
 
-SRCS_C   = $(wildcard user/src/*.c)
-SRCS_C  += $(wildcard arch/src/*.c)
-SRCS_C  += $(wildcard drivers/src/*.c)
+SRCS_C   = $(wildcard user/*.c)
+SRCS_C  += $(wildcard arch/*.c)
+SRCS_C  += $(wildcard drivers/*.c)
 SRCS_C  += $(wildcard kernel/*.c)
+SRCS_C  += $(wildcard lib/*.c)
 
 # 生成文件到build目录
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRCS_ASM:.S=.o) $(SRCS_C:.c=.o))
@@ -47,7 +48,7 @@ all: $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).dis $(BUILD_DIR)/$(TARGET
 # 1. 链接生成 ELF 文件
 $(BUILD_DIR)/$(TARGET).elf: $(OBJS)
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -nostdlib -Wl,-Map=$(BUILD_DIR)/$(TARGET).map -T link.ld -o $@ $^ -lgcc
 	@echo
 	@echo ">>> ELF Header Info:"
 	$(READELF) -h $@
