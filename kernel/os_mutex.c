@@ -47,7 +47,32 @@
 */
 INT8U  OSMutexAccept (OS_EVENT *pevent, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;  
+      
+    if (OSIntNesting > 0) {                            /* Make sure it's not called from an ISR        */
+        *err = OS_ERR_PEND_ISR;
+        return (0);
+    }
+    if (pevent == (OS_EVENT *)0) {                     /* Validate 'pevent'                            */
+        *err = OS_ERR_PEVENT_NULL;
+        return (0);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {  /* Validate event block type                    */
+        *err = OS_ERR_EVENT_TYPE;
+        return (0);
+    }                                                    
+    OS_ENTER_CRITICAL();							   /* Get value (0 or 1) of Mutex                  */
+    if ((pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE) {     
+        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;   /*      Mask off LSByte (Acquire Mutex)         */
+        pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;     /*      Save current task priority in LSByte    */
+        pevent->OSEventPtr  = (void *)OSTCBCur;        /*      Link TCB of task owning Mutex           */
+        OS_EXIT_CRITICAL();
+        *err = OS_NO_ERR;
+        return (1);
+    }
+    OS_EXIT_CRITICAL();
+    *err = OS_NO_ERR;
+    return (0);
 }
 
 /*
@@ -103,9 +128,7 @@ OS_EVENT  *OSMutexCreate (INT8U prio, INT8U *err)
     // 高8位 = PIP (优先级继承优先级)
     // 低8位 = 0xFF (表示锁是可用的，Available)
     pevent->OSEventCnt  = (prio << 8) | OS_MUTEX_AVAILABLE; 
-    
     pevent->OSEventPtr  = (void *)0; // 互斥锁不需要 Ptr 指向别的
-    
     OS_EventWaitListInit(pevent);    // 清空等待列表
 
     *err = OS_NO_ERR;
@@ -131,7 +154,67 @@ OS_EVENT  *OSMutexCreate (INT8U prio, INT8U *err)
 */
 OS_EVENT  *OSMutexDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;   
+    BOOLEAN    tasks_waiting;
+    INT8U      pip;
+
+
+    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+        *err = OS_ERR_DEL_ISR;                             /* ... can't DELETE from an ISR             */
+        return (pevent);
+    }
+    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+        *err = OS_ERR_PEVENT_NULL;
+        return ((OS_EVENT *)0);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      /* Validate event block type                */
+        *err = OS_ERR_EVENT_TYPE;
+        return (pevent);
+    }
+    OS_ENTER_CRITICAL();
+    if (pevent->OSEventGrp != 0x00) {                      /* See if any tasks waiting on mutex        */
+        tasks_waiting = TRUE;                              /* Yes                                      */
+    } else {
+        tasks_waiting = FALSE;                             /* No                                       */
+    }
+    switch (opt) {
+        case OS_DEL_NO_PEND:                               /* Delete mutex only if no task waiting     */
+             if (tasks_waiting == FALSE) {
+                 pip                 = (INT8U)(pevent->OSEventCnt >> 8);
+                 OSTCBPrioTbl[pip]   = (OS_TCB *)0;        /* Free up the PIP                          */
+                 pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+                 pevent->OSEventPtr  = OSEventFreeList;    /* Return Event Control Block to free list  */
+                 OSEventFreeList     = pevent;
+                 OS_EXIT_CRITICAL();
+                 *err = OS_NO_ERR;
+                 return ((OS_EVENT *)0);                   /* Mutex has been deleted                   */
+             } else {
+                 OS_EXIT_CRITICAL();
+                 *err = OS_ERR_TASK_WAITING;
+                 return (pevent);
+             }
+
+        case OS_DEL_ALWAYS:                                /* Always delete the mutex                  */
+             while (pevent->OSEventGrp != 0x00) {          /* Ready ALL tasks waiting for mutex        */
+                 OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MUTEX);
+             }
+             pip                 = (INT8U)(pevent->OSEventCnt >> 8);
+             OSTCBPrioTbl[pip]   = (OS_TCB *)0;            /* Free up the PIP                          */
+             pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+             pevent->OSEventPtr  = OSEventFreeList;        /* Return Event Control Block to free list  */
+             OSEventFreeList     = pevent;                 /* Get next free event control block        */
+             OS_EXIT_CRITICAL();
+             if (tasks_waiting == TRUE) {                  /* Reschedule only if task(s) were waiting  */
+                 OS_Sched();                               /* Find highest priority task ready to run  */
+             }
+             *err = OS_NO_ERR;
+             return ((OS_EVENT *)0);                       /* Mutex has been deleted                   */
+
+        default:
+             OS_EXIT_CRITICAL();
+             *err = OS_ERR_INVALID_OPT;
+             return (pevent);
+    }
 }
 
 /*
@@ -140,7 +223,7 @@ OS_EVENT  *OSMutexDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 * 任务 4: 等待互斥量 (OSMutexPend)
 *
 * 描述:
-* 请求互斥量，支持优先级继承。
+* 请求互斥量，实现优先级反转。
 *
 * 功能:
 * 1. 如果互斥量可用，占有之。
@@ -156,6 +239,8 @@ OS_EVENT  *OSMutexDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 */
 void  OSMutexPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 {
+    //解决三者堵门问题(优先级A>B>C, C占用cpu, B想抢占C, 但堵了A的门)
+    //如果不做处理，A优先级10就会挂起等待。这时候，如果B优先级20突然出现，因为B比C优先级30优先级高，B就会抢占CPU。
     OS_CPU_SR   cpu_sr;
     INT8U       pip; //Priority Inheritance Priority
     INT8U       mprio;//Mutex owner Priority
@@ -176,54 +261,76 @@ void  OSMutexPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
     }
 
     OS_ENTER_CRITICAL();
+    // OS_MUTEX_KEEP_LOWER_8 是 0x00FF，用来把高8位屏蔽掉，只看低8位
     if((INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE){
-        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;
-        pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;
-        pevent->OSEventPtr = (void *)OSTCBCur;
+        // 情况 1：没人占用互斥锁
+        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;  // 保留高8位的 PIP 信息，清空低8位
+        pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;    // 把A的优先级写进低8位
+        pevent->OSEventPtr = (void *)OSTCBCur;        // 在记录本上写下“持有者是A”
         OS_EXIT_CRITICAL();
         *err = OS_NO_ERR;
         return;
     }
+    // 取出高8位：尚方宝剑优先级 (PIP = 5)
     pip = (INT8U)(pevent->OSEventCnt >> 8);
+    // 取出低8位：当前持有者的优先级 (mprio = 30，即C)
     mprio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);
+    // 找到持有者C的任务控制块 (TCB)
     ptcb = (OS_TCB *)(pevent->OSEventPtr);
-    //解决三者堵门问题(优先级A>B>C, C占用cpu, B想抢占C, 但堵了A的门)
+
+    // 判断条件：
+    // 1. ptcb->OSTCBPrio != pip：C还没被提拔过（如果已经被提拔就不浪费时间了）
+    // 2. mprio > OSTCBCur->OSTCBPrio：持有者（30）比我（10）弱。
     if((ptcb->OSTCBPrio != pip) && (mprio > OSTCBCur->OSTCBPrio)){
+        
+        //  动作 1：把C从“旧家”赶出来 
+        // 检查C是不是“就绪”状态（在 Rdy 表里）
         if((OSRdyTbl[ptcb->OSTCBY]) & (ptcb->OSTCBBitX) != 0x00){
+            // 如果这一行只有C一个人，就把整行的标志位清零
             if((OSRdyTbl[ptcb->OSTCBY]) & ~(ptcb->OSTCBBitX) == 0x00){
                 OSRdyGrp &= ~(ptcb->OSTCBBitY);
             }
-            rdy = TRUE;
+            rdy = TRUE; // 标记：他本来是醒着的
         }
         else{
-            rdy = FALSE;
+            rdy = FALSE; // 他本来可能在睡觉（比如在该别的锁），那就不用操作就绪表
         }
-        ptcb->OSTCBPrio = pip;
-        ptcb->OSTCBY = (ptcb->OSTCBPrio) >> 3;
-        ptcb->OSTCBBitY = OSMapTbl[ptcb->OSTCBY];
-        ptcb->OSTCBX = (ptcb->OSTCBPrio) & 7;
-        ptcb->OSTCBBitX = OSMapTbl[ptcb->OSTCBX];
+
+        //  动作 2：给C改名换姓 
+        ptcb->OSTCBPrio = pip; // 现在的优先级变成 5 (PIP)！
+        // 重新计算他在 8x8 任务表里的新坐标（数学逻辑）
+        ptcb->OSTCBY = (ptcb->OSTCBPrio) >> 3;      // 新行号 = 5 / 8 = 0
+        ptcb->OSTCBBitY = OSMapTbl[ptcb->OSTCBY];   // 查表得行掩码
+        ptcb->OSTCBX = (ptcb->OSTCBPrio) & 7;       // 新列号 = 5 % 8 = 5
+        ptcb->OSTCBBitX = OSMapTbl[ptcb->OSTCBX];   // 查表得列掩码
+
+        //  动作 3：把C搬进“新豪宅” 
         if(rdy == TRUE){
+            // 在就绪表的“新位置”把它置位
             OSRdyGrp |= ptcb->OSTCBBitY;
             OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX; 
         }
+        // 记录一下：PIP 优先级 5 现在的代表人物是这个 ptcb
         OSTCBPrioTbl[pip] = (OS_TCB *)ptcb;
     }
-    OSTCBCur->OSTCBStat |= OS_STAT_MUTEX;
-    OSTCBCur->OSTCBDly = timeout;
-    OS_EventTaskWait(pevent);//还没完成
+    OSTCBCur->OSTCBStat |= OS_STAT_MUTEX; // 设置状态：A在等互斥量
+    OSTCBCur->OSTCBDly = timeout;         // 设置最长等多久
+    OS_EventTaskWait(pevent);             // 把A从就绪表里移除，放到这个互斥量的等待队列里
     OS_EXIT_CRITICAL();
-    OS_Sched();
+    OS_Sched(); // 关键发起调度：A，优先级 10睡着了。B，优先级 20是醒着的。C，现优先级5是醒着的。
     OS_ENTER_CRITICAL();
+    // 检查：如果A醒来时，状态里还标着“我在等锁”，说明A是被迫醒的（超时），而不是拿到了锁
     if(OSTCBCur->OSTCBStat & OS_STAT_MUTEX){
-        OS_EventTO(pevent);//还没完成
+        OS_EventTO(pevent); // 处理超时逻辑（把任务从等待队列移除）
         OS_EXIT_CRITICAL();
-        *err = OS_TIMEOUT;
+        *err = OS_TIMEOUT;  // 告诉调用者A：超时了
         return;
     }
+    
+    // 如果走到这里，说明A正常拿到了锁
     OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;
     OS_EXIT_CRITICAL();
-    *err = OS_NO_ERR;
+    *err = OS_NO_ERR; // 成功！
 }
 
 /*
@@ -245,9 +352,56 @@ void  OSMutexPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 * - 恢复优先级时需要重新计算在就绪表中的位置。
 *********************************************************************************************************
 */
-INT8U  OSMutexPost (OS_EVENT *pevent)
+INT8U  OSMutexPost (OS_EVENT *pevent)//考虑加上err
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    INT8U     pip;
+    INT8U     prio;
+
+    if(OSIntNesting > 0){
+        return (OS_ERR_POST_ISR);
+    }
+    if(pevent == (OS_EVENT *)0){
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if(pevent->OSEventType != OS_EVENT_TYPE_MUTEX){
+        return (OS_ERR_EVENT_TYPE);
+    }
+
+    OS_ENTER_CRITICAL();
+    pip = (INT8U)(pevent->OSEventCnt >> 8);
+    prio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);
+    if(OSTCBCur->OSTCBPrio != pip && OSTCBCur->OSTCBPrio != prio){
+        OS_EXIT_CRITICAL();
+        return (OS_ERR_NOT_MUTEX_OWNER);
+    }
+    if(OSTCBCur->OSTCBPrio == pip){
+        if((OSRdyTbl[OSTCBCur->OSTCBY] &= ~OSTCBCur->OSTCBBitX) == 0){
+            OSRdyGrp &= ~OSTCBCur->OSTCBBitY;
+        }
+        OSTCBCur->OSTCBPrio = prio;
+        OSTCBCur->OSTCBY = prio >> 3;
+        OSTCBCur->OSTCBBitY = OSMapTbl[OSTCBCur->OSTCBY];
+        OSTCBCur->OSTCBX = prio & 0x07;
+        OSTCBCur->OSTCBBitX = OSMapTbl[OSTCBCur->OSTCBX];
+        OSRdyGrp |= OSTCBCur->OSTCBBitY;
+        OSRdyTbl[OSTCBCur->OSTCBY] |= OSTCBCur->OSTCBBitX;
+        OSTCBPrioTbl[prio] = (OS_TCB *)OSTCBCur;
+    }
+    OSTCBPrioTbl[pip] = (OS_TCB *)1;
+    if(pevent->OSEventGrp != 0x00){
+        prio = OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MUTEX);//还没完成
+        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;
+        pevent->OSEventCnt |= prio;
+        pevent->OSEventPtr = OSTCBPrioTbl[prio];
+        OS_EXIT_CRITICAL();
+        OS_Sched();
+        return (OS_NO_ERR);
+    }
+    pevent->OSEventCnt |= OS_MUTEX_AVAILABLE;
+    pevent->OSEventPtr = (void *)0;
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
 }
 
 /*
@@ -266,8 +420,63 @@ INT8U  OSMutexPost (OS_EVENT *pevent)
 * - 无。
 *********************************************************************************************************
 */
-INT8U  OSMutexQuery (OS_EVENT *pevent, OS_MUTEX_DATA *p_data)
+INT8U  OSMutexQuery (OS_EVENT *pevent, OS_MUTEX_DATA *pdata)
 {
-    // 在此输入代码
-}
+    OS_CPU_SR  cpu_sr;
+    INT8U     *psrc;
+    INT8U     *pdest;
 
+    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+        return (OS_ERR_QUERY_ISR);                         /* ... can't QUERY mutex from an ISR        */
+    }
+    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      /* Validate event block type                */
+        return (OS_ERR_EVENT_TYPE);
+    }
+    OS_ENTER_CRITICAL();
+    pdata->OSMutexPIP  = (INT8U)(pevent->OSEventCnt >> 8);
+    pdata->OSOwnerPrio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);
+    if (pdata->OSOwnerPrio == 0xFF) {
+        pdata->OSValue = 1;
+    } else {
+        pdata->OSValue = 0;
+    }
+    pdata->OSEventGrp  = pevent->OSEventGrp;               /* Copy wait list                           */
+    psrc               = &pevent->OSEventTbl[0];
+    pdest              = &pdata->OSEventTbl[0];
+#if OS_EVENT_TBL_SIZE > 0
+    *pdest++           = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 1
+    *pdest++           = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 2
+    *pdest++           = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 3
+    *pdest++           = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 4
+    *pdest++           = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 5
+    *pdest++           = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 6
+    *pdest++           = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 7
+    *pdest             = *psrc;
+#endif
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
+}

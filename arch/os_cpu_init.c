@@ -97,7 +97,9 @@ void  OSTaskCreateHook (OS_TCB *ptcb)
 void  OSTaskDelHook (OS_TCB *ptcb)
 {
     // 在此输入代码
-    ptcb = ptcb;
+    INT8U val;
+    val = ptcb->OSTCBPrio;
+    Uart_Printf("/n task :",val," has been deleted /n");
 }
 
 void  OSTaskSwHook (void)

@@ -32,9 +32,6 @@
 #define  OS_TASK_IDLE_ID       65535                    // I.D. numbers for Idle and Stat tasks        
 #define  OS_TASK_STAT_ID       65534
 
-#define  OS_EVENT_EN       (((OS_Q_EN > 0) && (OS_MAX_QS > 0)) || (OS_MBOX_EN > 0) || (OS_SEM_EN > 0) || (OS_MUTEX_EN > 0))
-
-
 /*
 *********************************************************************************************************
 *                              TASK STATUS (Bit definition for OSTCBStat)
@@ -262,13 +259,12 @@ typedef struct {
 
 //TASK CONTROL BLOCK================================
 typedef struct os_tcb{
-    OS_STK        *OSTCBStkPtr;               //指向当前任务栈的栈顶指针
+    OS_STK          *OSTCBStkPtr;               //指向当前任务栈的栈顶指针
     //双向链表
     struct os_tcb   *OSTCBPrev;                 //指向上一个TCB任务控制块的指针
     struct os_tcb   *OSTCBNext;                 //指向下一个TCB任务控制块的指针
     OS_EVENT        *OSTCBEventPtr;             //指向任务所等待的事件控制块的指针
     void            *OSTCBMsg;                  //从邮箱或者消息队列中的消息
-    //OS_FLAG_NODE 还没定义
     OS_FLAG_NODE    *OSTCBFlagNode;             //指向时间标志节点的指针
     OS_FLAGS         OSTCBFlagsRdy;             //任务就绪态的事件标志
     INT16U           OSTCBDly;                  //延迟任务的节拍数，或者等待事件的超时
@@ -330,196 +326,81 @@ extern OS_MEM            OSMemTbl[OS_MAX_MEM_PART];// 内存分区管理器的�
 extern OS_Q             *OSQFreeList;              // 指向空闲队列控制块列表的指针    
 extern OS_Q              OSQTbl[OS_MAX_QS];        // 队列控制块表                   
 
- 
 extern volatile  INT32U  OSTime;                   // 系统时间的当前值 (以节拍为单位)         
-
 
 extern  INT8U            OSMapTbl[];                 // 优先级->位掩码 查找表                 
 extern  INT8U            OSUnMapTbl[];               // 优先级->索引   查找表                 
 
+/*
+*********************************************************************************************************
+*                                          FUNCTION PROTOTYPES
+*                                     (Target Independent Functions)
+*********************************************************************************************************
+*/
+
 //EVENT FLAGS MANAGEMENT=============================
-#if (OS_VERSION >= 251) && (OS_FLAG_EN > 0) && (OS_MAX_FLAGS > 0)
-
-#if OS_FLAG_ACCEPT_EN > 0
 OS_FLAGS      OSFlagAccept(OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U wait_type, INT8U *err);
-#endif
-
 OS_FLAG_GRP  *OSFlagCreate(OS_FLAGS flags, INT8U *err);
-
-#if OS_FLAG_DEL_EN > 0
 OS_FLAG_GRP  *OSFlagDel(OS_FLAG_GRP *pgrp, INT8U opt, INT8U *err);
-#endif
-
 OS_FLAGS      OSFlagPend(OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U wait_type, INT16U timeout, INT8U *err);
 OS_FLAGS      OSFlagPost(OS_FLAG_GRP *pgrp, OS_FLAGS flags, INT8U operation, INT8U *err);
-
-#if OS_FLAG_QUERY_EN > 0
 OS_FLAGS      OSFlagQuery(OS_FLAG_GRP *pgrp, INT8U *err);
-#endif
-#endif
 
 //MESSAGE MAILBOX MANAGEMENT=========================
-#if OS_MBOX_EN > 0
-
-#if OS_MBOX_ACCEPT_EN > 0
 void         *OSMboxAccept(OS_EVENT *pevent);
-#endif
-
 OS_EVENT     *OSMboxCreate(void *msg);
 
-#if OS_MBOX_DEL_EN > 0
 OS_EVENT     *OSMboxDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
-#endif
-
 void         *OSMboxPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
-
-#if OS_MBOX_POST_EN > 0
 INT8U         OSMboxPost(OS_EVENT *pevent, void *msg);
-#endif
-
-#if OS_MBOX_POST_OPT_EN > 0
 INT8U         OSMboxPostOpt(OS_EVENT *pevent, void *msg, INT8U opt);
-#endif
-
-#if OS_MBOX_QUERY_EN > 0
 INT8U         OSMboxQuery(OS_EVENT *pevent, OS_MBOX_DATA *pdata);
-#endif
-#endif
+
 
 //MEMORY MANAGEMENT==================================
-#if (OS_MEM_EN > 0) && (OS_MAX_MEM_PART > 0)
-
 OS_MEM       *OSMemCreate(void *addr, INT32U nblks, INT32U blksize, INT8U *err);
 void         *OSMemGet(OS_MEM *pmem, INT8U *err);
 INT8U         OSMemPut(OS_MEM *pmem, void *pblk);
-
-#if OS_MEM_QUERY_EN > 0
 INT8U         OSMemQuery(OS_MEM *pmem, OS_MEM_DATA *pdata);
-#endif
-
-#endif
 
 //MUTUAL EXCLUSION SEMAPHORE MANAGEMENT==============
-#if OS_MUTEX_EN > 0
-
-#if OS_MUTEX_ACCEPT_EN > 0
 INT8U         OSMutexAccept(OS_EVENT *pevent, INT8U *err);
-#endif
-
 OS_EVENT     *OSMutexCreate(INT8U prio, INT8U *err);
-
-#if OS_MUTEX_DEL_EN > 0
 OS_EVENT     *OSMutexDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
-#endif
-
 void          OSMutexPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
 INT8U         OSMutexPost(OS_EVENT *pevent);
-
-#if OS_MUTEX_QUERY_EN > 0
 INT8U         OSMutexQuery(OS_EVENT *pevent, OS_MUTEX_DATA *pdata);
-#endif
-
-#endif
 
 //MESSAGE QUEUE MANAGEMENT===========================
-#if (OS_Q_EN > 0) && (OS_MAX_QS > 0)
-
-#if OS_Q_ACCEPT_EN > 0
 void         *OSQAccept(OS_EVENT *pevent);
-#endif
-
 OS_EVENT     *OSQCreate(void **start, INT16U size);
-
-#if OS_Q_DEL_EN > 0
 OS_EVENT     *OSQDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
-#endif
-
-#if OS_Q_FLUSH_EN > 0
 INT8U         OSQFlush(OS_EVENT *pevent);
-#endif
-
 void         *OSQPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
-
-#if OS_Q_POST_EN > 0
 INT8U         OSQPost(OS_EVENT *pevent, void *msg);
-#endif
-
-#if OS_Q_POST_FRONT_EN > 0
 INT8U         OSQPostFront(OS_EVENT *pevent, void *msg);
-#endif
-
-#if OS_Q_POST_OPT_EN > 0
 INT8U         OSQPostOpt(OS_EVENT *pevent, void *msg, INT8U opt);
-#endif
-
-#if OS_Q_QUERY_EN > 0
 INT8U         OSQQuery(OS_EVENT *pevent, OS_Q_DATA *pdata);
-#endif
 
-#endif
 
 //SEMAPHORE MANAGEMENT===============================
-#if OS_SEM_EN > 0
-
-#if OS_SEM_ACCEPT_EN > 0
 INT16U        OSSemAccept(OS_EVENT *pevent);
-#endif
-
 OS_EVENT     *OSSemCreate(INT16U cnt);
-
-#if OS_SEM_DEL_EN > 0
 OS_EVENT     *OSSemDel(OS_EVENT *pevent, INT8U opt, INT8U *err);
-#endif
-
 void          OSSemPend(OS_EVENT *pevent, INT16U timeout, INT8U *err);
 INT8U         OSSemPost(OS_EVENT *pevent);
-
-#if OS_SEM_QUERY_EN > 0
 INT8U         OSSemQuery(OS_EVENT *pevent, OS_SEM_DATA *pdata);
-#endif
-
-#endif
-
 
 //TASK MANAGEMENT====================================
-#if OS_TASK_CHANGE_PRIO_EN > 0
 INT8U         OSTaskChangePrio(INT8U oldprio, INT8U newprio);
-#endif
-
-#if OS_TASK_CREATE_EN > 0
-INT8U         OSTaskCreate(void (* task)(void *pd), 
-						   void *  pdata1, OS_STK *  ptos, INT8U  prio);
-#endif
-
-#if OS_TASK_CREATE_EXT_EN > 0
-INT8U         OSTaskCreateExt(void  (*task)(void *pd),
-                              void   *pdata,
-                              OS_STK *ptos,
-                              INT8U   prio,
-                              INT16U  id,
-                              OS_STK *pbos,
-                              INT32U  stk_size,
-                              void   *pext,
-                              INT16U  opt);
-#endif
-
-#if OS_TASK_DEL_EN > 0
+INT8U         OSTaskCreate(void (* task)(void *pd), void *  pdata1, OS_STK *  ptos, INT8U  prio);
+INT8U         OSTaskCreateExt(void  (*task)(void *pd), void   *pdata, OS_STK *ptos, INT8U   prio, INT16U  id, OS_STK *pbos, INT32U  stk_size, void   *pext, INT16U  opt);
 INT8U         OSTaskDel(INT8U prio);
 INT8U         OSTaskDelReq(INT8U prio);
-#endif
-
-#if OS_TASK_SUSPEND_EN > 0
 INT8U         OSTaskResume(INT8U prio);
 INT8U         OSTaskSuspend(INT8U prio);
-#endif
-
-#if OS_TASK_CREATE_EXT_EN > 0
 INT8U         OSTaskStkChk(INT8U prio, OS_STK_DATA *pdata);
-#endif
-
-#if OS_TASK_QUERY_EN > 0
 INT8U         OSTaskQuery(INT8U prio, OS_TCB *pdata);
-#endif
 
 //TIME MANAGEMENT====================================
 void          OSTimeDly(INT16U ticks);
@@ -538,35 +419,36 @@ void          OSSchedUnlock(void);
 void          OSStart(void);
 void          OSStatInit(void);
 
+//INTERNAL FUNCTION PROTOTYPES=======================
+void          OS_Dummy(void);
+INT8U         OS_EventTaskRdy(OS_EVENT *pevent, void *msg, INT8U msk);
+void          OS_EventTaskWait(OS_EVENT *pevent);
+void          OS_EventTO(OS_EVENT *pevent);
+void          OS_EventWaitListInit(OS_EVENT *pevent);
+void          OS_FlagInit(void);
+void          OS_FlagUnlink(OS_FLAG_NODE *pnode);
+void          OS_MemInit(void);
+void          OS_QInit(void);
+void          OS_Sched(void);
+void          OS_TaskIdle(void *data1);
+void          OS_TaskStat(void *data);
+INT8U         OS_TCBInit (INT8U  prio, OS_STK  * ptos, OS_STK * pbos, INT16U  id, INT32U  stk_size, void * pext, INT16U  opt) ;
+
 //FUNC Prototype=====================================
-void    OSCtxSw(void);
-void    OSTickISR(void);//还没定义
+void          OSInitHookBegin(void);
+void          OSInitHookEnd(void);
+void          OSIntCtxSw(void);
+void          OSStartHighRdy(void);
+void          OSTaskCreateHook(OS_TCB *ptcb);
+void          OSTaskDelHook(OS_TCB *ptcb);
+void          OSTaskIdleHook(void);
+void          OSTaskStatHook(void);
+OS_STK       *OSTaskStkInit (void (* task)(void *pd) , void * pdata1, OS_STK *  ptos, INT16U  opt);
+void          OSTaskSwHook(void);
+void          OSTCBInitHook(OS_TCB *ptcb);
+void          OSTimeTickHook(void);
 
-//EVENT FLAGS========================================
+void          OSCtxSw(void);
+void          OSTickISR(void);
 
-
-//MESSAGE MAILBOXES==================================
-
-
-//MEMORY MANAGEMENT==================================
-
-
-//MUTUAL EXCLUSION SEMAPHORES========================
-
-
-//MESSAGE QUEUES=====================================
-
-
-//SEMAPHORES=========================================
-
-
-//TASK MANAGEMENT====================================
-
-
-//TIME MANAGEMENT====================================
-
-
-//MISCELLANEOUS======================================
-
-
-#endif // __OS_H__
+#endif // __UCOS_II_H__

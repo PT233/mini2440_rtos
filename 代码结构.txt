@@ -286,7 +286,7 @@ main
         Key_Init(); 
         InitTimer4();
     OSTaskCreate(Task_Start, (void *)0, &StartStk[TASK_STK_SIZE - 1], 2);{
-        void Task_Start(void *pdata)
+        void Task_Start(void *pdata)✅
         {
             INT8U err;
             (void)pdata;
@@ -654,7 +654,7 @@ main
                     *err = OS_NO_ERR;
                 }
             Uart_Printf("\n[OS] uC/OS-II Started on Mini2440.\n");
-            OSMutexPost(UartMutex);
+            OSMutexPost(UartMutex);✅
                 {
                 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
                     OS_CPU_SR  cpu_sr;
@@ -700,7 +700,39 @@ main
                     OSTCBPrioTbl[pip] = (OS_TCB *)1;                  /* Reserve table entry                           */
                     if (pevent->OSEventGrp != 0x00) {                 /* Any task waiting for the mutex?               */
                                                                     /* Yes, Make HPT waiting for mutex ready         */
-                        prio                = OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MUTEX);
+                        prio                = OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MUTEX)✅
+                            {
+                                OS_TCB *ptcb;
+                                INT8U   x;
+                                INT8U   y;
+                                INT8U   bitx;
+                                INT8U   bity;
+                                INT8U   prio;
+
+
+                                y    = OSUnMapTbl[pevent->OSEventGrp];            /* Find highest prio. task waiting for message   */
+                                bity = OSMapTbl[y];
+                                x    = OSUnMapTbl[pevent->OSEventTbl[y]];
+                                bitx = OSMapTbl[x];
+                                prio = (INT8U)((y << 3) + x);                     /* Find priority of task getting the msg         */
+                                if ((pevent->OSEventTbl[y] &= ~bitx) == 0x00) {   /* Remove this task from the waiting list        */
+                                    pevent->OSEventGrp &= ~bity;                  /* Clr group bit if this was only task pending   */
+                                }
+                                ptcb                 =  OSTCBPrioTbl[prio];       /* Point to this task's OS_TCB                   */
+                                ptcb->OSTCBDly       =  0;                        /* Prevent OSTimeTick() from readying task       */
+                                ptcb->OSTCBEventPtr  = (OS_EVENT *)0;             /* Unlink ECB from this task                     */
+                            #if ((OS_Q_EN > 0) && (OS_MAX_QS > 0)) || (OS_MBOX_EN > 0)
+                                ptcb->OSTCBMsg       = msg;                       /* Send message directly to waiting task         */
+                            #else
+                                msg                  = msg;                       /* Prevent compiler warning if not used          */
+                            #endif
+                                ptcb->OSTCBStat     &= ~msk;                      /* Clear bit associated with event type          */
+                                if (ptcb->OSTCBStat == OS_STAT_RDY) {             /* See if task is ready (could be susp'd)        */
+                                    OSRdyGrp        |=  bity;                     /* Put task in the ready to run list             */
+                                    OSRdyTbl[y]     |=  bitx;
+                                }
+                                return (prio);
+                            }
                         pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;  /*      Save priority of mutex's new owner       */
                         pevent->OSEventCnt |= prio;
                         pevent->OSEventPtr  = OSTCBPrioTbl[prio];     /*      Link to mutex owner's OS_TCB             */
@@ -719,7 +751,7 @@ main
             OSTaskCreate(Task_Display, (void *)0, &DisplayStk[TASK_STK_SIZE - 1], 5);
             OSTaskCreate(Task_Monitor, (void *)0, &MonitorStk[TASK_STK_SIZE - 1], 6);
 
-            OSTaskDel(OS_PRIO_SELF);
+            OSTaskDel(OS_PRIO_SELF);✅
                 {
                 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                     OS_CPU_SR     cpu_sr;
@@ -767,7 +799,7 @@ main
                 #if (OS_VERSION >= 251) && (OS_FLAG_EN > 0) && (OS_MAX_FLAGS > 0)
                         pnode = ptcb->OSTCBFlagNode;
                         if (pnode != (OS_FLAG_NODE *)0) {                       /* If task is waiting on event flag    */
-                            OS_FlagUnlink(pnode); 
+                            OS_FlagUnlink(pnode);✅ 
                                 {
                                 #if OS_TASK_DEL_EN > 0
                                     OS_TCB       *ptcb;
@@ -809,7 +841,7 @@ main
                         if (OSLockNesting > 0) {
                             OSLockNesting--;
                         }
-                        OSTaskDelHook(ptcb); 
+                        OSTaskDelHook(ptcb); ✅
                             {}                                   /* Call user defined hook              */
                         OSTaskCtr--;                                            /* One less task being managed         */
                         OSTCBPrioTbl[prio] = (OS_TCB *)0;                       /* Clear old priority entry            */
@@ -823,7 +855,7 @@ main
                         ptcb->OSTCBNext = OSTCBFreeList;                        /* Return TCB to free TCB list         */
                         OSTCBFreeList   = ptcb;
                         OS_EXIT_CRITICAL();
-                        OS_Sched();
+                        OS_Sched();✅
                             {
                             #if OS_CRITICAL_METHOD == 3                            /* Allocate storage for CPU status register     */
                                 OS_CPU_SR  cpu_sr;
@@ -850,7 +882,7 @@ main
                 }
         }
 
-        void Task_Input(void *pdata)
+        void Task_Input(void *pdata)✅
         {
             INT8U err;
             int key;
@@ -864,7 +896,7 @@ main
 
                 if (key != 0) {
                     // 按键按下，打印 Log
-                    OSMutexPend(UartMutex, 0, &err);
+                    OSMutexPend(UartMutex, 0, &err);✅
                         {
                         #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
                             OS_CPU_SR  cpu_sr;
@@ -955,7 +987,7 @@ main
                             *err = OS_NO_ERR;
                         }                    
                     Uart_Printf("[KEY] K%d Pressed -> ", key);
-                    OSMutexPost(UartMutex);
+                    OSMutexPost(UartMutex);✅
                         {
                         #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
                             OS_CPU_SR  cpu_sr;
@@ -1054,7 +1086,7 @@ main
                         // K2: 控制 LED1 翻转 (Mbox)
                         case 2:
                             Uart_Printf("Send Mbox to LED\n");
-                            OSMboxPost(MboxLed, (void *)0x01); // 发送指令 1
+                            OSMboxPost(MboxLed, (void *)0x01); ✅// 发送指令 1
                                 {
                                 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                                     OS_CPU_SR  cpu_sr;
@@ -1093,7 +1125,7 @@ main
                         case 3:
                             Uart_Printf("Send Static Queue\n");
                             static_pkt.Type  = 0;
-                            static_pkt.Value = OSTimeGet(); // 发送当前时间
+                            static_pkt.Value = OSTimeGet(); ✅// 发送当前时间
                                 INT32U  OSTimeGet (void)
                                 {
                                 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
@@ -1105,7 +1137,7 @@ main
                                     OS_EXIT_CRITICAL();
                                     return (ticks);
                                 }                            
-                            OSQPost(DataQueue, &static_pkt);
+                            OSQPost(DataQueue, &static_pkt);✅
                                 {
                                 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                                     OS_CPU_SR  cpu_sr;
@@ -1150,7 +1182,7 @@ main
                         case 4:
                             Uart_Printf("Alloc Mem & Send\n");
                             // [OS_MEM] 申请内存
-                            p_mem_pkt = (DATA_PKT *)OSMemGet(MemPartition, &err);
+                            p_mem_pkt = (DATA_PKT *)OSMemGet(MemPartition, &err);✅
                                 {
                                 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
                                     OS_CPU_SR  cpu_sr;
@@ -1192,7 +1224,7 @@ main
                         case 5:
                             if (work_task_suspended) {
                                 Uart_Printf("Resume Work Task\n");
-                                OSTaskResume(4); // 恢复 Prio 4
+                                OSTaskResume(4);✅ // 恢复 Prio 4
                                     {
                                     #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                                         OS_CPU_SR  cpu_sr;
@@ -1230,7 +1262,7 @@ main
                             } 
                             else {
                                 Uart_Printf("Suspend Work Task\n");
-                                OSTaskSuspend(4); // 挂起 Prio 4
+                                OSTaskSuspend(4);✅ // 挂起 Prio 4
                                     {
                                     #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                                         OS_CPU_SR  cpu_sr;
@@ -1277,7 +1309,7 @@ main
 
                         // K6: 切换系统模式 (Flag)
                         case 6:
-                            OSFlagPost(SysModeFlag, MODE_NORMAL | MODE_TURBO, OS_FLAG_CLR, &err); // 清除
+                            OSFlagPost(SysModeFlag, MODE_NORMAL | MODE_TURBO, OS_FLAG_CLR, &err); ✅// 清除
                                 {
                                 #if OS_CRITICAL_METHOD == 3                          /* Allocate storage for CPU status register       */
                                     OS_CPU_SR     cpu_sr;
@@ -1373,7 +1405,7 @@ main
                             break;
                     }
                     
-                    OSTimeDlyHMSM(0,0,0,20); // 去抖
+                    OSTimeDlyHMSM(0,0,0,20);✅ // 去抖
                         {
                             INT32U ticks;
                             INT16U loops;
@@ -1413,7 +1445,7 @@ main
             }
         }
 
-        void Task_Work(void *pdata)
+        void Task_Work(void *pdata)✅
         {
             INT8U err;
             DATA_PKT *p_pkt;
@@ -1421,7 +1453,7 @@ main
 
             for (;;) {
                 // 死等队列消息
-                p_pkt = (DATA_PKT *)OSQPend(DataQueue, 0, &err);
+                p_pkt = (DATA_PKT *)OSQPend(DataQueue, 0, &err);✅
                     {
                     #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                         OS_CPU_SR  cpu_sr;
@@ -1484,7 +1516,7 @@ main
                     {略}
                     // 如果是动态申请的内存，必须释放！
                     if (p_pkt->Type == 1) {
-                        OSMemPut(MemPartition, (void *)p_pkt);
+                        OSMemPut(MemPartition, (void *)p_pkt);✅
                             {
                             #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                                 OS_CPU_SR  cpu_sr;
@@ -1516,7 +1548,7 @@ main
             }
         }
 
-        void Task_Display(void *pdata)
+        void Task_Display(void *pdata)✅
         {
             INT8U err;
             void *msg;
@@ -1525,7 +1557,7 @@ main
 
             for (;;) {
                 // --- 1. 检查蜂鸣器 (非阻塞 Accept) ---
-                if (OSSemAccept(SemBeep) > 0) {
+                if (OSSemAccept(SemBeep) > 0) ✅{
                     INT16U  OSSemAccept (OS_EVENT *pevent){
                     #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
                         OS_CPU_SR  cpu_sr;
@@ -1554,7 +1586,7 @@ main
                 }
 
                 // --- 2. 检查 LED 邮箱 (非阻塞 Accept) ---
-                msg = OSMboxAccept(MboxLed);
+                msg = OSMboxAccept(MboxLed);✅
                     {
                     #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                         OS_CPU_SR  cpu_sr;
@@ -1582,7 +1614,7 @@ main
                 }
 
                 // --- 3. 根据标志位更新 LED2/3/4 ---
-                OS_FLAGS flags = OSFlagQuery(SysModeFlag, &err);
+                OS_FLAGS flags = OSFlagQuery(SysModeFlag, &err);✅
                     {
                     #if OS_CRITICAL_METHOD == 3                       /* Allocate storage for CPU status register          */
                         OS_CPU_SR  cpu_sr;
@@ -1636,7 +1668,7 @@ main
                 OSTimeDlyHMSM(0,0,10,0); // 每 10 秒打印一次
 
                 // 1. 查询内存剩余
-                OSMemQuery(MemPartition, &mem_data);
+                OSMemQuery(MemPartition, &mem_data);✅
                     {
                     #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
                         OS_CPU_SR  cpu_sr;

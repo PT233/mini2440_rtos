@@ -33,7 +33,21 @@
 */
 INT16U  OSSemAccept (OS_EVENT *pevent)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    INT16U cnt;
+    if(pevent == (OS_EVENT *)0){
+        return 0;
+    }
+    if(pevent->OSEventType != OS_EVENT_TYPE_SEM){
+        return 0;
+    }
+    OS_ENTER_CRITICAL();
+    cnt = pevent->OSEventCnt;
+    if(cnt > 0){
+        pevent->OSEventCnt--;
+    }
+    OS_EXIT_CRITICAL();
+    return cnt;
 }
 
 /*
@@ -96,7 +110,64 @@ OS_EVENT  *OSSemCreate (INT16U cnt)
 */
 OS_EVENT  *OSSemDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;  
+    BOOLEAN    tasks_waiting;
+
+
+    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+        *err = OS_ERR_DEL_ISR;                             /* ... can't DELETE from an ISR             */
+        return (pevent);
+    }
+
+    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+        *err = OS_ERR_PEVENT_NULL;
+        return (pevent);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_SEM) {        /* Validate event block type                */
+        *err = OS_ERR_EVENT_TYPE;
+        return (pevent);
+    }
+
+    OS_ENTER_CRITICAL();
+    if (pevent->OSEventGrp != 0x00) {                      /* See if any tasks waiting on semaphore    */
+        tasks_waiting = TRUE;                              /* Yes                                      */
+    } else {
+        tasks_waiting = FALSE;                             /* No                                       */
+    }
+    switch (opt) {
+        case OS_DEL_NO_PEND:                               /* Delete semaphore only if no task waiting */
+             if (tasks_waiting == FALSE) {
+                 pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+                 pevent->OSEventPtr  = OSEventFreeList;    /* Return Event Control Block to free list  */
+                 OSEventFreeList     = pevent;             /* Get next free event control block        */
+                 OS_EXIT_CRITICAL();
+                 *err = OS_NO_ERR;
+                 return ((OS_EVENT *)0);                   /* Semaphore has been deleted               */
+             } else {
+                 OS_EXIT_CRITICAL();
+                 *err = OS_ERR_TASK_WAITING;
+                 return (pevent);
+             }
+
+        case OS_DEL_ALWAYS:                                /* Always delete the semaphore              */
+             while (pevent->OSEventGrp != 0x00) {          /* Ready ALL tasks waiting for semaphore    */
+                 OS_EventTaskRdy(pevent, (void *)0, OS_STAT_SEM);
+             }
+             pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+             pevent->OSEventPtr  = OSEventFreeList;        /* Return Event Control Block to free list  */
+             OSEventFreeList     = pevent;                 /* Get next free event control block        */
+             OS_EXIT_CRITICAL();
+             if (tasks_waiting == TRUE) {                  /* Reschedule only if task(s) were waiting  */
+                 OS_Sched();                               /* Find highest priority task ready to run  */
+             }
+             *err = OS_NO_ERR;
+             return ((OS_EVENT *)0);                       /* Semaphore has been deleted               */
+
+        default:
+             OS_EXIT_CRITICAL();
+             *err = OS_ERR_INVALID_OPT;
+             return (pevent);
+    }
 }
 
 /*
@@ -121,7 +192,42 @@ OS_EVENT  *OSSemDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 */
 void  OSSemPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;  
+    if (OSIntNesting > 0) {                           /* See if called from ISR ...                    */
+        *err = OS_ERR_PEND_ISR;                       /* ... can't PEND from an ISR                    */
+        return;
+    }
+    if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
+        *err = OS_ERR_PEVENT_NULL;
+        return;
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_SEM) {   /* Validate event block type                     */
+        *err = OS_ERR_EVENT_TYPE;
+        return;
+    }
+    OS_ENTER_CRITICAL();
+    if (pevent->OSEventCnt > 0) {                     /* If sem. is positive, resource available ...   */
+        pevent->OSEventCnt--;                         /* ... decrement semaphore only if positive.     */
+        OS_EXIT_CRITICAL();
+        *err = OS_NO_ERR;
+        return;
+    }
+                                                      /* Otherwise, must wait until event occurs       */
+    OSTCBCur->OSTCBStat |= OS_STAT_SEM;               /* Resource not available, pend on semaphore     */
+    OSTCBCur->OSTCBDly   = timeout;                   /* Store pend timeout in TCB                     */
+    OS_EventTaskWait(pevent);                         /* Suspend task until event or timeout occurs    */
+    OS_EXIT_CRITICAL();
+    OS_Sched();                                       /* Find next highest priority task ready         */
+    OS_ENTER_CRITICAL();
+    if (OSTCBCur->OSTCBStat & OS_STAT_SEM) {          /* Must have timed out if still waiting for event*/
+        OS_EventTO(pevent);
+        OS_EXIT_CRITICAL();
+        *err = OS_TIMEOUT;                            /* Indicate that didn't get event within TO      */
+        return;
+    }
+    OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;
+    OS_EXIT_CRITICAL();
+    *err = OS_NO_ERR;
 }
 
 /*
@@ -144,7 +250,28 @@ void  OSSemPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 */
 INT8U  OSSemPost (OS_EVENT *pevent)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    if(pevent == (OS_EVENT *)0){
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if(pevent->OSEventType != OS_EVENT_TYPE_SEM){
+        return (OS_ERR_EVENT_TYPE);
+    }
+
+    OS_ENTER_CRITICAL();
+    if(pevent->OSEventGrp != 0x00){
+        OS_EventTaskRdy(pevent, (void *)0, OS_STAT_SEM);
+        OS_EXIT_CRITICAL();
+        OS_Sched();
+        return (OS_NO_ERR);
+    }
+    if(pevent->OSEventCnt < 65535){
+        pevent->OSEventCnt++;
+        OS_EXIT_CRITICAL();
+        return (OS_NO_ERR);
+    }
+    OS_EXIT_CRITICAL();
+    return (OS_SEM_OVF);
 }
 
 /*
@@ -162,7 +289,54 @@ INT8U  OSSemPost (OS_EVENT *pevent)
 * - 无。
 *********************************************************************************************************
 */
-INT8U  OSSemQuery (OS_EVENT *pevent, OS_SEM_DATA *p_data)
+INT8U  OSSemQuery (OS_EVENT *pevent, OS_SEM_DATA *pdata)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr; 
+    INT8U     *psrc;
+    INT8U     *pdest;
+
+    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_SEM) {        /* Validate event block type                */
+        return (OS_ERR_EVENT_TYPE);
+    }
+    OS_ENTER_CRITICAL();
+    pdata->OSEventGrp = pevent->OSEventGrp;                /* Copy message mailbox wait list           */
+    psrc              = &pevent->OSEventTbl[0];
+    pdest             = &pdata->OSEventTbl[0];
+#if OS_EVENT_TBL_SIZE > 0
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 1
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 2
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 3
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 4
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 5
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 6
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 7
+    *pdest            = *psrc;
+#endif
+    pdata->OSCnt      = pevent->OSEventCnt;                /* Get semaphore count                      */
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
 }

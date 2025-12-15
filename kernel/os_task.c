@@ -35,32 +35,71 @@
 * - 涉及复杂的位操作和链表操作，需确保原子性。
 *********************************************************************************************************
 */
-INT8U OSTaskChangePrio(INT8U oldprio, INT8U newprio){
-    OS_CPU_SR cpu_sr;
-    OS_TCB    *ptcb;
-    if(oldprio >= OS_LOWEST_PRIO || newprio >= OS_LOWEST_PRIO){
-        return OS_PRIO_INVALID;
-    }
-    if(oldprio != OS_PRIO_SELF){
-        return OS_PRIO_ERR;
-    }
-    if(newprio == OS_PRIO_EXIST){
-        return OS_PRIO_EXIST;
+INT8U  OSTaskChangePrio (INT8U oldprio, INT8U newprio)
+{
+    OS_CPU_SR    cpu_sr;
+    OS_EVENT    *pevent;
+    OS_TCB      *ptcb;
+    INT8U        x;
+    INT8U        y;
+    INT8U        bitx;
+    INT8U        bity;
+
+    if ((oldprio >= OS_LOWEST_PRIO && oldprio != OS_PRIO_SELF)  ||
+         newprio >= OS_LOWEST_PRIO) {
+        return (OS_PRIO_INVALID);
     }
     OS_ENTER_CRITICAL();
-    ptcb->OSTCBPrio = newprio;
-    OS_EXIT_CRITICAL();//检查
-    ptcb->OSTCBY = newprio >> 3;
-    ptcb->OSTCBX = newprio & 7;
-    ptcb->OSTCBBitY = OSMapTbl[ptcb->OSTCBY];
-    ptcb->OSTCBBitX = OSMapTbl[ptcb->OSTCBX];
-
-
-    if(ptcb->OSTCBEventPtr != 0){
-        oseventwaitlist;
-        return //直接看
+    if (OSTCBPrioTbl[newprio] != (OS_TCB *)0) {           
+        OS_EXIT_CRITICAL();
+        return (OS_PRIO_EXIST);
+    } else {
+        OSTCBPrioTbl[newprio] = (OS_TCB *)1;        
+        OS_EXIT_CRITICAL();
+        y    = newprio >> 3;                           
+        bity = OSMapTbl[y];
+        x    = newprio & 0x07;
+        bitx = OSMapTbl[x];
+        OS_ENTER_CRITICAL();
+        if (oldprio == OS_PRIO_SELF) {                
+            oldprio = OSTCBCur->OSTCBPrio;      
+        }
+        ptcb = OSTCBPrioTbl[oldprio];
+        if (ptcb != (OS_TCB *)0) {            
+            OSTCBPrioTbl[oldprio] = (OS_TCB *)0;           
+            if ((OSRdyTbl[ptcb->OSTCBY] & ptcb->OSTCBBitX) != 0x00) { 
+                if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) {
+                    OSRdyGrp &= ~ptcb->OSTCBBitY;
+                }
+                OSRdyGrp    |= bity;                          
+                OSRdyTbl[y] |= bitx;
+            } 
+            else {
+                pevent = ptcb->OSTCBEventPtr;
+                if (pevent != (OS_EVENT *)0) {                
+                    if ((pevent->OSEventTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0) {
+                        pevent->OSEventGrp &= ~ptcb->OSTCBBitY;
+                    }
+                    pevent->OSEventGrp    |= bity;             
+                    pevent->OSEventTbl[y] |= bitx;
+                }
+            }
+            OSTCBPrioTbl[newprio] = ptcb;                    
+            ptcb->OSTCBPrio       = newprio;                  
+            ptcb->OSTCBY          = y;
+            ptcb->OSTCBX          = x;
+            ptcb->OSTCBBitY       = bity;
+            ptcb->OSTCBBitX       = bitx;
+            OS_EXIT_CRITICAL();
+            OS_Sched();                                        
+            return (OS_NO_ERR);
+        } 
+        else {
+            OSTCBPrioTbl[newprio] = (OS_TCB *)0;                
+            OS_EXIT_CRITICAL();
+            return (OS_PRIO_ERR);                               
+        }
     }
-    return OS_NO_ERR;
 }
 
 /*
@@ -136,8 +175,7 @@ INT8U OSTaskCreate(int (*task)(int* pdata), void *pata1, void *ptos, INT8U prio)
 */
 INT8U  OSTaskCreateExt (void (*task)(void *pd), void *pdata1, OS_STK *ptos, INT8U prio, INT16U id, OS_STK *pbos, INT32U stk_size, void *pext, INT16U opt)
 {
-    // 在此输入代码
-
+    //不实现
 }
 
 /*
@@ -161,8 +199,73 @@ INT8U  OSTaskCreateExt (void (*task)(void *pd), void *pdata1, OS_STK *ptos, INT8
 */
 INT8U  OSTaskDel (INT8U prio)
 {
-    // 在此输入代码
+    OS_CPU_SR       cpu_sr;
+    OS_EVENT        *pevent;
+    OS_FLAG_NODE    *pnode;
+    OS_TCB          *ptcb;
+    BOOLEAN         self;
+    
+    if (OSIntNesting > 0) {    
+        return (OS_TASK_DEL_ISR);
+    }
+    if (prio == OS_IDLE_PRIO) {                               
+        return (OS_TASK_DEL_IDLE);
+    }
+    if (prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {       
+        return (OS_PRIO_INVALID);
+    }
+
+    OS_ENTER_CRITICAL();
+    if (prio == OS_PRIO_SELF) {                                
+        prio = OSTCBCur->OSTCBPrio;                            
+    }
+    ptcb = OSTCBPrioTbl[prio];
+    if (ptcb != (OS_TCB *)0) {                                  
+        if ((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00) { 
+            OSRdyGrp &= ~ptcb->OSTCBBitY;
+        }
+        pevent = ptcb->OSTCBEventPtr;
+        if (pevent != (OS_EVENT *)0) {                  
+            if ((pevent->OSEventTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0) {
+                pevent->OSEventGrp &= ~ptcb->OSTCBBitY;       
+            }
+        }
+        pnode = ptcb->OSTCBFlagNode;
+        if (pnode != (OS_FLAG_NODE *)0) {                    
+            OS_FlagUnlink(pnode);
+        }
+        ptcb->OSTCBDly  = 0;                               
+        ptcb->OSTCBStat = OS_STAT_RDY;                          
+        if (OSLockNesting < 255) {
+            OSLockNesting++;
+        }
+        OS_EXIT_CRITICAL();                                    
+        OS_Dummy();                                             
+        OS_ENTER_CRITICAL();                                    
+        if (OSLockNesting > 0) {
+            OSLockNesting--;
+        }
+        OSTaskDelHook(ptcb);
+        OSTaskCtr--;                                           
+        OSTCBPrioTbl[prio] = (OS_TCB *)0;                       
+        if (ptcb->OSTCBPrev == (OS_TCB *)0) {                   
+            ptcb->OSTCBNext->OSTCBPrev = (OS_TCB *)0;
+            OSTCBList                  = ptcb->OSTCBNext;
+        } 
+        else {
+            ptcb->OSTCBPrev->OSTCBNext = ptcb->OSTCBNext;
+            ptcb->OSTCBNext->OSTCBPrev = ptcb->OSTCBPrev;
+        }
+        ptcb->OSTCBNext = OSTCBFreeList;                        
+        OSTCBFreeList   = ptcb;
+        OS_EXIT_CRITICAL();
+        OS_Sched();
+        return (OS_NO_ERR);
+    }
+    OS_EXIT_CRITICAL();
+    return (OS_TASK_DEL_ERR);
 }
+
 
 /*
 *********************************************************************************************************
@@ -182,7 +285,34 @@ INT8U  OSTaskDel (INT8U prio)
 */
 INT8U  OSTaskDelReq (INT8U prio)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;
+    BOOLEAN    stat;
+    INT8U      err;
+    OS_TCB    *ptcb;
+
+    if (prio == OS_IDLE_PRIO) {                                 
+        return (OS_TASK_DEL_IDLE);
+    }
+    if (prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {   
+        return (OS_PRIO_INVALID);
+    }
+    if (prio == OS_PRIO_SELF) {                               
+        OS_ENTER_CRITICAL();                           
+        stat = OSTCBCur->OSTCBDelReq;                         
+        OS_EXIT_CRITICAL();
+        return (stat);
+    }
+    OS_ENTER_CRITICAL();
+    ptcb = OSTCBPrioTbl[prio];
+    if (ptcb != (OS_TCB *)0) {                                
+        ptcb->OSTCBDelReq = OS_TASK_DEL_REQ;                    
+        err = OS_NO_ERR;
+    } 
+    else {
+        err = OS_TASK_NOT_EXIST;                 
+    }
+    OS_EXIT_CRITICAL();
+    return (err);
 }
 
 /*
@@ -205,6 +335,31 @@ INT8U  OSTaskDelReq (INT8U prio)
 INT8U  OSTaskResume (INT8U prio)
 {
     // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    OS_TCB *ptcb;
+    if(prio >= OS_LOWEST_PRIO){
+        retun (OS_PRIO_INVALID);
+    }
+    OS_ENTER_CRITICAL();
+    ptcb = OSTCBPrioTbl[prio];
+    if(ptcb == (OS_TCB *)0){
+        OS_EXIT_CRITICAL();
+        return (OS_TASK_RESUME_PRIO);
+    }
+    if((ptcb->OSTCBStat & OS_STAT_SUSPEND) != OS_STAT_RDY){
+        if(((ptcb->OSTCBStat &= ~OS_STAT_SUSPEND) == OS_STAT_RDY) && (ptcb->OSTCBDly == 0)){
+            OSRdyGrp |= ptcb->OSTCBBitY;
+            OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+            OS_EXIT_CRITICAL();
+            OS_Sched();
+        }
+        else{
+            OS_EXIT_CRITICAL();
+        }
+        return(OS_NO_ERR);
+    }
+    OS_EXIT_CRITICAL();
+    return (OS_TASK_NOT_SUSPENDED);
 }
 
 /*
@@ -226,7 +381,7 @@ INT8U  OSTaskResume (INT8U prio)
 */
 INT8U  OSTaskStkChk (INT8U prio, OS_STK_DATA *p_data)
 {
-    // 在此输入代码
+    // 不实现
 }
 
 /*
@@ -249,7 +404,41 @@ INT8U  OSTaskStkChk (INT8U prio, OS_STK_DATA *p_data)
 */
 INT8U  OSTaskSuspend (INT8U prio)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    BOOLEAN self;
+    OS_TCB *ptcb;
+
+    if(prio == OS_IDLE_PRIO){
+        return (OS_TASK_SUSPEND_IDLE);
+    }
+    if(prio >= OS_LOWEST_PRIO && prio != OS_PRIO_SELF){
+        return (OS_PRIO_INVALID);
+    }
+    OS_ENTER_CRITICAL();
+    if(prio == OS_PRIO_SELF){
+        prio = OSTCBCur->OSTCBPrio;
+        self = TRUE;
+    }
+    else if(prio == OSTCBCur->OSTCBPrio){
+        self = TRUE;
+    }
+    else{
+        self = TRUE;
+    }
+    ptcb = OSTCBPrioTbl[prio];
+    if(ptcb == (OS_TCB *)0){
+        OS_EXIT_CRITICAL();
+        return (OS_TASK_SUSPEND_PRIO);
+    }
+    if((OSRdyTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0x00){
+        OSRdyGrp &= ~ptcb->OSTCBBitY;
+    }
+    ptcb->OSTCBStat |= OS_STAT_SUSPEND;
+    OS_EXIT_CRITICAL();
+    if(self = TRUE){
+        OS_Sched();
+    }
+    return (OS_NO_ERR);
 }
 
 /*
@@ -267,7 +456,23 @@ INT8U  OSTaskSuspend (INT8U prio)
 * - 涉及内存拷贝，注意结构体对齐。
 *********************************************************************************************************
 */
-INT8U  OSTaskQuery (INT8U prio, OS_TCB *p_data)
+INT8U  OSTaskQuery (INT8U prio, OS_TCB *pdata)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;
+    OS_TCB    *ptcb;
+
+    if (prio > OS_LOWEST_PRIO && prio != OS_PRIO_SELF) {   
+        return (OS_PRIO_INVALID);
+    }
+    OS_ENTER_CRITICAL();
+    if (prio == OS_PRIO_SELF) {                            
+        prio = OSTCBCur->OSTCBPrio;
+    }
+    ptcb = OSTCBPrioTbl[prio];
+    if (ptcb == (OS_TCB *)0) {                             
+        OS_EXIT_CRITICAL();
+        return (OS_PRIO_ERR);
+    }
+    memcpy(pdata, ptcb, sizeof(OS_TCB));                   
+    return (OS_NO_ERR);
 }

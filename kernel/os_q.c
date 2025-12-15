@@ -33,9 +33,30 @@
 * - 指针算术运算：在 Mini2440 上，`void **` 指针增减步长为 4 字节。
 *********************************************************************************************************
 */
-void  *OSQAccept (OS_EVENT *pevent)
-{
-    // 在此输入代码
+void  *OSQAccept (OS_EVENT *pevent){
+    OS_CPU_SR  cpu_sr;
+    void      *msg;
+    OS_Q      *pq;
+
+    if (pevent == (OS_EVENT *)0) {               /* Validate 'pevent'                                  */
+        return ((void *)0);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_Q) {/* Validate event block type                          */
+        return ((void *)0);
+    }
+    OS_ENTER_CRITICAL();
+    pq = (OS_Q *)pevent->OSEventPtr;             /* Point at queue control block                       */
+    if (pq->OSQEntries > 0) {                    /* See if any messages in the queue                   */
+        msg = *pq->OSQOut++;                     /* Yes, extract oldest message from the queue         */
+        pq->OSQEntries--;                        /* Update the number of entries in the queue          */
+        if (pq->OSQOut == pq->OSQEnd) {          /* Wrap OUT pointer if we are at the end of the queue */
+            pq->OSQOut = pq->OSQStart;
+        }
+    } else {
+        msg = (void *)0;                         /* Queue is empty                                     */
+    }
+    OS_EXIT_CRITICAL();
+    return (msg);                                /* Return message received (or NULL)                  */
 }
 
 /*
@@ -57,7 +78,6 @@ void  *OSQAccept (OS_EVENT *pevent)
 */
 OS_EVENT  *OSQCreate (void **start, INT16U size)
 {
-    // 在此输入代码
     OS_CPU_SR cpu_sr;
     OS_EVENT  *pevent;
     OS_Q      *pq;
@@ -117,10 +137,72 @@ OS_EVENT  *OSQCreate (void **start, INT16U size)
 * - 无。
 *********************************************************************************************************
 */
-OS_EVENT  *OSQDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
-{
-    // 在此输入代码
+OS_EVENT  *OSQDel (OS_EVENT *pevent, INT8U opt, INT8U *err){
+    OS_CPU_SR  cpu_sr;
+    BOOLEAN    tasks_waiting;
+    OS_Q      *pq;
+
+    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
+        *err = OS_ERR_DEL_ISR;                             /* ... can't DELETE from an ISR             */
+        return ((OS_EVENT *)0);
+    }
+    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+        *err = OS_ERR_PEVENT_NULL;
+        return (pevent);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_Q) {          /* Validate event block type                */
+        *err = OS_ERR_EVENT_TYPE;
+        return (pevent);
+    }
+
+    OS_ENTER_CRITICAL();
+    if (pevent->OSEventGrp != 0x00) {                      /* See if any tasks waiting on queue        */
+        tasks_waiting = TRUE;                              /* Yes                                      */
+    } else {
+        tasks_waiting = FALSE;                             /* No                                       */
+    }
+    switch (opt) {
+        case OS_DEL_NO_PEND:                               /* Delete queue only if no task waiting     */
+             if (tasks_waiting == FALSE) {
+                 pq                  = (OS_Q *)pevent->OSEventPtr;  /* Return OS_Q to free list        */
+                 pq->OSQPtr          = OSQFreeList;
+                 OSQFreeList         = pq;
+                 pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+                 pevent->OSEventPtr  = OSEventFreeList;    /* Return Event Control Block to free list  */
+                 OSEventFreeList     = pevent;             /* Get next free event control block        */
+                 OS_EXIT_CRITICAL();
+                 *err = OS_NO_ERR;
+                 return ((OS_EVENT *)0);                   /* Queue has been deleted                   */
+             } else {
+                 OS_EXIT_CRITICAL();
+                 *err = OS_ERR_TASK_WAITING;
+                 return (pevent);
+             }
+
+        case OS_DEL_ALWAYS:                                /* Always delete the queue                  */
+             while (pevent->OSEventGrp != 0x00) {          /* Ready ALL tasks waiting for queue        */
+                 OS_EventTaskRdy(pevent, (void *)0, OS_STAT_Q);
+             }
+             pq                  = (OS_Q *)pevent->OSEventPtr;      /* Return OS_Q to free list        */
+             pq->OSQPtr          = OSQFreeList;
+             OSQFreeList         = pq;
+             pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
+             pevent->OSEventPtr  = OSEventFreeList;        /* Return Event Control Block to free list  */
+             OSEventFreeList     = pevent;                 /* Get next free event control block        */
+             OS_EXIT_CRITICAL();
+             if (tasks_waiting == TRUE) {                  /* Reschedule only if task(s) were waiting  */
+                 OS_Sched();                               /* Find highest priority task ready to run  */
+             }
+             *err = OS_NO_ERR;
+             return ((OS_EVENT *)0);                       /* Queue has been deleted                   */
+
+        default:
+             OS_EXIT_CRITICAL();
+             *err = OS_ERR_INVALID_OPT;
+             return (pevent);
+    }
 }
+
 
 /*
 *********************************************************************************************************
@@ -140,7 +222,22 @@ OS_EVENT  *OSQDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 */
 INT8U  OSQFlush (OS_EVENT *pevent)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;
+    OS_Q      *pq;
+
+    if (pevent == (OS_EVENT *)0) {                    
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_Q) {    
+        return (OS_ERR_EVENT_TYPE);
+    }
+    OS_ENTER_CRITICAL();
+    pq             = (OS_Q *)pevent->OSEventPtr;      
+    pq->OSQIn      = pq->OSQStart;
+    pq->OSQOut     = pq->OSQStart;
+    pq->OSQEntries = 0;
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
 }
 
 /*
@@ -162,7 +259,53 @@ INT8U  OSQFlush (OS_EVENT *pevent)
 */
 void  *OSQPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    void *msg;
+    OS_Q *pq;
+
+    if(OSIntNesting > 0){
+        *err = OS_ERR_PEND_ISR;
+        return ((void *)0);
+    }
+    if(pevent == (OS_EVENT *)0){
+        *err = OS_ERR_PEVENT_NULL;
+        return ((void *)0);
+    }
+    if(pevent->OSEventType != OS_EVENT_TYPE_Q){
+        *err = OS_ERR_EVENT_TYPE;
+        return ((void *)0);
+    }
+    OS_ENTER_CRITICAL();
+    pq = (OS_Q *)pevent->OSEventPtr;
+    if(pq->OSQEntries > 0){
+        msg = *pq->OSQOut++;
+        pq->OSQEntries--;
+        if(pq->OSQOut == pq->OSQEnd){
+            pq->OSQOut = pq->OSQStart;
+        }
+        OS_EXIT_CRITICAL();
+        *err = OS_NO_ERR;
+        return (msg);
+    }
+    OSTCBCur->OSTCBStat |= OS_STAT_Q;
+    OSTCBCur->OSTCBDly = timeout;
+    OS_EventTaskWait(pevent);
+    OS_EXIT_CRITICAL();
+    OS_Sched();
+    OS_ENTER_CRITICAL();
+    msg = OSTCBCur->OSTCBMsg;
+    if(msg != (void *)0){
+        OSTCBCur->OSTCBMsg = (void *)0;
+        OSTCBCur->OSTCBStat = OS_STAT_RDY;
+        OSTCBCur->OSTCBEventPtr = (OS_EVENT *)0;
+        OS_EXIT_CRITICAL();
+        *err = OS_NO_ERR;
+        return (msg);
+    }
+    OS_EventTO(pevent);
+    OS_EXIT_CRITICAL();
+    *err = OS_TIMEOUT;
+    return ((void *)0);
 }
 
 /*
@@ -184,7 +327,37 @@ void  *OSQPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 */
 INT8U  OSQPost (OS_EVENT *pevent, void *msg)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    OS_Q      *pq;
+
+    if(pevent == (OS_EVENT *)0){
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if(msg == (void *)0){
+        return (OS_ERR_POST_NULL_PTR);
+    }
+    if(pevent->OSEventType != OS_EVENT_TYPE_Q){
+        return (OS_ERR_EVENT_TYPE);
+    }
+    OS_ENTER_CRITICAL();
+    if(pevent->OSEventGrp != 0x00){
+        OS_EventTaskRdy(pevent, msg, OS_STAT_Q);
+        OS_EXIT_CRITICAL();
+        OS_Sched();
+        return (OS_NO_ERR);
+    }
+    pq = (OS_Q *)pevent->OSEventPtr;
+    if(pq->OSQEntries >= pq->OSQSize){
+        OS_EXIT_CRITICAL();
+        return (OS_Q_FULL);
+    }
+    *pq->OSQIn++ = msg;
+    pq->OSQEntries++;
+    if(pq->OSQIn == pq->OSQEnd){
+        pq->OSQIn = pq->OSQStart;
+    }
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
 }
 
 /*
@@ -205,7 +378,39 @@ INT8U  OSQPost (OS_EVENT *pevent, void *msg)
 */
 INT8U  OSQPostFront (OS_EVENT *pevent, void *msg)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;
+    OS_Q      *pq;
+
+    if (pevent == (OS_EVENT *)0) {        
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if (msg == (void *)0) {      
+        return (OS_ERR_POST_NULL_PTR);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_Q) { 
+        return (OS_ERR_EVENT_TYPE);
+    }
+
+    OS_ENTER_CRITICAL();
+    if (pevent->OSEventGrp != 0x00) {           
+        OS_EventTaskRdy(pevent, msg, OS_STAT_Q);    
+        OS_EXIT_CRITICAL();
+        OS_Sched();                                  
+        return (OS_NO_ERR);
+    }
+    pq = (OS_Q *)pevent->OSEventPtr;              
+    if (pq->OSQEntries >= pq->OSQSize) {             
+        OS_EXIT_CRITICAL();
+        return (OS_Q_FULL);
+    }
+    if (pq->OSQOut == pq->OSQStart) {               
+        pq->OSQOut = pq->OSQEnd;
+    }
+    pq->OSQOut--;
+    *pq->OSQOut = msg;                             
+    pq->OSQEntries++;                            
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
 }
 
 /*
@@ -227,7 +432,7 @@ INT8U  OSQPostFront (OS_EVENT *pevent, void *msg)
 */
 INT8U  OSQPostOpt (OS_EVENT *pevent, void *msg, INT8U opt)
 {
-    // 在此输入代码
+    //不实现
 }
 
 /*
@@ -246,9 +451,65 @@ INT8U  OSQPostOpt (OS_EVENT *pevent, void *msg, INT8U opt)
 * - 内存拷贝。
 *********************************************************************************************************
 */
-INT8U  OSQQuery (OS_EVENT *pevent, OS_Q_DATA *p_data)
+INT8U  OSQQuery (OS_EVENT *pevent, OS_Q_DATA *pdata)
 {
-    // 在此输入代码
+    OS_CPU_SR  cpu_sr;
+    OS_Q      *pq;
+    INT8U     *psrc;
+    INT8U     *pdest;
+
+    if (pevent == (OS_EVENT *)0) {                         
+        return (OS_ERR_PEVENT_NULL);
+    }
+    if (pevent->OSEventType != OS_EVENT_TYPE_Q) {          
+        return (OS_ERR_EVENT_TYPE);
+    }
+
+    OS_ENTER_CRITICAL();
+    pdata->OSEventGrp = pevent->OSEventGrp;                
+    psrc              = &pevent->OSEventTbl[0];
+    pdest             = &pdata->OSEventTbl[0];
+#if OS_EVENT_TBL_SIZE > 0
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 1
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 2
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 3
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 4
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 5
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 6
+    *pdest++          = *psrc++;
+#endif
+
+#if OS_EVENT_TBL_SIZE > 7
+    *pdest            = *psrc;
+#endif
+    pq = (OS_Q *)pevent->OSEventPtr;
+    if (pq->OSQEntries > 0) {
+        pdata->OSMsg = *pq->OSQOut;                       
+    } else {
+        pdata->OSMsg = (void *)0;
+    }
+    pdata->OSNMsgs = pq->OSQEntries;
+    pdata->OSQSize = pq->OSQSize;
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
 }
 
 /*
@@ -269,7 +530,6 @@ INT8U  OSQQuery (OS_EVENT *pevent, OS_Q_DATA *p_data)
 */
 void  OS_QInit (void)
 {
-    // 在此输入代码
 #if OS_MAX_QS == 1
     OSQFreeList = &OSQTbl[0];
     OSQFreeList->OSQPtr = (OS_Q *)0;

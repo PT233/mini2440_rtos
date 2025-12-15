@@ -51,6 +51,8 @@ typedef INT32U         OS_FLAGS;   /* Date type for event flag bits      */
 *********************************************************************************************************
 */
 #define    OS_TASK_SW() OSCtxSw()
+
+
 OS_CPU_SR  OS_CPU_SR_Save(void);
 void       OS_CPU_SR_Restore(OS_CPU_SR cpu_sr);
 

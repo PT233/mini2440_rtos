@@ -101,7 +101,24 @@ OS_MEM  *OSMemCreate (void *addr, INT32U nblks, INT32U blksize, INT8U *err)
 */
 void  *OSMemGet (OS_MEM *pmem, INT8U *err)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    void *pblk;
+    if(pmem == (OS_MEM *)0){
+        *err = OS_MEM_INVALID_PMEM;
+        return ((OS_MEM *)0);
+    }
+    OS_ENTER_CRITICAL();
+    if(pmem->OSMemNFree > 0){
+        pblk = pmem->OSMemFreeList;
+        pmem->OSMemFreeList = *(void **)pblk;
+        pmem->OSMemNFree--;
+        OS_EXIT_CRITICAL();
+        *err = OS_NO_ERR;
+        return(pblk);
+    }
+    OS_EXIT_CRITICAL();
+    *err = OS_MEM_NO_FREE_BLKS;
+    return ((void *)0);
 }
 
 /*
@@ -123,7 +140,23 @@ void  *OSMemGet (OS_MEM *pmem, INT8U *err)
 */
 INT8U  OSMemPut (OS_MEM  *pmem, void *pblk)
 {
-    // 在此输入代码
+    OS_CPU_SR cpu_sr;
+    if(pmem == (OS_MEM *)0){
+        return (OS_MEM_INVALID_PMEM);
+    }
+    if(pblk == (void *)0){
+        return (OS_MEM_INVALID_PBLK);
+    }
+    OS_ENTER_CRITICAL();
+    if(pmem->OSMemNFree >= pmem->OSMemNBlks){
+        OS_EXIT_CRITICAL();
+        return (OS_MEM_FULL);
+    }
+    *(void **)pblk = pmem->OSMemFreeList;
+    pmem->OSMemFreeList = pblk;
+    pmem->OSMemNFree++;
+    OS_EXIT_CRITICAL();
+    return (OS_NO_ERR);
 }
 
 /*
@@ -141,9 +174,27 @@ INT8U  OSMemPut (OS_MEM  *pmem, void *pblk)
 * - 无。
 *********************************************************************************************************
 */
-INT8U  OSMemQuery (OS_MEM *pmem, OS_MEM_DATA *p_data)
+INT8U  OSMemQuery (OS_MEM *pmem, OS_MEM_DATA *pdata)
 {
-    // 在此输入代码
+
+    OS_CPU_SR  cpu_sr;
+    
+    if (pmem == (OS_MEM *)0) {                   /* Must point to a valid memory partition             */
+        return (OS_MEM_INVALID_PMEM);
+    }
+    if (pdata == (OS_MEM_DATA *)0) {             /* Must release a valid storage area for the data     */
+        return (OS_MEM_INVALID_PDATA);
+    }
+    OS_ENTER_CRITICAL();
+    pdata->OSAddr     = pmem->OSMemAddr;
+    pdata->OSFreeList = pmem->OSMemFreeList;
+    pdata->OSBlkSize  = pmem->OSMemBlkSize;
+    pdata->OSNBlks    = pmem->OSMemNBlks;
+    pdata->OSNFree    = pmem->OSMemNFree;
+    OS_EXIT_CRITICAL();
+    pdata->OSNUsed    = pdata->OSNBlks - pdata->OSNFree;
+    return (OS_NO_ERR);
+
 }
 
 /*
