@@ -4,55 +4,61 @@
 
 ## 目录结构
 
-```text
 mini2440_rtos/
-├── arch/                           # 【架构层】
-│   ├── inc/
-│   │   ├── 2440addr.h              # S3C2440 寄存器定义 (C语言)
-│   │   ├── 2440addr.inc            # S3C2440 寄存器定义 (汇编)
-│   │   ├── memcfg.inc              # 内存控制器配置
-│   │   └── os_cpu.h                # 架构相关头文件 (包含数据类型定义)
-│   └── src/
-│       ├── startup.S               # 启动代码
-│       ├── os_cpu_context_switch.S # 上下文切换汇编
-│       └── os_cpu_init.c           # 堆栈初始化
+├── arch/                           				# 【架构层 - GNU工具链】
+│   ├── startup.S                   			# 启动代码
+│   ├── os_cpu_context_switch.S     # 上下文切换汇编
+│   └── os_cpu_init.c               		# 堆栈初始化
 │
-├── drivers/                        # 【驱动层】
-│   ├── inc/
-│   │   ├── os_uart.h               # 串口驱动头文件
-│   │   └── os_timer.h              # 定时器驱动头文件
-│   └── src/
-│       ├── os_uart.c               # 串口驱动
-│       └── os_timer.c              # 定时器驱动
+├── arch_keil/                      			# 【架构层 - Keil工具链】
+│   ├── startup_keil.S              		# 启动代码 (Keil汇编格式)
+│   ├── os_cpu_cs_keil.S           		# 上下文切换汇编 (Keil格式)
+│   ├── os_cpu_init.c               		# CPU初始化
+│   └── 注意用make不要把这个目录加入规则  # 说明文件
 │
-├── include/                        # 【公共引用】
-│   ├── includes.h                  # 项目总头文件 (包含所有模块头文件)
-│   └── ucos_ii.h                   # uC/OS-II 核心头文件
+├── drivers/                       				 # 【驱动层】
+│   ├── os_bsp.c                   			 # 板级支持包 (BSP)
+│   ├── os_uart.c                  			 # 串口驱动
+│   └── os_timer.c                 			 # 定时器驱动
 │
-├── kernel/                         # 【内核层】
-│   ├── os_core.c                   # 核心调度
-│   ├── os_flag.c                   # 事件标志组
-│   ├── os_mailbox.c                # 邮箱管理
-│   ├── os_mem.c                    # 内存管理
-│   ├── os_mutex.c                  # 互斥信号量
-│   ├── os_queue.c                  # 消息队列
-│   ├── os_sem.c                    # 信号量
-│   ├── os_task.c                   # 任务管理
-│   ├── os_time.c                   # 时间管理
-│   └── ucos_ii.c                   # 内核源文件集合
+├── include/                        			# 【公共头文件】
+│   ├── 2440addr.h                  			# S3C2440 寄存器定义 (C语言)
+│   ├── 2440addr.inc               		 # S3C2440 寄存器定义 (汇编)
+│   ├── memcfg.inc                 			 # 内存控制器配置
+│   ├── os_cpu.h                   			 # 架构相关头文件 (数据类型定义)
+│   ├── os_cfg.h                    			# 系统配置文件 (裁剪与配置)
+│   ├── os_uart.h                  			 # 串口驱动头文件
+│   ├── os_timer.h                  			# 定时器驱动头文件
+│   ├── includes.h                  			# 项目总头文件 (包含所有模块)
+│   └── ucos_ii.h                   			# uC/OS-II 核心头文件
 │
-├── user/                           # 【应用层】
-│   ├── inc/
-│   │   ├── os_cfg.h                # 系统配置文件 (裁剪与配置)
-│   │   └── os_debug.h              # 调试工具头文件
-│   └── src/
-│       ├── main.c                  # 主程序入口
-│       └── os_debug.c              # 调试函数实现 (printf等)
+├── kernel/                        				 # 【内核层】
+│   ├── os.c                        				# 内核源文件集合
+│   ├── os_core.c                  			 # 核心调度
+│   ├── os_flag.c                  			 # 事件标志组
+│   ├── os_mbox.c                 			 # 邮箱管理
+│   ├── os_mem.c                  			 # 内存管理
+│   ├── os_mutex.c                  		# 互斥信号量
+│   ├── os_q.c                      			# 消息队列
+│   ├── os_sem.c                   			 # 信号量
+│   ├── os_task.c                   			# 任务管理
+│   └── os_time.c                   			# 时间管理
 │
-├── build/                          # 编译产物目录
-├── Makefile                        # 构建脚本
-└── link.ld                         # 链接脚本
-```
+├── lib/                            			# 【库函数层】
+│   └── os_lib.c                   		 # 通用库函数
+│
+├── user/                           			# 【应用层】
+│   └── main.c                      		# 主程序入口及应用任务
+│
+├── dnw/                            # 【下载工具】
+├── build/                          # 【编译产物目录】
+│
+├── Makefile                      # 构建脚本
+├── link.ld                         # 链接脚本
+├── Dockerfile                  # Docker 构建环境
+├── run_docker.sh          # Docker 运行脚本
+├── mini2440.svd             # SVD 设备描述文件
+└── README.md               # 项目说明文档
 
 ## 编译说明
 
@@ -63,6 +69,7 @@ make
 ```
 
 编译产物将生成在 `build/` 目录下：
+
 - `mini2440_rtos.bin`: 可烧录的二进制文件
 - `mini2440_rtos.elf`: 用于调试的 ELF 文件
 - `mini2440_rtos.dis`: 反汇编文件
@@ -72,4 +79,3 @@ make
 ```bash
 make clean
 ```
-
