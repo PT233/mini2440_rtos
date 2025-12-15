@@ -51,6 +51,11 @@ mini2440_rtos/
 │   └── main.c                      # 主程序入口及应用任务
 │
 ├── dnw/                            # 【下载工具】
+├── project/                        # 【Keil项目文件】
+│   ├── mini2440_rtos.uvprojx       # Keil工程文件
+│   ├── mini2440_rtos.uvoptx        # Keil项目选项文件
+│   └── s3c2440.sct                 # Keil链接脚本
+│
 ├── build/                          # 【编译产物目录】
 │
 ├── Makefile                        # 构建脚本
