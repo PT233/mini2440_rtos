@@ -103,7 +103,7 @@ static void OS_InitEventList(void)
     /* Initialize event free list */
     pevent = &OSEventTbl[0];
     pevent2 = &OSEventTbl[1];
-    for (i = 0; i < OS_MAX_EVENTS - 1; i++) {
+    for (i = 0; i < (OS_MAX_EVENTS - 1); i++) {
         pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
         pevent->OSEventPtr = (void *)pevent2;
         pevent++;

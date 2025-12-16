@@ -1,170 +1,233 @@
-    .syntax unified
-    .cpu arm920t
-    .thumb
-    .thumb_func
+        AREA    OS_CPU_CODE, CODE, READONLY
+        ARM
+        CODE32
+        PRESERVE8
 
-    .global OS_CPU_SR_Save
-    .global OS_CPU_SR_Restore
-    .global OSStartHighRdy
-    .global OSCtxSw
-    .global OSIntCtxSw
-    .global OSTickISR
+; ===================================================
+; Export all global symbols
+; ===================================================
+        EXPORT  OS_CPU_SR_Save
+        EXPORT  OS_CPU_SR_Restore
+        EXPORT  OSStartHighRdy
+        EXPORT  OSCtxSw
+        EXPORT  OSIntCtxSw
+        EXPORT  OSTickISR
 
-    .extern OSTCBCur
-    .extern OSTCBHighRdy
-    .extern OSPrioCur
-    .extern OSPrioHighRdy
-    .extern OSIntNesting
-    .extern OSRunning
-    .extern OSTimeTick
-    .extern OSIntEnter
-    .extern OSIntExit
-    .extern OSTaskSwHook
+; ===================================================
+; Import external symbols (from uCOS-II core)
+; ===================================================
+        IMPORT  OSTCBCur
+        IMPORT  OSTCBHighRdy
+        IMPORT  OSPrioCur
+        IMPORT  OSPrioHighRdy
+        IMPORT  OSIntNesting
+        IMPORT  OSRunning
+        IMPORT  OSTimeTick
+        IMPORT  OSIntEnter
+        IMPORT  OSIntExit
+        IMPORT  OSTaskSwHook
 
-    #include "2440addr.inc"
-    #include "memcfg.inc"
+; ============================================
+; S3C2440 Register Address EQU Definitions (ARMASM recognizable)
+; ============================================
 
-    .text
-    .p2align 2
+BWSCON      EQU     0x48000000
+BANKCON0    EQU     0x48000004
+BANKCON1    EQU     0x48000008
+BANKCON2    EQU     0x4800000C
+BANKCON3    EQU     0x48000010
+BANKCON4    EQU     0x48000014
+BANKCON5    EQU     0x48000018
+BANKCON6    EQU     0x4800001C
+BANKCON7    EQU     0x48000020
 
-// ===========================================================
-//   OS_CPU_SR_Save
-// ===========================================================
-OS_CPU_SR_Save:
-    mrs     r0, cpsr
-    orr     r1, r0, #0xC0
-    msr     cpsr_c, r1
-    bx      lr
+REFRESH     EQU     0x48000024
+BANKSIZE    EQU     0x48000028
+MRSRB6      EQU     0x4800002C
+MRSRB7      EQU     0x48000030
 
-// ===========================================================
-//   OS_CPU_SR_Restore
-// ===========================================================
-OS_CPU_SR_Restore:
-    msr     cpsr_c, r0
-    bx      lr
+; CLOCK
+LOCKTIME    EQU     0x4C000000
+MPLLCON     EQU     0x4C000004
+UPLLCON     EQU     0x4C000008
+CLKCON      EQU     0x4C00000C
+CLKSLOW     EQU     0x4C000010
+CLKDIVN     EQU     0x4C000014
 
-// ===========================================================
-//   OSStartHighRdy
-// ===========================================================
-OSStartHighRdy:
+; INTERRUPT
+SRCPND      EQU     0x4A000000
+INTMOD      EQU     0x4A000004
+INTMSK      EQU     0x4A000008
+PRIORITY    EQU     0x4A00000C
+INTPND      EQU     0x4A000010
+INTOFFSET   EQU     0x4A000014
+SUBSRCPND   EQU     0x4A000018
+INTSUBMSK   EQU     0x4A00001C
 
-    ldr     r0, =OSRunning
-    mov     r1, #1
-    strb    r1, [r0]
+; IO PORT
+GPFCON      EQU     0x56000050
+GPFDAT      EQU     0x56000054
+GPBDAT      EQU     0x56000014
 
-    ldr     r0, =OSTCBHighRdy
-    ldr     r0, [r0]
-    ldr     sp, [r0]
 
-    ldmfd   sp!, {r1}
-    msr     cpsr_c, r1
 
-    ldmfd   sp!, {r0-r12, lr}
-    subs    pc, lr, #0
+; ===================================================
+; OS_CPU_SR_Save
+; ===================================================
+OS_CPU_SR_Save
+        MRS     r0, cpsr
+        ORR     r1, r0, #0xC0
+        MSR     cpsr_c, r1
+        BX      lr
 
-// ===========================================================
-//   OSCtxSw
-// ===========================================================
-OSCtxSw:
 
-    stmfd   sp!, {lr}
-    stmfd   sp!, {lr}
-    stmfd   sp!, {r0-r12}
+; ===================================================
+; OS_CPU_SR_Restore
+; ===================================================
+OS_CPU_SR_Restore
+        MSR     cpsr_c, r0
+        BX      lr
 
-    mrs     r0, cpsr
-    stmfd   sp!, {r0}
 
-    ldr     r0, =OSTCBCur
-    ldr     r1, [r0]
-    str     sp, [r1]
+; ===================================================
+; OSStartHighRdy
+; ===================================================
+OSStartHighRdy
 
-    ldr     r2, =OSTCBHighRdy
-    ldr     r3, [r2]
-    str     r3, [r0]
+        ; OSRunning = 1
+        LDR     r0, =OSRunning
+        MOV     r1, #1
+        STRB    r1, [r0]
 
-    ldr     r0, =OSPrioCur
-    ldr     r1, =OSPrioHighRdy
-    ldrb    r2, [r1]
-    strb    r2, [r0]
+        ; Load highest priority task stack
+        LDR     r0, =OSTCBHighRdy
+        LDR     r0, [r0]
+        LDR     sp, [r0]
 
-    ldr     sp, [r3]
+        ; Restore SPSR
+        LDMFD   sp!, {r1}
+        MSR     cpsr_c, r1
 
-    ldmfd   sp!, {r0}
-    msr     cpsr_c, r0
+        LDMFD   sp!, {r0-r12, lr, pc}
 
-    ldmfd   sp!, {r0-r12, lr}
-    subs    pc, lr, #0
 
-// ===========================================================
-//   OSIntCtxSw
-// ===========================================================
-OSIntCtxSw:
+; ===================================================
+; OSCtxSw (Task Context Switch)
+; ===================================================
+OSCtxSw
 
-    ldr     r0, =OSTCBCur
-    ldr     r1, =OSTCBHighRdy
-    ldr     r2, [r1]
-    str     r2, [r0]
+        STMFD   sp!, {lr}
+        STMFD   sp!, {lr}
+        STMFD   sp!, {r0-r12}
 
-    ldr     r0, =OSPrioCur
-    ldr     r1, =OSPrioHighRdy
-    ldrb    r2, [r1]
-    strb    r2, [r0]
+        MRS     r0, cpsr
+        STMFD   sp!, {r0}
 
-    ldr     sp, [r2]
+        ; Save current SP
+        LDR     r0, =OSTCBCur
+        LDR     r1, [r0]
+        STR     sp, [r1]
 
-    ldmfd   sp!, {r0}
-    msr     cpsr_c, r0
+        ; Switch TCB
+        LDR     r2, =OSTCBHighRdy
+        LDR     r3, [r2]
+        STR     r3, [r0]
 
-    ldmfd   sp!, {r0-r12, lr}
-    subs    pc, lr, #0
+        ; Switch priority variables
+        LDR     r0, =OSPrioCur
+        LDR     r1, =OSPrioHighRdy
+        LDRB    r2, [r1]
+        STRB    r2, [r0]
 
-// ===========================================================
-//   OSTickISR
-// ===========================================================
-OSTickISR:
+        ; Switch SP to new task
+        LDR     sp, [r3]
 
-    sub     lr, lr, #4
-    stmfd   sp!, {r0-r3, r12, lr}
+        ; Restore task CPSR
+        LDMFD   sp!, {r0}
+        MSR     cpsr_c, r0
 
-    mrs     r0, spsr
-    stmfd   sp!, {r0}
+        LDMFD   sp!, {r0-r12, lr}
+        SUBS    pc, lr, #0
 
-    add     sp, sp, #(6*4)
 
-    msr     cpsr_c, #(0x13 | 0xC0)
+; ===================================================
+; OSIntCtxSw (Context Switch in Interrupt)
+; ===================================================
+OSIntCtxSw
 
-    stmfd   sp!, {lr}
-    stmfd   sp!, {lr}
-    stmfd   sp!, {r0-r12}
-    stmfd   sp!, {r0}
+        LDR     r0, =OSTCBCur
+        LDR     r1, =OSTCBHighRdy
+        LDR     r2, [r1]
+        STR     r2, [r0]
 
-    ldr     r0, =OSIntNesting
-    ldrb    r1, [r0]
-    add     r1, r1, #1
-    strb    r1, [r0]
+        LDR     r0, =OSPrioCur
+        LDR     r1, =OSPrioHighRdy
+        LDRB    r2, [r1]
+        STRB    r2, [r0]
 
-    cmp     r1, #1
-    bne     _int_nested
+        LDR     sp, [r2]
 
-    ldr     r0, =OSTCBCur
-    ldr     r1, [r0]
-    str     sp, [r1]
+        LDMFD   sp!, {r0}
+        MSR     cpsr_c, r0
 
-_int_nested:
+        LDMFD   sp!, {r0-r12, lr}
+        SUBS    pc, lr, #0
 
-    ldr     r0, =SRCPND
-    ldr     r1, =(1<<14)
-    str     r1, [r0]
 
-    ldr     r0, =INTPND
-    str     r1, [r0]
+; ===================================================
+; OSTickISR (System Clock Tick)
+; ===================================================
+OSTickISR
 
-    bl      OSTimeTick
-    bl      OSIntExit
+        SUB     lr, lr, #4
+        STMFD   sp!, {r0-r3, r12, lr}
 
-    ldmfd   sp!, {r0}
-    msr     spsr_cxsf, r0
+        MRS     r0, spsr
+        STMFD   sp!, {r0}
 
-    ldmfd   sp!, {r0-r12, lr}
-    subs    pc, lr, #0
+        ADD     sp, sp, #(6*4)
 
+        MSR     cpsr_c, #(0x13 :OR: 0xC0)
+
+        STMFD   sp!, {lr}
+        STMFD   sp!, {lr}
+        STMFD   sp!, {r0-r12}
+        STMFD   sp!, {r0}
+
+        ; OSIntNesting++
+        LDR     r0, =OSIntNesting
+        LDRB    r1, [r0]
+        ADD     r1, r1, #1
+        STRB    r1, [r0]
+
+        CMP     r1, #1
+        BNE     _int_nested
+
+        ; Save task SP before interrupt
+        LDR     r0, =OSTCBCur
+        LDR     r1, [r0]
+        STR     sp, [r1]
+
+_int_nested
+
+        ; Clear interrupt flags
+        LDR     r0, =SRCPND
+        LDR     r1, =(1<<14)
+        STR     r1, [r0]
+
+        LDR     r0, =INTPND
+        STR     r1, [r0]
+
+        BL      OSTimeTick
+        BL      OSIntExit
+
+        ; Restore SPSR
+        LDMFD   sp!, {r0}
+        MSR     spsr_cxsf, r0
+
+        LDMFD   sp!, {r0-r12, lr}
+        SUBS    pc, lr, #0
+
+
+        LTORG
+        END

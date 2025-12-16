@@ -1,0 +1,14 @@
+
+LR_ROM 0x30000000 0x02000000
+{
+    ER_ROM 0x30000000 0x02000000
+    {
+        *(InRoot$$Sections)
+        .ANY (+RO)
+    }
+
+    RW_RAM 0x31000000 UNINIT
+    {
+        .ANY (+RW +ZI)
+    }
+}
