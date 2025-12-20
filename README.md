@@ -3,7 +3,7 @@
 这是一个基于 uC/OS-II 的 Mini2440 实时操作系统项目。
 
 ## 目录结构
-
+```bash
 mini2440_rtos/
 ├── arch/                           # 【架构层 - GNU工具链】
 │   ├── startup.S                   # 启动代码
@@ -65,7 +65,7 @@ mini2440_rtos/
 ├── run_docker.sh                   # Docker 运行脚本
 ├── mini2440.svd                    # SVD 设备描述文件
 └── README.md                       # 项目说明文档
-
+```
 ## 编译说明
 
 使用 `make` 命令进行编译：
