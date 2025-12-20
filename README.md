@@ -10,12 +10,6 @@ mini2440_rtos/
 │   ├── os_cpu_context_switch.S     # 上下文切换汇编
 │   └── os_cpu_init.c               # 堆栈初始化
 │
-├── arch_keil/                      # 【架构层 - Keil工具链】
-│   ├── startup_keil.S              # 启动代码 (Keil 汇编格式)
-│   ├── os_cpu_cs_keil.S            # 上下文切换汇编 (Keil 格式)
-│   ├── os_cpu_init.c               # CPU 初始化
-│   └── 注意：使用 make 构建时不要把此目录加入规则
-│
 ├── drivers/                        # 【驱动层】
 │   ├── os_bsp.c                    # 板级支持包 (BSP)
 │   ├── os_uart.c                   # 串口驱动
