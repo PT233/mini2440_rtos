@@ -7,7 +7,7 @@
 
 #include "includes.h"
 
-/*  堆栈定义  */
+// 堆栈定义
 
 OS_STK      StartStk[TASK_STK_SIZE];
 OS_STK      InputStk[TASK_STK_SIZE];    
@@ -15,7 +15,7 @@ OS_STK      WorkStk[TASK_STK_SIZE];
 OS_STK      DisplayStk[TASK_STK_SIZE];  
 OS_STK      MonitorStk[TASK_STK_SIZE];  
 
-/*  OS 对象  */
+// OS 对象
 OS_EVENT    *SemBeep;           // 蜂鸣器信号量
 OS_EVENT    *MboxLed;           // LED 控制指令
 OS_EVENT    *DataQueue;         // 数据传输队列
@@ -25,17 +25,17 @@ OS_FLAG_GRP *SysModeFlag;       // 系统模式标志
 OS_MEM      *MemPartition;      // 内存分区
 INT8U       MemStorage[10][64]; // 物理内存：10块，每块64字节
 
-/*  标志位定义  */
+// 标志位定义
 #define     MODE_NORMAL  (1 << 0)
 #define     MODE_TURBO   (1 << 1)
 
-/*  数据结构  */
+// 数据结构
 typedef struct {
     INT8U  Type;    // 0:静态消息, 1:动态内存消息
     INT32U Value;
 } DATA_PKT;
 
-/*  函数声明  */
+// 函数声明
 void Task_Start(void *pdata);
 void Task_Input(void *pdata);
 void Task_Work(void *pdata);

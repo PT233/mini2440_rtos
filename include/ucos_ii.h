@@ -172,83 +172,83 @@ typedef struct os_event {
 }OS_EVENT;
 
 //EVENT FLAGS CONTROL BLOCK=========================
-typedef struct {                            /* Event Flag Group                                        */
-    INT8U         OSFlagType;               /* Should be set to OS_EVENT_TYPE_FLAG                     */
-    void         *OSFlagWaitList;           /* Pointer to first NODE of task waiting on event flag     */
-    OS_FLAGS      OSFlagFlags;              /* 8, 16 or 32 bit flags                                   */
+typedef struct {                            // Event Flag Group
+    INT8U         OSFlagType;               // Should be set to OS_EVENT_TYPE_FLAG
+    void         *OSFlagWaitList;           // Pointer to first NODE of task waiting on event flag
+    OS_FLAGS      OSFlagFlags;              // 8, 16 or 32 bit flags
 } OS_FLAG_GRP; 
 
-typedef struct {                            /* Event Flag Wait List Node                               */
-    void         *OSFlagNodeNext;           /* Pointer to next     NODE in wait list                   */
-    void         *OSFlagNodePrev;           /* Pointer to previous NODE in wait list                   */
-    void         *OSFlagNodeTCB;            /* Pointer to TCB of waiting task                          */  
-    void         *OSFlagNodeFlagGrp;        /* Pointer to Event Flag Group                             */  
-    OS_FLAGS      OSFlagNodeFlags;          /* Event flag to wait on                                   */  
-    INT8U         OSFlagNodeWaitType;       /* Type of wait:                                           */
-                                            /*      OS_FLAG_WAIT_AND                                   */
-                                            /*      OS_FLAG_WAIT_ALL                                   */
-                                            /*      OS_FLAG_WAIT_OR                                    */
-                                            /*      OS_FLAG_WAIT_ANY                                   */
+typedef struct {                            // Event Flag Wait List Node
+    void         *OSFlagNodeNext;           // Pointer to next     NODE in wait list
+    void         *OSFlagNodePrev;           // Pointer to previous NODE in wait list
+    void         *OSFlagNodeTCB;            // Pointer to TCB of waiting task  
+    void         *OSFlagNodeFlagGrp;        // Pointer to Event Flag Group  
+    OS_FLAGS      OSFlagNodeFlags;          // Event flag to wait on  
+    INT8U         OSFlagNodeWaitType;       // Type of wait:
+                                            // OS_FLAG_WAIT_AND
+                                            // OS_FLAG_WAIT_ALL
+                                            // OS_FLAG_WAIT_OR
+                                            // OS_FLAG_WAIT_ANY
 } OS_FLAG_NODE;
 
 //MESSAGE MAILBOX DATA==============================
 typedef struct {
-    void   *OSMsg;                         /* Pointer to message in mailbox                            */
-    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE]; /* List of tasks waiting for event to occur                 */
-    INT8U   OSEventGrp;                    /* Group corresponding to tasks waiting for event to occur  */
+    void   *OSMsg;                         // Pointer to message in mailbox
+    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE]; // List of tasks waiting for event to occur
+    INT8U   OSEventGrp;                    // Group corresponding to tasks waiting for event to occur
 } OS_MBOX_DATA;
 
 //MEMORY PARTITION DATA STRUCTURES==================
-typedef struct {                       /* MEMORY CONTROL BLOCK                                         */
-    void   *OSMemAddr;                 /* Pointer to beginning of memory partition                     */
-    void   *OSMemFreeList;             /* Pointer to list of free memory blocks                        */
-    INT32U  OSMemBlkSize;              /* Size (in bytes) of each block of memory                      */
-    INT32U  OSMemNBlks;                /* Total number of blocks in this partition                     */
-    INT32U  OSMemNFree;                /* Number of memory blocks remaining in this partition          */
+typedef struct {                       // MEMORY CONTROL BLOCK
+    void   *OSMemAddr;                 // Pointer to beginning of memory partition
+    void   *OSMemFreeList;             // Pointer to list of free memory blocks
+    INT32U  OSMemBlkSize;              // Size (in bytes) of each block of memory
+    INT32U  OSMemNBlks;                // Total number of blocks in this partition
+    INT32U  OSMemNFree;                // Number of memory blocks remaining in this partition
 } OS_MEM;
 
 typedef struct {
-    void   *OSAddr;                    /* Pointer to the beginning address of the memory partition     */
-    void   *OSFreeList;                /* Pointer to the beginning of the free list of memory blocks   */
-    INT32U  OSBlkSize;                 /* Size (in bytes) of each memory block                         */
-    INT32U  OSNBlks;                   /* Total number of blocks in the partition                      */
-    INT32U  OSNFree;                   /* Number of memory blocks free                                 */
-    INT32U  OSNUsed;                   /* Number of memory blocks used                                 */
+    void   *OSAddr;                    // Pointer to the beginning address of the memory partition
+    void   *OSFreeList;                // Pointer to the beginning of the free list of memory blocks
+    INT32U  OSBlkSize;                 // Size (in bytes) of each memory block
+    INT32U  OSNBlks;                   // Total number of blocks in the partition
+    INT32U  OSNFree;                   // Number of memory blocks free
+    INT32U  OSNUsed;                   // Number of memory blocks used
 } OS_MEM_DATA;
 
 //MUTUAL EXCLUSION SEMAPHORE DATA===================
 typedef struct {
-    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE];  /* List of tasks waiting for event to occur                */
-    INT8U   OSEventGrp;                     /* Group corresponding to tasks waiting for event to occur */
-    INT8U   OSValue;                        /* Mutex value (0 = used, 1 = available)                   */
-    INT8U   OSOwnerPrio;                    /* Mutex owner's task priority or 0xFF if no owner         */
-    INT8U   OSMutexPIP;                     /* Priority Inheritance Priority or 0xFF if no owner       */
+    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE];  // List of tasks waiting for event to occur
+    INT8U   OSEventGrp;                     // Group corresponding to tasks waiting for event to occur
+    INT8U   OSValue;                        // Mutex value (0 = used, 1 = available)
+    INT8U   OSOwnerPrio;                    // Mutex owner's task priority or 0xFF if no owner
+    INT8U   OSMutexPIP;                     // Priority Inheritance Priority or 0xFF if no owner
 } OS_MUTEX_DATA;
 
 //MESSAGE QUEUE DATA================================
-typedef struct os_q {                   /* QUEUE CONTROL BLOCK                                         */
-    struct os_q   *OSQPtr;              /* Link to next queue control block in list of free blocks     */
-    void         **OSQStart;            /* Pointer to start of queue data                              */
-    void         **OSQEnd;              /* Pointer to end   of queue data                              */
-    void         **OSQIn;               /* Pointer to where next message will be inserted  in   the Q  */
-    void         **OSQOut;              /* Pointer to where next message will be extracted from the Q  */
-    INT16U         OSQSize;             /* Size of queue (maximum number of entries)                   */
-    INT16U         OSQEntries;          /* Current number of entries in the queue                      */
+typedef struct os_q {                   // QUEUE CONTROL BLOCK
+    struct os_q   *OSQPtr;              // Link to next queue control block in list of free blocks
+    void         **OSQStart;            // Pointer to start of queue data
+    void         **OSQEnd;              // Pointer to end   of queue data
+    void         **OSQIn;               // Pointer to where next message will be inserted  in   the Q
+    void         **OSQOut;              // Pointer to where next message will be extracted from the Q
+    INT16U         OSQSize;             // Size of queue (maximum number of entries)
+    INT16U         OSQEntries;          // Current number of entries in the queue
 } OS_Q;
 
 typedef struct {
-    void          *OSMsg;               /* Pointer to next message to be extracted from queue          */
-    INT16U         OSNMsgs;             /* Number of messages in message queue                         */
-    INT16U         OSQSize;             /* Size of message queue                                       */
-    INT8U          OSEventTbl[OS_EVENT_TBL_SIZE];  /* List of tasks waiting for event to occur         */
-    INT8U          OSEventGrp;          /* Group corresponding to tasks waiting for event to occur     */
+    void          *OSMsg;               // Pointer to next message to be extracted from queue
+    INT16U         OSNMsgs;             // Number of messages in message queue
+    INT16U         OSQSize;             // Size of message queue
+    INT8U          OSEventTbl[OS_EVENT_TBL_SIZE];  // List of tasks waiting for event to occur
+    INT8U          OSEventGrp;          // Group corresponding to tasks waiting for event to occur
 } OS_Q_DATA;
 
 //SEMAPHORE DATA====================================
 typedef struct {
-    INT16U  OSCnt;                          /* 信号量计数                                         */
-    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE];  /* 等待事件发生的任务列表                */
-    INT8U   OSEventGrp;                     /* 对应于等待事件发生的任务的组 */
+    INT16U  OSCnt;                          // 信号量计数
+    INT8U   OSEventTbl[OS_EVENT_TBL_SIZE];  // 等待事件发生的任务列表
+    INT8U   OSEventGrp;                     // 对应于等待事件发生的任务的组
 } OS_SEM_DATA;
 
 //TASK STACK DATA===================================

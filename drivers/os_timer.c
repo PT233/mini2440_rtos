@@ -12,10 +12,10 @@
 #include "os_cpu.h"
 #include "2440addr.h"
 
-/* 中断向量表基址 (根据 startup.S 定义) */
+// 中断向量表基址 (根据 startup.S 定义)
 #define ISR_START_ADDR  0x33ffff00
 
-/* 外部汇编中断服务程序声明 */
+// 外部汇编中断服务程序声明
 extern void OSTickISR(void);
 
 /*

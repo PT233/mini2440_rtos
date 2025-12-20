@@ -49,23 +49,23 @@ INT8U  OSMutexAccept (OS_EVENT *pevent, INT8U *err)
 {
     OS_CPU_SR  cpu_sr;  
       
-    if (OSIntNesting > 0) {                            /* Make sure it's not called from an ISR        */
+    if (OSIntNesting > 0) {                            // Make sure it's not called from an ISR
         *err = OS_ERR_PEND_ISR;
         return (0);
     }
-    if (pevent == (OS_EVENT *)0) {                     /* Validate 'pevent'                            */
+    if (pevent == (OS_EVENT *)0) {                     // Validate 'pevent'
         *err = OS_ERR_PEVENT_NULL;
         return (0);
     }
-    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {  /* Validate event block type                    */
+    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {  // Validate event block type
         *err = OS_ERR_EVENT_TYPE;
         return (0);
     }                                                    
-    OS_ENTER_CRITICAL();							   /* Get value (0 or 1) of Mutex                  */
+    OS_ENTER_CRITICAL();							   // Get value (0 or 1) of Mutex
     if ((pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE) {     
-        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;   /*      Mask off LSByte (Acquire Mutex)         */
-        pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;     /*      Save current task priority in LSByte    */
-        pevent->OSEventPtr  = (void *)OSTCBCur;        /*      Link TCB of task owning Mutex           */
+        pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;   // Mask off LSByte (Acquire Mutex)
+        pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;     // Save current task priority in LSByte
+        pevent->OSEventPtr  = (void *)OSTCBCur;        // Link TCB of task owning Mutex
         OS_EXIT_CRITICAL();
         *err = OS_NO_ERR;
         return (1);
@@ -159,56 +159,56 @@ OS_EVENT  *OSMutexDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
     INT8U      pip;
 
 
-    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
-        *err = OS_ERR_DEL_ISR;                             /* ... can't DELETE from an ISR             */
+    if (OSIntNesting > 0) {                                // See if called from ISR ...
+        *err = OS_ERR_DEL_ISR;                             // ... can't DELETE from an ISR
         return (pevent);
     }
-    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+    if (pevent == (OS_EVENT *)0) {                         // Validate 'pevent'
         *err = OS_ERR_PEVENT_NULL;
         return ((OS_EVENT *)0);
     }
-    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      /* Validate event block type                */
+    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      // Validate event block type
         *err = OS_ERR_EVENT_TYPE;
         return (pevent);
     }
     OS_ENTER_CRITICAL();
-    if (pevent->OSEventGrp != 0x00) {                      /* See if any tasks waiting on mutex        */
-        tasks_waiting = TRUE;                              /* Yes                                      */
+    if (pevent->OSEventGrp != 0x00) {                      // See if any tasks waiting on mutex
+        tasks_waiting = TRUE;                              // Yes
     } else {
-        tasks_waiting = FALSE;                             /* No                                       */
+        tasks_waiting = FALSE;                             // No
     }
     switch (opt) {
-        case OS_DEL_NO_PEND:                               /* Delete mutex only if no task waiting     */
+        case OS_DEL_NO_PEND:                               // Delete mutex only if no task waiting
              if (tasks_waiting == FALSE) {
                  pip                 = (INT8U)(pevent->OSEventCnt >> 8);
-                 OSTCBPrioTbl[pip]   = (OS_TCB *)0;        /* Free up the PIP                          */
+                 OSTCBPrioTbl[pip]   = (OS_TCB *)0;        // Free up the PIP
                  pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
-                 pevent->OSEventPtr  = OSEventFreeList;    /* Return Event Control Block to free list  */
+                 pevent->OSEventPtr  = OSEventFreeList;    // Return Event Control Block to free list
                  OSEventFreeList     = pevent;
                  OS_EXIT_CRITICAL();
                  *err = OS_NO_ERR;
-                 return ((OS_EVENT *)0);                   /* Mutex has been deleted                   */
+                 return ((OS_EVENT *)0);                   // Mutex has been deleted
              } else {
                  OS_EXIT_CRITICAL();
                  *err = OS_ERR_TASK_WAITING;
                  return (pevent);
              }
 
-        case OS_DEL_ALWAYS:                                /* Always delete the mutex                  */
-             while (pevent->OSEventGrp != 0x00) {          /* Ready ALL tasks waiting for mutex        */
+        case OS_DEL_ALWAYS:                                // Always delete the mutex
+             while (pevent->OSEventGrp != 0x00) {          // Ready ALL tasks waiting for mutex
                  OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MUTEX);
              }
              pip                 = (INT8U)(pevent->OSEventCnt >> 8);
-             OSTCBPrioTbl[pip]   = (OS_TCB *)0;            /* Free up the PIP                          */
+             OSTCBPrioTbl[pip]   = (OS_TCB *)0;            // Free up the PIP
              pevent->OSEventType = OS_EVENT_TYPE_UNUSED;
-             pevent->OSEventPtr  = OSEventFreeList;        /* Return Event Control Block to free list  */
-             OSEventFreeList     = pevent;                 /* Get next free event control block        */
+             pevent->OSEventPtr  = OSEventFreeList;        // Return Event Control Block to free list
+             OSEventFreeList     = pevent;                 // Get next free event control block
              OS_EXIT_CRITICAL();
-             if (tasks_waiting == TRUE) {                  /* Reschedule only if task(s) were waiting  */
-                 OS_Sched();                               /* Find highest priority task ready to run  */
+             if (tasks_waiting == TRUE) {                  // Reschedule only if task(s) were waiting
+                 OS_Sched();                               // Find highest priority task ready to run
              }
              *err = OS_NO_ERR;
-             return ((OS_EVENT *)0);                       /* Mutex has been deleted                   */
+             return ((OS_EVENT *)0);                       // Mutex has been deleted
 
         default:
              OS_EXIT_CRITICAL();
@@ -424,13 +424,13 @@ INT8U  OSMutexQuery (OS_EVENT *pevent, OS_MUTEX_DATA *pdata)
 {
     OS_CPU_SR  cpu_sr;
 
-    if (OSIntNesting > 0) {                                /* See if called from ISR ...               */
-        return (OS_ERR_QUERY_ISR);                         /* ... can't QUERY mutex from an ISR        */
+    if (OSIntNesting > 0) {                                // See if called from ISR ...
+        return (OS_ERR_QUERY_ISR);                         // ... can't QUERY mutex from an ISR
     }
-    if (pevent == (OS_EVENT *)0) {                         /* Validate 'pevent'                        */
+    if (pevent == (OS_EVENT *)0) {                         // Validate 'pevent'
         return (OS_ERR_PEVENT_NULL);
     }
-    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      /* Validate event block type                */
+    if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) {      // Validate event block type
         return (OS_ERR_EVENT_TYPE);
     }
     OS_ENTER_CRITICAL();
@@ -441,7 +441,7 @@ INT8U  OSMutexQuery (OS_EVENT *pevent, OS_MUTEX_DATA *pdata)
     } else {
         pdata->OSValue = 0;
     }
-    pdata->OSEventGrp  = pevent->OSEventGrp;               /* Copy wait list                           */
+    pdata->OSEventGrp  = pevent->OSEventGrp;               // Copy wait list
     memcpy(&pdata->OSEventTbl[0], &pevent->OSEventTbl[0], sizeof(pdata->OSEventTbl));
     OS_EXIT_CRITICAL();
     return (OS_NO_ERR);

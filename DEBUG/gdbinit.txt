@@ -1,0 +1,13 @@
+genggai1# target extended-remote localhost:2331
+file build/mini2440_rtos.elf
+break main
+break OS_Sched
+break OS_TaskStat
+define reset_target
+  monitor reset halt
+  load
+  continue
+end
+
+# To connect manually in GDB:
+# (gdb) target extended-remote localhost:2331

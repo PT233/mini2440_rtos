@@ -179,10 +179,10 @@ INT8U  OSMemQuery (OS_MEM *pmem, OS_MEM_DATA *pdata)
 
     OS_CPU_SR  cpu_sr;
     
-    if (pmem == (OS_MEM *)0) {                   /* Must point to a valid memory partition             */
+    if (pmem == (OS_MEM *)0) {                   // Must point to a valid memory partition
         return (OS_MEM_INVALID_PMEM);
     }
-    if (pdata == (OS_MEM_DATA *)0) {             /* Must release a valid storage area for the data     */
+    if (pdata == (OS_MEM_DATA *)0) {             // Must release a valid storage area for the data
         return (OS_MEM_INVALID_PDATA);
     }
     OS_ENTER_CRITICAL();
