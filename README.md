@@ -11,10 +11,10 @@ mini2440_rtos/
 │   └── os_cpu_init.c               # 堆栈初始化
 │
 ├── arch_keil/                      # 【架构层 - Keil工具链】
-│   ├── startup_keil.S              # 启动代码 (Keil汇编格式)
-│   ├── os_cpu_cs_keil.S            # 上下文切换汇编 (Keil格式)
-│   ├── os_cpu_init.c               # CPU初始化
-│   └── 注意用make不要把这个目录加入规则
+│   ├── startup_keil.S              # 启动代码 (Keil 汇编格式)
+│   ├── os_cpu_cs_keil.S            # 上下文切换汇编 (Keil 格式)
+│   ├── os_cpu_init.c               # CPU 初始化
+│   └── 注意：使用 make 构建时不要把此目录加入规则
 │
 ├── drivers/                        # 【驱动层】
 │   ├── os_bsp.c                    # 板级支持包 (BSP)
@@ -22,7 +22,7 @@ mini2440_rtos/
 │   └── os_timer.c                  # 定时器驱动
 │
 ├── include/                        # 【公共头文件】
-│   ├── 2440addr.h                  # S3C2440 寄存器定义 (C语言)
+│   ├── 2440addr.h                  # S3C2440 寄存器定义 (C 语言)
 │   ├── 2440addr.inc                # S3C2440 寄存器定义 (汇编)
 │   ├── memcfg.inc                  # 内存控制器配置
 │   ├── os_cpu.h                    # 架构相关头文件 (数据类型定义)
@@ -51,10 +51,11 @@ mini2440_rtos/
 │   └── main.c                      # 主程序入口及应用任务
 │
 ├── dnw/                            # 【下载工具】
-├── project/                        # 【Keil项目文件】
-│   ├── mini2440_rtos.uvprojx       # Keil工程文件
-│   ├── mini2440_rtos.uvoptx        # Keil项目选项文件
-│   └── s3c2440.sct                 # Keil链接脚本
+│
+├── project/                        # 【Keil 项目文件】
+│   ├── mini2440_rtos.uvprojx       # Keil 工程文件
+│   ├── mini2440_rtos.uvoptx        # Keil 项目选项文件
+│   └── s3c2440.sct                 # Keil 链接脚本
 │
 ├── build/                          # 【编译产物目录】
 │
