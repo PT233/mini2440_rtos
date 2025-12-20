@@ -37,13 +37,20 @@ SRCS_C  += $(wildcard drivers/*.c)
 SRCS_C  += $(wildcard kernel/*.c)
 SRCS_C  += $(wildcard lib/*.c)
 
+# QEMU 版本使用不同的启动代码
+SRCS_ASM_QEMU = arch/startup_qemu.S $(filter-out arch/startup.S, $(SRCS_ASM))
+
 # 生成文件到build目录
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRCS_ASM:.S=.o) $(SRCS_C:.c=.o))
+OBJS_QEMU = $(addprefix $(BUILD_DIR)/, $(SRCS_ASM_QEMU:.S=.o) $(SRCS_C:.c=.o))
 DEPS = $(OBJS:.o=.d)
 
-.PHONY: all clean dis
+.PHONY: all clean dis qemu
 
 all: $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).dis $(BUILD_DIR)/$(TARGET).txt
+
+# QEMU 专用版本 (链接到 0x00000000)
+qemu: $(BUILD_DIR)/$(TARGET)_qemu.bin
 
 # 1. 链接生成 ELF 文件
 $(BUILD_DIR)/$(TARGET).elf: $(OBJS)
@@ -54,8 +61,22 @@ $(BUILD_DIR)/$(TARGET).elf: $(OBJS)
 	$(READELF) -h $@
 	@echo
 
+# 1b. QEMU 专用 ELF (链接到 0x00000000，使用 startup_qemu.S)
+$(BUILD_DIR)/$(TARGET)_qemu.elf: $(OBJS_QEMU)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -nostdlib -Wl,-Map=$(BUILD_DIR)/$(TARGET)_qemu.map -T link_qemu.ld -o $@ $^ -lgcc
+	@echo
+	@echo ">>> QEMU ELF Header Info:"
+	$(READELF) -h $@
+	@echo
+
 # 2. 生成bin
 $(BUILD_DIR)/$(TARGET).bin: $(BUILD_DIR)/$(TARGET).elf
+	@mkdir -p $(dir $@)
+	$(OBJCOPY) -O binary -S $< $@
+
+# 2b. 生成 QEMU bin
+$(BUILD_DIR)/$(TARGET)_qemu.bin: $(BUILD_DIR)/$(TARGET)_qemu.elf
 	@mkdir -p $(dir $@)
 	$(OBJCOPY) -O binary -S $< $@
 
