@@ -79,3 +79,11 @@ make
 ```bash
 make clean
 ```
+## 烧录环境搭建
+
+```bash
+开发环境搭建
+https://blog.csdn.net/qq_39883394/article/details/155205817
+如何烧录
+https://blog.csdn.net/qq_39883394/article/details/156205367
+```

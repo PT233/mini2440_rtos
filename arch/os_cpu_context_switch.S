@@ -1,18 +1,17 @@
-
-    .equ BUSWIDTH, 32            // 内存总线宽度
+.equ BUSWIDTH, 32            // Memory bus width
     .include "2440addr.inc" 
     .include "memcfg.inc"
 
-    .equ NO_IRQ_FIQ, 0xC0        // 禁止 IRQ 和 FIQ
-    .equ SVC_MODE,   0x13        // 管理模式 (Supervisor Mode)
-    .equ IRQ_MODE,   0x12        // 中断模式 (IRQ Mode)
+    .equ NO_IRQ_FIQ, 0xC0        // Disable IRQ and FIQ
+    .equ SVC_MODE,   0x13        // Supervisor mode
+    .equ IRQ_MODE,   0x12        // Interrupt mode (IRQ mode)
 
     .global OS_CPU_SR_Save
     .global OS_CPU_SR_Restore
     .global OSStartHighRdy
     .global OSCtxSw
     .global OSIntCtxSw
-    .global OSTickISR           // 系统滴答中断入口
+    .global OSTickISR           // System tick interrupt entry
 
     .extern OSTCBCur
     .extern OSTCBHighRdy
@@ -33,19 +32,19 @@
 
 // OS_CPU_SR OS_CPU_SR_Save(void);
 OS_CPU_SR_Save:
-    mrs     r0, cpsr            // 读取 CPSR 到 R0
+    mrs     r0, cpsr            // Read CPSR into r0
     orr     r1, r0, #NO_IRQ_FIQ 
-    msr     cpsr_c, r1          // 写回 CPSR
-    mov     pc, lr              // 返回
+    msr     cpsr_c, r1          // Write back CPSR
+    mov     pc, lr              // Return
 
 // void OS_CPU_SR_Restore(OS_CPU_SR cpu_sr);
 OS_CPU_SR_Restore:
-    msr     cpsr_c, r0          // 将传入的 cpu_sr (R0) 恢复给 CPSR
-    mov     pc, lr              // 返回
+    msr     cpsr_c, r0          // Restore passed cpu_sr (r0) to CPSR
+    mov     pc, lr              // Return
 
 
 OSStartHighRdy:
-    // 1. 钩子函数
+    // 1. Hook function
     // bl OSTaskSwHook
 
     // 2. OSRunning = true
@@ -53,101 +52,101 @@ OSStartHighRdy:
     mov     r1, #1
     strb    r1, [r0]
 
-    // 3. 获取最高优先级任务的 TCB 地址
+    // 3. Get TCB address of highest-priority task
     ldr     r0, =OSTCBHighRdy
-    ldr     r0, [r0]            // R0 = ptcb
-    ldr     sp, [r0]            // SP = ptcb->OSTCBStackPtr
+    ldr     r0, [r0]            // r0 = ptcb
+    ldr     sp, [r0]            // sp = ptcb->OSTCBStackPtr
 
-    // 4. 恢复全部现场
-    ldmfd   sp!, {r0}           // 弹出 SPSR 
-    msr     cpsr_c, r0          // 恢复 CPSR 
+    // 4. Restore full context
+    ldmfd   sp!, {r0}           // Pop SPSR 
+    msr     cpsr_c, r0          // Restore CPSR 
     
-    ldmfd   sp!, {r0-r12, lr, pc} // 弹出寄存器并跳转到任务入口
+    ldmfd   sp!, {r0-r12, lr, pc} // Pop registers and jump to task entry
 
 
 OSCtxSw:
-    // 1. 保存当前任务现场
-    stmfd   sp!, {lr}           // 入栈 PC
-    stmfd   sp!, {lr}           // 入栈 LR
-    stmfd   sp!, {r0-r12}       // 入栈通用寄存器
-    mrs     r0, cpsr            // 读取 CPSR
-    stmfd   sp!, {r0}           // 入栈 CPSR
+    // 1. Save current task context
+    stmfd   sp!, {lr}           // Push PC
+    stmfd   sp!, {lr}           // Push LR
+    stmfd   sp!, {r0-r12}       // Push general-purpose registers
+    mrs     r0, cpsr            // Read CPSR
+    stmfd   sp!, {r0}           // Push CPSR
 
-    // 2. 保存 SP 到当前 TCB
-    ldr     r0, =OSTCBCur       // 加载 OSTCBCur 地址
-    ldr     r1, [r0]            // R1 = OSTCBCur
-    str     sp, [r1]            // OSTCBCur->OSTCBStackPtr = SP
+    // 2. Save SP to current TCB
+    ldr     r0, =OSTCBCur       // Load address of OSTCBCur
+    ldr     r1, [r0]            // r1 = OSTCBCur
+    str     sp, [r1]            // OSTCBCur->OSTCBStackPtr = sp
 
-    // 3. 钩子函数
+    // 3. Hook function
     // bl OSTaskSwHook
 
-    // 4. 切换 TCB 指针: OSTCBCur = OSTCBHighRdy
+    // 4. Switch TCB pointer: OSTCBCur = OSTCBHighRdy
     ldr     r2, =OSTCBHighRdy
-    ldr     r3, [r2]            // R3 = OSTCBHighRdy
-    str     r3, [r0]            // OSTCBCur = R3
+    ldr     r3, [r2]            // r3 = OSTCBHighRdy
+    str     r3, [r0]            // OSTCBCur = r3
 
-    // 5. 切换优先级变量
+    // 5. Switch priority variables
     ldr     r0, =OSPrioCur
     ldr     r1, =OSPrioHighRdy
     ldrb    r2, [r1]
     strb    r2, [r0]
 
-    // 6. 获取新任务 SP
-    ldr     sp, [r3]            // SP = OSTCBHighRdy->OSTCBStackPtr
+    // 6. Get new task SP
+    ldr     sp, [r3]            // sp = OSTCBHighRdy->OSTCBStackPtr
 
-    // 7. 恢复新任务现场
-    ldmfd   sp!, {r0}           // 弹出 CPSR
-    msr     cpsr_c, r0          // 恢复状态
-    ldmfd   sp!, {r0-r12, lr, pc} // 切换任务
+    // 7. Restore new task context
+    ldmfd   sp!, {r0}           // Pop CPSR
+    msr     cpsr_c, r0          // Restore state
+    ldmfd   sp!, {r0-r12, lr, pc} // Switch to task
 
 
 OSIntCtxSw:
-    // 1. 调用钩子
+    // 1. Call hook
     // bl OSTaskSwHook
 
-    // 2. 切换 TCB 指针
+    // 2. Switch TCB pointer
     ldr     r0, =OSTCBCur
     ldr     r1, =OSTCBHighRdy
     ldr     r2, [r1]
     str     r2, [r0]            // OSTCBCur = OSTCBHighRdy
 
-    // 3. 切换优先级变量
+    // 3. Switch priority variables
     ldr     r0, =OSPrioCur
     ldr     r1, =OSPrioHighRdy
     ldrb    r2, [r1]
     strb    r2, [r0]
 
-    // 4. 切换堆栈指针
-    ldr     sp, [r2]            // SP = OSTCBHighRdy->OSTCBStackPtr
+    // 4. Switch stack pointer
+    ldr     sp, [r2]            // sp = OSTCBHighRdy->OSTCBStackPtr
 
-    // 5. 恢复新任务现场
-    ldmfd   sp!, {r0}           // 弹出 CPSR
+    // 5. Restore new task context
+    ldmfd   sp!, {r0}           // Pop CPSR
     msr     cpsr_c, r0          
-    ldmfd   sp!, {r0-r12, lr, pc} // 切换任务
+    ldmfd   sp!, {r0-r12, lr, pc} // Switch to task
 
 
 OSTickISR:
     
-    // 1. 修正返回地址
+    // 1. Adjust return address
     sub     lr, lr, #4
 
-    // 2. 临时保存寄存器到 IRQ 堆栈
+    // 2. Temporarily save registers to IRQ stack
     stmfd   sp!, {r0-r3, r12, lr}
     
-    // 3. 保存 SPSR (这是被中断之前的 CPSR)
+    // 3. Save SPSR (the CPSR before interrupt)
     mrs     r0, spsr
     
-    // 4. 准备切换到 SVC 模式
-    add     sp, sp, #(6*4)      // 恢复 IRQ 堆栈指针
+    // 4. Prepare to switch to SVC mode
+    add     sp, sp, #(6*4)      // Restore IRQ stack pointer
     
-    // 5. 切换到 SVC 模式
+    // 5. Switch to SVC mode
     msr     cpsr_c, #(SVC_MODE | NO_IRQ_FIQ) 
     
-    // 6. 重新压入刚才那些寄存器
-    stmfd   sp!, {lr}           // 保存 SVC 模式的 LR
-    stmfd   sp!, {lr}           // 占位
-    stmfd   sp!, {r0-r12}       // 保存通用寄存器
-    stmfd   sp!, {r0}           // 保存 SPSR
+    // 6. Re-push those registers
+    stmfd   sp!, {lr}           // Save LR in SVC mode
+    stmfd   sp!, {lr}           // Placeholder
+    stmfd   sp!, {r0-r12}       // Save general-purpose registers
+    stmfd   sp!, {r0}           // Save SPSR
 
     
     ldr     r0, =OSIntNesting   // OSIntNesting++
@@ -155,16 +154,16 @@ OSTickISR:
     add     r1, r1, #1
     strb    r1, [r0]
 
-    cmp     r1, #1              // 如果嵌套层数 > 1，说明是嵌套中断
+    cmp     r1, #1              // If nesting level > 1, it's a nested interrupt
     bne     _Int_Nested
 
-    // 如果是第一层中断，保存当前 SP 到 TCB
+    // If it's the first-level interrupt, save current SP to TCB
     ldr     r0, =OSTCBCur
     ldr     r1, [r0]
     str     sp, [r1]
 
 _Int_Nested:
-    // 清除 Timer4 中断
+    // Clear Timer4 interrupt
     ldr     r0, =SRCPND     // rSRCPND
     ldr     r1, =(1<<14)
     str     r1, [r0]
@@ -174,6 +173,6 @@ _Int_Nested:
     bl      OSTimeTick
     bl      OSIntExit
     
-    ldmfd   sp!, {r0}              // 恢复 SPSR
+    ldmfd   sp!, {r0}              // Restore SPSR
     msr     spsr_cxsf, r0       
-    ldmfd   sp!, {r0-r12, lr, pc}^ // 异常返回
+    ldmfd   sp!, {r0-r12, lr, pc}^ // Exception return

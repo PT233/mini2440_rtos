@@ -1,0 +1,12 @@
+.\objects\main.o: user\main.c
+.\objects\main.o: .\include\includes.h
+.\objects\main.o: E:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\objects\main.o: E:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\objects\main.o: E:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\main.o: E:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\main.o: .\include\2440addr.h
+.\objects\main.o: .\include\ucos_ii.h
+.\objects\main.o: .\include\os_cfg.h
+.\objects\main.o: .\include\os_cpu.h
+.\objects\main.o: .\include\os_uart.h
+.\objects\main.o: .\include\os_timer.h
