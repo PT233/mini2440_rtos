@@ -290,7 +290,20 @@ copy_loop:
     ldr pc, =on_sdram
 on_sdram:
 
-// 7. Zero BSS
+// 7. Copy initialized data (.data) from ROM image to RAM
+    ldr r0, TopOfROM        // r0 = &_etext
+    ldr r0, [r0]            // r0 = _etext (source)
+    ldr r1, BaseOfBSS       // r1 = &_data
+    ldr r1, [r1]            // r1 = _data (destination)
+    ldr r2, BaseOfZero      // r2 = &_bss_start_
+    ldr r2, [r2]            // r2 = _bss_start_ (end of data)
+1:
+    cmp r1, r2
+    ldrcc r3, [r0], #4
+    strcc r3, [r1], #4
+    bcc 1b
+
+// 8. Zero BSS
     mov r0, #0
     ldr r2, BaseOfZero
     ldr r3, EndOfBSS
@@ -299,7 +312,35 @@ on_sdram:
     strcc r0, [r2], #4
     bcc 0b
 
-// 8. Jump to main
+// 9. Install exception vector table to physical 0x00000000
+//    Match Keil flow: write 8x 'LDR PC, [PC, #24]' then fill handler addresses at 0x20
+    ldr r0, =0x00000000
+    ldr r1, =0xE59FF018        // LDR PC, [PC, #24]
+    mov r2, #8
+1:
+    str r1, [r0], #4
+    subs r2, r2, #1
+    bgt 1b
+
+    ldr r0, =0x00000020
+    ldr r1, =_start            // Reset entry points to vector table start
+    str r1, [r0], #4
+    ldr r1, =undef
+    str r1, [r0], #4
+    ldr r1, =swi
+    str r1, [r0], #4
+    ldr r1, =pabort
+    str r1, [r0], #4
+    ldr r1, =dabort
+    str r1, [r0], #4
+    mov r1, #0                 // Reserved
+    str r1, [r0], #4
+    ldr r1, =OSTickISR         // IRQ handler: direct to OS tick ISR
+    str r1, [r0], #4
+    ldr r1, =fiq
+    str r1, [r0], #4
+
+// 10. Jump to main
     bl main
     b .
 // End of reset ===============================================================

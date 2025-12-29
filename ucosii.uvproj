@@ -125,8 +125,8 @@
             <Oh166RecLen>16</Oh166RecLen>
           </OPTHX>
           <Simulator>
-            <UseSimulator>1</UseSimulator>
-            <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
+            <UseSimulator>0</UseSimulator>
+            <LoadApplicationAtStartup>0</LoadApplicationAtStartup>
             <RunToMain>1</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
             <RestoreWatchpoints>1</RestoreWatchpoints>
@@ -137,7 +137,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Simulator>
           <Target>
-            <UseTarget>0</UseTarget>
+            <UseTarget>1</UseTarget>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>1</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -149,21 +149,21 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>0</TargetSelection>
+          <TargetSelection>5</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile></InitializationFile>
+            <InitializationFile>.\Ext_RAM.ini</InitializationFile>
           </SimDlls>
           <TargetDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile></InitializationFile>
-            <Driver>BIN\UL2ARM.DLL</Driver>
+            <InitializationFile>.\Ext_RAM.ini</InitializationFile>
+            <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
         <Utilities>
@@ -171,13 +171,13 @@
             <UseTargetDll>1</UseTargetDll>
             <UseExternalTool>0</UseExternalTool>
             <RunIndependent>0</RunIndependent>
-            <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
+            <UpdateFlashBeforeDebugging>0</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>-1</DriverSelection>
+            <DriverSelection>4098</DriverSelection>
           </Flash1>
-          <bUseTDR>1</bUseTDR>
-          <Flash2>BIN\UL2ARM.DLL</Flash2>
-          <Flash3></Flash3>
+          <bUseTDR>0</bUseTDR>
+          <Flash2>Segger\JLTAgdi.dll</Flash2>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -352,7 +352,7 @@
             <RvctStartVector></RvctStartVector>
           </ArmAdsMisc>
           <Cads>
-            <interw>1</interw>
+            <interw>0</interw>
             <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
@@ -379,11 +379,11 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\arch copy;.\drivers;.\include;.\kernel;.\lib;.\user</IncludePath>
+              <IncludePath>.\archcopy;.\drivers;.\include;.\kernel;.\lib;.\user</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
-            <interw>1</interw>
+            <interw>0</interw>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
             <thumb>0</thumb>
@@ -397,7 +397,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\drivers;.\include;.\kernel;.\lib;.\user;.\arch copy</IncludePath>
+              <IncludePath>.\drivers;.\include;.\kernel;.\lib;.\user;.\archcopy</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -407,13 +407,13 @@
             <noStLib>0</noStLib>
             <RepFail>1</RepFail>
             <useFile>0</useFile>
-            <TextAddressRange>0x00000000</TextAddressRange>
-            <DataAddressRange>0x40000000</DataAddressRange>
+            <TextAddressRange>0x30000000</TextAddressRange>
+            <DataAddressRange>0x30000000</DataAddressRange>
             <pXoBase></pXoBase>
             <ScatterFile>.\Objects\ucosii.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc>--entry _start</Misc>
+            <Misc>--entry _start --datacompressor=off</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -571,17 +571,17 @@
             <File>
               <FileName>os_cpu_cs_keil.S</FileName>
               <FileType>2</FileType>
-              <FilePath>.\arch copy\os_cpu_cs_keil.S</FilePath>
+              <FilePath>.\archcopy\os_cpu_cs_keil.S</FilePath>
             </File>
             <File>
               <FileName>os_cpu_init.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\arch copy\os_cpu_init.c</FilePath>
+              <FilePath>.\archcopy\os_cpu_init.c</FilePath>
             </File>
             <File>
               <FileName>startup_keil.S</FileName>
               <FileType>2</FileType>
-              <FilePath>.\arch copy\startup_keil.S</FilePath>
+              <FilePath>.\archcopy\startup_keil.S</FilePath>
             </File>
           </Files>
         </Group>

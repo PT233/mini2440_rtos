@@ -14,7 +14,6 @@
 
 #include "includes.h"
 
-
 static  void     OS_FlagBlock(OS_FLAG_GRP *pgrp, OS_FLAG_NODE *pnode, OS_FLAGS flags, INT8U wait_type, INT16U timeout);
 static  BOOLEAN  OS_FlagTaskRdy(OS_FLAG_NODE *pnode, OS_FLAGS flags_rdy);
 
@@ -674,7 +673,7 @@ void  OS_FlagUnlink (OS_FLAG_NODE *pnode)
         }
     }
     else{
-        pnode_next->OSFlagNodeNext = pnode_next;
+        pnode_prev->OSFlagNodeNext = pnode_next;
         if(pnode_next != (OS_FLAG_NODE *)0){
             pnode_next->OSFlagNodePrev = pnode_prev;
         }

@@ -1,1 +1,1 @@
-.\objects\startup_keil.o: arch copy\startup_keil.S
+.\objects\startup_keil.o: archcopy\startup_keil.S

@@ -29,6 +29,25 @@ static  void  OS_InitTaskIdle(void);
 static  void  OS_InitTaskStat(void);
 static  void  OS_InitTCBList(void);
 
+// Stack probe helpers (Keil ARMCC compatible)
+#define OS_STACK_PROBE 0
+#if OS_STACK_PROBE
+volatile INT32U OS_StackProbe_SP_Before;
+volatile INT32U OS_StackProbe_SP_After;
+volatile INT32U OS_StackProbe_LR_Before;
+volatile INT32U OS_StackProbe_LR_After;
+volatile INT32U OS_StackProbe_Snap_Before[16];
+volatile INT32U OS_StackProbe_Snap_After[16];
+__asm INT32U OS_GetSP(void) {
+    MOV r0, sp
+    BX lr
+}
+__asm INT32U OS_GetLR(void) {
+    MOV r0, lr
+    BX lr
+}
+#endif
+
 
 /*
 *******************************************************************************
@@ -223,7 +242,6 @@ void  OSStart (void)
 {
     INT8U y;
     INT8U x;
-
     if (OSRunning == FALSE) {
         y             = OSUnMapTbl[OSRdyGrp];        
         x             = OSUnMapTbl[OSRdyTbl[y]];
@@ -402,7 +420,7 @@ void OS_TaskIdle(void *pdata1){
         OS_ENTER_CRITICAL();
         OSIdleCtr++;                                           // 空闲计数器加1
         OS_EXIT_CRITICAL();
-        OSTaskIdleHook();                                     // 调用用户定义的空闲任务钩子函数,还没定义
+        OSTaskIdleHook();                                     // 调用空闲任务钩子函数,还没定义
     }
 }
 

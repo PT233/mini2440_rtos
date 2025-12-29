@@ -1,1 +1,1 @@
-.\objects\os_cpu_cs_keil.o: arch copy\os_cpu_cs_keil.S
+.\objects\os_cpu_cs_keil.o: archcopy\os_cpu_cs_keil.S

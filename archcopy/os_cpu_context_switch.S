@@ -37,7 +37,7 @@ OS_CPU_SR_Save:
     msr     cpsr_c, r1          // Write back CPSR
     mov     pc, lr              // Return
 
-// void OS_CPU_SR_Restore(OS_CPU_SR cpu_sr);
+//OS_CPU_SR_Restore(OS_CPU_SR cpu_sr);
 OS_CPU_SR_Restore:
     msr     cpsr_c, r0          // Restore passed cpu_sr (r0) to CPSR
     mov     pc, lr              // Return

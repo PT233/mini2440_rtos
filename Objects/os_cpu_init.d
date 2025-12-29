@@ -1,4 +1,4 @@
-.\objects\os_cpu_init.o: arch copy\os_cpu_init.c
+.\objects\os_cpu_init.o: archcopy\os_cpu_init.c
 .\objects\os_cpu_init.o: .\include\includes.h
 .\objects\os_cpu_init.o: E:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 .\objects\os_cpu_init.o: E:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
