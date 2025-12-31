@@ -15,9 +15,9 @@ BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/.obj
 
 # 编译优化选项 (快速编译，保留调试符号)
-INCLUDES = -Iinclude -Iarch/inc -Iuser/inc -Idrivers/inc -Ikernel
+INCLUDES = -Iinclude
 CFLAGS   = -mcpu=arm920t -g -O0 -Wall -nostdlib $(INCLUDES) -MMD -MP
-ASFLAGS  = -mcpu=arm920t -g $(INCLUDES) -Wa,-Iinclude -Wa,-Iarch/inc
+ASFLAGS  = -mcpu=arm920t -g $(INCLUDES) -Wa,-Iinclude
 LDFLAGS  = -T link.ld
 
 # 源文件列表
@@ -34,15 +34,14 @@ DEPS = $(OBJS:.o=.d)
 
 .PHONY: all clean
 
-all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).map $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).dis
-	@rm -rf $(OBJ_DIR)
-	@echo ">>> Cleaned up intermediate files"
+all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).dis $(BUILD_DIR)/$(TARGET).map
 
 # 1. 链接生成 ELF 文件
 $(BUILD_DIR)/$(TARGET).elf: $(OBJS)
 	@mkdir -p $(dir $@)
 	@echo "LD  $@"
 	@$(CC) $(CFLAGS) -nostdlib -Wl,-Map=$(BUILD_DIR)/$(TARGET).map -T link.ld -o $@ $^ -lgcc
+	@echo
 	@echo ">>> Build Complete"
 
 # 2. 生成bin
@@ -51,23 +50,19 @@ $(BUILD_DIR)/$(TARGET).bin: $(BUILD_DIR)/$(TARGET).elf
 	@echo "OBJCOPY $@"
 	@$(OBJCOPY) -O binary -S $< $@
 
-# 3. 生成 map 文件（已在链接阶段生成，这里是依赖规则）
-$(BUILD_DIR)/$(TARGET).map: $(BUILD_DIR)/$(TARGET).elf
-	@echo "Map file: $@"
-
-# 4. 生成 dis
+# 3. 生成 dis
 $(BUILD_DIR)/$(TARGET).dis: $(BUILD_DIR)/$(TARGET).elf
 	@mkdir -p $(dir $@)
 	@echo "OBJDUMP $@"
-	@$(OBJDUMP) -D $< > $@
+	@$(OBJDUMP) -S $< > $@
 
-# 5. 编译汇编
+# 4. 编译汇编
 $(OBJ_DIR)/%.o: %.S
 	@mkdir -p $(dir $@)
 	@echo "AS  $<"
 	@$(CC) $(ASFLAGS) -c -o $@ $<
 
-# 6. 编译 C
+# 5. 编译 C
 $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	@echo "CC  $<"
@@ -91,4 +86,3 @@ openocd:
 	openocd -f $(PWD)/DEBUG/openocd.cfg -s $(PWD)/DEBUG/OpenOCD || true
 
 .PHONY: debug jlink openocd kill-openocd clean all
-

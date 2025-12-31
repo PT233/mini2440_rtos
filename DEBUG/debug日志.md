@@ -3,7 +3,7 @@
 点击右上角搜索查看markdown预览
 
 ![alt text](image/3.png)
-# A.因为在线仿真，keil中mini2440的内存设置太小导致程序陷入死循环
+# A. 因为在线仿真，keil中mini2440的内存设置太小导致程序陷入死循环
 
 结论：不能使用在线仿真
 
@@ -542,3 +542,365 @@ SVCStack  EQU  0x30100000  ; 放在data段起始1MB处
 
     find ./ -type f |xargs touch
 
+# D. Jlink连着电脑关机，再开机，会找不到USB端口，绿色LED会熄灭
+- 结论： 断联一会儿把电放了就好
+
+# E. GDB continue错误
+- 结论：set $PC= 0X30000000
+- 现象
+load之前地址在0x00000000,load之后进入SDRAM在0x30000000.之后c直接报错又重新回到0x00000000,按理说应该在0x30000500main函数入口停下
+
+```c
+>>> load
+Loading section .text, size 0x80ad lma 0x30000000
+Loading section .data, size 0x108 lma 0x300080b0
+Start address 0x30000000, load size 33205
+Transfer rate: 29 KB/sec, 8301 bytes/write.
+>>> dashboard
+>>> b main
+Breakpoint 1 at 0x30000500: file user/main.c, line 52.
+>>> dashboard
+>>> c
+Continuing.
+
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x00000000 in ?? ()
+>>>
+```
+
+- 原因
+1. **SDRAM控制器未初始化**：load命令只是将代码写入内存，但如果SDRAM控制器未初始化，访问0x30000000会触发数据异常，导致PC跳转到0x00000000（异常向量表）
+2. **PC寄存器未正确设置**：load命令不会自动设置PC寄存器，PC可能还在0x00000000
+3. **缺少启动代码执行**：直接跳转到main会跳过启动代码的初始化（内存控制器、堆栈、BSS清零等）
+
+- 解决方案
+
+添加set ￥pc = 0x30000000即可
+```C
+>>> load
+Loading section .text, size 0x80ad lma 0x30000000
+Loading section .data, size 0x108 lma 0x300080b0
+Start address 0x30000000, load size 33205
+Transfer rate: 37 KB/sec, 8301 bytes/write.
+>>> set $pc=0x30000000
+>>> dashboard
+>>> c
+Continuing.
+
+Breakpoint 1, main () at user/main.c:52
+52          OSInit();      // 初始化内核
+>>>
+```
+
+# F. gdb dashboard只显示部分variables
+- 结论： 
+  - 使用dispaly *ptcb1解决，不能通过修改dashboard的显示，否则其他页面查看很麻烦
+  - 使用info dispaly查看信息id
+  - 使用undisplay关闭id
+- 现象：
+```c
+Variables 
+loc i = 0 '\000', ptcb1 = 0x3000ac98 <OSRunning>: {OSTCBStkPtr = 0x0,OSTCBPrev = 0x0,OSTCBNext = 0x0,OSTCBEventPtr = …, ptcb2 = 0xffffffff: {OSTCBStkPtr = 0xc00,OSTCBPrev = 0x5ea,OSTCBNext = 0x5ea,OSTCBEventPtr = 0x5ea,…
+```
+
+# G. 因为调用了标准库但是没把标准库文件放入导致的GDB warning
+- 结论：不影响，但是会warning
+- 现象：
+```C
+>>>
+__divsi3 () at ../../../libgcc/config/arm/lib1funcs.S:1297
+warning: 1297   ../../../libgcc/config/arm/lib1funcs.S: No such file or directory
+>>>
+1298    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1300    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1302    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1303    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1304    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1305    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1307    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1308    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1309    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1310    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1311    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1313    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+
+
+1315    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1317    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+1318    in ../../../libgcc/config/arm/lib1funcs.S
+
+>>>
+```
+- 原因：在 drivers/os_uart.c 第19行有整数除法：
+os_uart.cLine 19
+```C
+    rUBRDIV0 = (int)(pclk / (baud * 16)) - 1;
+```
+在 C 代码中写了 /（除法）时，编译器会自动插入一个名为 `__divsi3 `的库函数（位于 libgcc 中）来通过软件模拟除法。因为没有这个交叉编译工具链的源码（或者路径没对上），GDB 找不到 `.S `源文件，就会报错。实际上不影响运算结果，只影响编译报错。
+
+
+# H. GDB 调试会话断开
+- 结论：不要一直GDB挂机,
+- 现象：
+```C
+>>> s
+Last read operation left 13 bytes
+Failed to send data to device: LIBUSB_ERROR_IO
+transport_write() failed: unspecified error
+jaylink_jtag_io() failed: unspecified error
+Last read operation left 91 bytes
+Failed to send data to device: LIBUSB_ERROR_IO
+transport_write() failed: unspecified error
+jaylink_jtag_io() failed: unspecified error
+Couldn't calculate PC of next instruction, current opcode was 0x00000000
+```
+
+# I. 自我繁殖
+
+- 现象：一直卡在一个循环里
+```C
+>>>
+301         cmp r1, r2
+
+>>>
+
+302         ldrcc r3, [r0], #4
+>>>
+303         strcc r3, [r1], #4
+
+>>>
+304         bcc 1b
+```
+- 原因：`startup.S`中是把源代码从flash0x00000000复制到0x30000000，然而现在本来就在0x30000000,这会导致代码一直在增值复制，陷入死循环。
+- 解决：加上逻辑判断
+```C
+ldr r0, TopOfROM
+ldr r0, [r0]            // r0 = _etext
+ldr r1, BaseOfBSS
+ldr r1, [r1]            // r1 = _data
+ldr r2, BaseOfZero
+ldr r2, [r2]            // r2 = _bss_start_
+
+cmp r0, r1
+beq skip_copy           // source == dest → 跳过 copy
+
+1:
+    cmp r1, r2
+    ldrcc r3, [r0], #4
+    strcc r3, [r1], #4
+    bcc 1b
+
+skip_copy:
+```
+
+# J. cannot insert breakpoint 0 cannot access memory at address 0x300000f48
+- 结论：任何时候自己定义的断点只能有一个，或者改用thbreak，命中一次自动删除。
+- 现象：
+  - 在GDB中
+```C
+>>> c
+Continuing.
+
+Breakpoint 4, BSP_Init () at drivers/os_bsp.c:58
+58          Uart_Init(50000000,115200);// PCLK=50000000, Baud=115200
+>>> s
+Warning:
+Cannot insert breakpoint 0.
+Cannot access memory at address 0x30001340
+
+Uart_Init (pclk=1610612947, baud=805352824) at drivers/os_uart.c:5
+5       {
+>>>
+8           rGPHCON &= ~((3<<4) | (3<<6));
+>>> display rUBRDIV0
+No symbol "rUBRDIV0" in current context.
+>>> s
+9           rGPHCON |=  ((2<<4) | (2<<6));
+>>>
+10          rGPHUP  &= ~((1<<2) | (1<<3));  // 使能上拉
+>>>
+13          rULCON0 = 0x3;  // 8N1: 8数据位, 无校验, 1停止位
+>>>
+14          rUCON0  = 0x5;  // 查询模式
+>>>
+15          rUFCON0 = 0x0;  // 禁用 FIFO
+>>>
+16          rUMCON0 = 0x0;  // 禁用流控
+>>>
+19          rUBRDIV0 = (int)(pclk / (baud * 16)) - 1;
+>>>
+__divsi3 () at ../../../libgcc/config/arm/lib1funcs.S:1297
+warning: 1297   ../../../libgcc/config/arm/lib1funcs.S: No such file or directory
+>>>
+1298    in ../../../libgcc/config/arm/lib1funcs.S
+>>>
+Uart_Init (pclk=50000000, baud=115200) at drivers/os_uart.c:22
+22          for(i=0; i<100; i++);
+>>>
+23      }
+>>>
+BSP_Init () at drivers/os_bsp.c:59
+59          Beep_Init();
+>>> s
+Warning:
+Cannot insert breakpoint 0.
+Cannot access memory at address 0x30000f9c
+
+Beep_Init () at drivers/os_bsp.c:13
+13      void Beep_Init(void){
+>>>
+14          rGPBCON &= ~(3<<0);
+>>>
+15          rGPBCON |=  (1<<0);
+>>>
+16          Beep_Ctrl(0);
+>>>
+Warning:
+Cannot insert breakpoint 0.
+Cannot access memory at address 0x30000f48
+
+Beep_Ctrl (on=50000000) at drivers/os_bsp.c:8
+8       {
+>>>
+9           if (on) {rGPBDAT |=  (1<<0); }
+>>>
+10          else    {rGPBDAT &= ~(1<<0);}
+>>>
+11      }
+>>>
+Beep_Init () at drivers/os_bsp.c:17
+17      }
+>>>
+BSP_Init () at drivers/os_bsp.c:60
+60          LED_Init();
+>>>
+Warning:
+Cannot insert breakpoint 0.
+Cannot access memory at address 0x300010a0
+
+LED_Init () at drivers/os_bsp.c:33
+33      void LED_Init(void){
+>>>
+34          rGPBCON &= ~((3<<10)|(3<<12)|(3<<14)|(3<<16));
+>>>
+35          rGPBCON |=  ((1<<10)|(1<<12)|(1<<14)|(1<<16));
+>>>
+36          LED_Set(0);
+>>>
+Warning:
+Cannot insert breakpoint 0.
+Cannot access memory at address 0x30000ff0
+
+LED_Set (mask=16734188) at drivers/os_bsp.c:20
+20      {
+```
+ - 在OpenOCD中同时
+```C
+Info : no watchpoint unit available for hardware breakpoint
+Error: [s3c2440.cpu] can't add breakpoint: resource not available
+Info : no watchpoint unit available for hardware breakpoint
+Error: [s3c2440.cpu] can't add breakpoint: resource not available
+Info : no watchpoint unit available for hardware breakpoint
+Error: [s3c2440.cpu] can't add breakpoint: resource not available
+Info : no watchpoint unit available for hardware breakpoint
+Error: [s3c2440.cpu] can't add breakpoint: resource not available
+Info : no watchpoint unit available for hardware breakpoint
+Error: [s3c2440.cpu] can't add breakpoint: resource not available
+
+```
+- 原因： 断点上限，mini2440断点只有2个，之后使用n s b实际上能让程序停下来都是依靠的是断点。
+
+# K. WorkStk
+- 结论：已经进入多任务系统了，无法通过传统的单步执行来暂停程序了，因为栈不是轮循系统那样堆栈是挨着的，是不连续的，要通过打断点实现暂停。
+- 现象：
+```C
+>>>
+OS_Sched () at kernel/os_core.c:413
+413     }
+2: OSRunning = 128 '\200'
+3: OSTCBHighRdy = (OS_TCB *) 0x3000b6c4 <OSTCBTbl>
+>>>
+0x30009814 in WorkStk ()
+2: OSRunning = 128 '\200'
+3: OSTCBHighRdy = (OS_TCB *) 0x3000b6c4 <OSTCBTbl>
+>>>
+Single stepping until exit from function WorkStk,
+which has no line number information.
+```
+- 在OS中按下^C：
+```C
+>>> c
+Continuing.
+^C
+Program received signal SIGINT, Interrupt.
+0x00000020 in ?? ()
+2: OSRunning = 128 '\200'
+3: OSTCBHighRdy = (OS_TCB *) 0x3000b6c4 <OSTCBTbl>
+>>>
+```
+这些 RTOS 核心变量 仍然正常，说明：
+OS 没崩，调度没乱，只是在一个“GDB 无法理解的时刻”把 CPU 停住了。
+
+
+# L. s单步执行到SemCreate卡死
+- 结论：实际上已经进入了多任务系统
+- 现象：
+
+```C
+>>> target remote localhost:3333
+Remote debugging using localhost:3333
+0x00000020 in ?? ()
+2: OSRunning = 0 '\000'
+3: OSTCBHighRdy = (OS_TCB *) 0x0
+>>> load
+Loading section .text, size 0x80b5 lma 0x30000000
+Loading section .data, size 0x108 lma 0x300080b8
+Start address 0x30000000, load size 33213
+Transfer rate: 38 KB/sec, 8303 bytes/write.
+>>> set $pc=0x30000000
+>>> dashboard
+>>> c
+Continuing.
+
+Breakpoint 1, main () at user/main.c:52
+52          OSInit();      // 初始化内核
+2: OSRunning = 0 '\000'
+3: OSTCBHighRdy = (OS_TCB *) 0x0
+>>> thbreak Task_Start
+Hardware assisted breakpoint 8 at 0x30000554: file user/main.c, line 70.
+>>> c
+Continuing.
+
+Temporary breakpoint 8, Task_Start (pdata=0x0) at user/main.c:70
+70          SemBeep      = OSSemCreate(0);                  // 初始0，按键触发
+2: OSRunning = 1 '\001'
+3: OSTCBHighRdy = (OS_TCB *) 0x3000b714 <OSTCBTbl+80>
+>>> s
+
+
+```
+
+- 原因：thbreak命中的是已经启动的系统（OSRunning = 1），因为任务函数只有在 OS 已经启动后，才可能被执行。
+
+# M. 判断什么时候OSRunning = 1，如何在OS中调试
+
+
+
+
+# N. 解决git冲突问题
+
+![alt text](image/10.png)

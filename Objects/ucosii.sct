@@ -1,0 +1,11 @@
+LR_ROM1 0x30000000 0x04000000  {    ; 加载区改到 SDRAM 起始地址
+  ER_ROM1 0x30000000 0x04000000  {  ; 执行区也改到 SDRAM
+   *.o (RESET, +First)           
+   *(InRoot$$Sections)
+   .ANY (+RO)
+   .ANY (+XO)
+  }
+  RW_RAM1 +0 {                     ; 紧跟在 RO 后面
+   .ANY (+RW +ZI)
+  }
+}

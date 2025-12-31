@@ -1,25 +1,25 @@
 
-// 全局变量以及头文件
+// Global constants and headers
     .equ BUSWIDTH, 32 
     .include "2440addr.inc" 
     .include "memcfg.inc"
 
 
-// 外部符号声明
+// External symbol declarations
     .extern main
 
-// bss data text段位置定义
-    .extern _start          // 代码段起始(ROM)
-    .extern _etext          // 代码段结束
-    .extern _data           // 数据段起始
-    .extern _bss_start_     // BSS段起始 (RAM,data与bss起始紧挨着，所以不用定义)
-    .extern _bss_end_       // BSS段结束
+// Section locations for text/data/bss
+    .extern _start          // Start of text section (ROM)
+    .extern _etext          // End of text section
+    .extern _data           // Start of data section
+    .extern _bss_start_     // BSS segment start (RAM; data and bss starts are adjacent, so no extra symbol)
+    .extern _bss_end_       // BSS segment end
 
-    .global _start          // 链接器默认入口
+    .global _start          // Linker default entry
     .global my_entry        
 
 
-// 处理器7种模式定义
+// Processor mode definitions
 
     .equ USERMODE,   0x10
     .equ FIQMODE,    0x11
@@ -30,12 +30,12 @@
     .equ MODEMASK,   0x1f
 
 
-// 异常向量表
+// Exception vector table
     .section .text
-    .code 32                // ARM 模式 （16是thumb模式，即ARMV4T的T，完全不需要考虑T，只用ARMV4即可）
-    .align 2                // 4字节对齐2^n
+    .code 32                // ARM state (16 is Thumb; using ARMv4 only)
+    .align 2                // 4-byte alignment (2^n)
 
-_start:                     // 标准入口标签
+_start:                     // Standard entry label
 my_entry:
     b   reset               // 0x00
     b   undef               // 0x04
@@ -43,13 +43,13 @@ my_entry:
     b   pabort              // 0x0C
     b   dabort              // 0x10
     b   .                   // 0x14 
-    b   OSTickISR           // 已修改irq -> OSTickISR,跳转到os_cpu_context_switch.S中
+    b   OSTickISR           // Changed IRQ to OSTickISR; jumps to os_cpu_context_switch.S
     b   fiq                 // 0x1C
 
 
-// 异常处理函数,报错LED亮起，如果程序卡死还可以再各个位置加入led检查运行状态
+// Exception handlers: turn on LEDs on errors; if the program hangs, add LED checks at various points to inspect runtime state
 
-//undef LED1亮
+// undef: LED1 on
 undef:
     ldr r0, =GPBDAT
     ldr r1, [r0]
@@ -60,7 +60,7 @@ undef:
     str r1, [r0]
     b   .
 
-//swi LED2亮
+// swi: LED2 on
 swi:
     ldr r0, =GPBDAT
     ldr r1, [r0]
@@ -71,7 +71,7 @@ swi:
     str r1, [r0]
     b   .
 
-//pabort LED1 2亮
+// pabort: LED1 and LED2 on
 pabort:
     ldr r0, =GPBDAT
     ldr r1, [r0]
@@ -82,7 +82,7 @@ pabort:
     str r1, [r0]
     b   .
 
-//dabort LED 3亮
+// dabort: LED3 on
 dabort:
     ldr r0, =GPBDAT
     ldr r1, [r0]
@@ -93,14 +93,14 @@ dabort:
     str r1, [r0]
     b   .
 
-//irq LED 1 3亮
+// irq: LED1 and LED3 on
 irq:
     sub lr, lr, #4
     stmfd sp!, {r0-r12, lr}
     mrs r0, spsr
     stmfd sp!, {r0}
 
-    // LED 指示 (可选)
+    // LED indicator (optional)
     ldr r0, =GPBDAT
     ldr r1, [r0]
     ldr r2, =(0x05<<5)
@@ -109,7 +109,7 @@ irq:
 
     ldr r0, =INTOFFSET
     ldr r0, [r0]
-    ldr r1, =HandlerEINT0   // 需定义该地址常量
+    ldr r1, =HandlerEINT0   // Address constant must be defined
     add r1, r1, r0, lsl #2
     ldr r1, [r1]
     mov lr, pc
@@ -120,7 +120,7 @@ irq:
     ldmfd sp!, {r0-r12, lr}
     movs pc, lr
 
-//fiq LED2 3亮
+// fiq: LED2 and LED3 on
 fiq:
     ldr r0, =GPBDAT
     ldr r1, [r0]
@@ -132,15 +132,15 @@ fiq:
     b   .
 
 
-// 复位处理 (Reset Handler)
+// Reset handler
 
 reset:
-// 1. 关闭看门狗
+// 1. Disable watchdog
     ldr r0, =WTCON
     mov r1, #0x0
     str r1, [r0]
 
-// 2. 屏蔽中断
+// 2. Mask interrupts
     ldr r0, =INTMSK
     ldr r1, =0xffffffff
     str r1, [r0]
@@ -149,27 +149,27 @@ reset:
     ldr r1, =0x7fff
     str r1, [r0]
 
-// 3. 设置时钟
+// 3. Configure clock
     .equ U_MDIV, 56
     .equ U_PDIV, 2
     .equ U_SDIV, 2
     .equ M_MDIV, 127
     .equ M_PDIV, 2
     .equ M_SDIV, 1
-    .equ CLKDIVN_VAL, 5 //直接根据数据手册查表
+    .equ CLKDIVN_VAL, 5 // Directly from datasheet table
 
     ldr r0, =LOCKTIME
     ldr r1, =0xffffffff
     str r1, [r0]
 
-    // 3.1 设置分频系数 CLKDIVN
-    // 必须在 MPLLCON 之前设置，防止频率过高
+    // 3.1 Set divider CLKDIVN
+    // Must be set before MPLLCON to prevent excessive frequency
     ldr r0, =CLKDIVN
     ldr r1, =CLKDIVN_VAL
     str r1, [r0]
 
-    // 3.2 设置异步总线模式 (Async Bus Mode)
-    // 当 HDIVN != 0 时必须设置
+    // 3.2 Set asynchronous bus mode (Async Bus Mode)
+    // Must be set when HDIVN != 0
     .if CLKDIVN_VAL > 1
         mrc p15,0,r0,c1,c0,0
         orr r0,r0,#0xc0000000
@@ -180,12 +180,12 @@ reset:
         mcr p15,0,r0,c1,c0,0
     .endif
 
-    // 3.3 设置 UPLLCON
+    // 3.3 Configure UPLLCON
     ldr r0, =UPLLCON
     ldr r1, =((U_MDIV<<12)+(U_PDIV<<4)+U_SDIV)
     str r1, [r0]
 
-    // 7个nop
+    // 7 NOPs
     nop
     nop
     nop
@@ -194,32 +194,32 @@ reset:
     nop
     nop
 
-    // 3.4 设置 MPLLCON
+    // 3.4 Configure MPLLCON
     ldr r0, =MPLLCON
     ldr r1, =((M_MDIV<<12)+(M_PDIV<<4)+M_SDIV)
     str r1, [r0]
 
-// 4. 初始化内存控制器
+// 4. Initialize memory controller
     ldr r0, =SMRDATA
     ldr r1, =_start
-    sub r0, r0, r1          // r0 = SMRDATA 相对 _start 的偏移
+    sub r0, r0, r1          // r0 = offset of SMRDATA relative to _start
     
-    mov r2, pc              // 获取当前 PC
-    ldr r3, =0x30000000     // 判断阈值
+    mov r2, pc              // Get current PC
+    ldr r3, =0x30000000     // Threshold
     cmp r2, r3
-    blo 1f                  // 若 PC < 0x30000000，说明在 0x0 运行，偏移即为物理地址
-    add r0, r0, r3          // 若 PC >= 0x30000000，说明在 SDRAM 运行，需加上基址
+    blo 1f                  // If PC < 0x30000000, running at 0x0; offset equals physical address
+    add r0, r0, r3          // If PC >= 0x30000000, running in SDRAM; add base address
 1:
     ldr r1, =BWSCON
-    add r2, r0, #52         // SMRDATA 数据长度 13*4 = 52 字节
+    add r2, r0, #52         // SMRDATA length 13*4 = 52 bytes
 
-0:                          // 局部标签
+0:                          // Local label
     ldr r3, [r0], #4
     str r3, [r1], #4
     cmp r2, r0
-    bne 0b                  // backward跳转到标签 0
+    bne 0b                  // Backward branch to label 0
 
-// 5. 初始化堆栈
+// 5. Initialize stacks
     .equ STACK_BASE_ADDRESS, 0x33ff8000
     .equ UserStack,  (STACK_BASE_ADDRESS-0x3800)
     .equ SVCStack,   (STACK_BASE_ADDRESS-0x2800)
@@ -228,69 +228,82 @@ reset:
     .equ IRQStack,   (STACK_BASE_ADDRESS-0x1000)
     .equ FIQStack,   (STACK_BASE_ADDRESS-0x0)
 
-    //5.1 undef
+    // 5.1 Undef
     mrs r0, cpsr
     bic r0, r0, #MODEMASK
     orr r0, r0, #UNDEFMODE
     msr cpsr_c, r0
     ldr sp, =UndefStack
 
-    //5.2 Abort
+    // 5.2 Abort
     mrs r0, cpsr
     bic r0, r0, #MODEMASK
     orr r0, r0, #ABORTMODE
     msr cpsr_c, r0
     ldr sp, =AbortStack
 
-    //5.3 irq
+    // 5.3 IRQ
     mrs r0, cpsr
     bic r0, r0, #MODEMASK
     orr r0, r0, #IRQMODE
     msr cpsr_c, r0
     ldr sp, =IRQStack
 
-    //5.4 fiq
+    // 5.4 FIQ
     mrs r0, cpsr
     bic r0, r0, #MODEMASK
     orr r0, r0, #FIQMODE
     msr cpsr_c, r0
     ldr sp, =FIQStack
     
-    //5.5 svc
+    // 5.5 SVC
     mrs r0, cpsr
     bic r0, r0, #MODEMASK
     orr r0, r0, #SVCMODE
     msr cpsr_c, r0
     ldr sp, =SVCStack
 
-// 6. 代码搬运 (SRAM/NOR -> SDRAM)
-// 无论从 NAND 还是 NOR 启动，0x00000000 处都有我们的代码
-// (NAND启动时是SRAM，NOR启动时是NOR Flash)
-// 将其复制到0x30000000 处
+// 6. Code relocation (SRAM/NOR -> SDRAM)
+// Regardless of NAND or NOR boot, our code is at 0x00000000
+// (NAND boot uses SRAM; NOR boot uses NOR Flash)
+// Copy it to 0x30000000
 
-    // 检查当前运行地址，如果在 SDRAM 中 (>=0x30000000) 则跳过复制
+    // Check current address; if in SDRAM (>=0x30000000), skip copying
     mov r0, pc
     ldr r1, =0x30000000
     cmp r0, r1
-    bhs on_sdram            // 如果 PC >= 0x30000000，直接跳转到 on_sdram
+    bhs on_sdram            // If PC >= 0x30000000, jump directly to on_sdram
 
-    mov r0, #0                  // 源地址 0x00000000
-    ldr r1, =_start             // 目标地址 0x30000000 (由linker.ld定义)
-    ldr r2, =_bss_start_      // 结束地址 (BSS段是空的)
+    mov r0, #0                  // Source address 0x00000000
+    ldr r1, =_start             // Destination address 0x30000000 (defined in linker.ld)
+    ldr r2, =_bss_start_      // End address (BSS segment is empty)
     
-    sub r2, r2, r1              // 计算代码大小 (r2 = _bss_start_ - _start)
+    sub r2, r2, r1              // Compute code size (r2 = _bss_start_ - _start)
     
 copy_loop:
     ldr r3, [r0], #4
     str r3, [r1], #4
     subs r2, r2, #4
-    bgt copy_loop               // 循环直到复制完
+    bgt copy_loop               // Loop until copy completes
 
-    // 跳转到 SDRAM 中的代码继续执行
+    // Jump to code in SDRAM to continue
     ldr pc, =on_sdram
 on_sdram:
 
-// 7. 清零 BSS
+// 7. Copy initialized data (.data) from ROM image to RAM
+    ldr r0, TopOfROM        // r0 = &_etext
+    ldr r0, [r0]            // r0 = _etext (source)
+    ldr r1, BaseOfBSS       // r1 = &_data
+    ldr r1, [r1]            // r1 = _data (destination)
+    ldr r2, BaseOfZero      // r2 = &_bss_start_
+    ldr r2, [r2]            // r2 = _bss_start_ (end of data)
+1:
+    cmp r1, r2
+    ldrcc r3, [r0], #4
+    strcc r3, [r1], #4
+    bcc 1b
+
+// 8. Zero BSS
     mov r0, #0
     ldr r2, BaseOfZero
     ldr r3, EndOfBSS
@@ -299,17 +312,45 @@ on_sdram:
     strcc r0, [r2], #4
     bcc 0b
 
-// 8.跳转到 main
+// 9. Install exception vector table to physical 0x00000000
+//    Match Keil flow: write 8x 'LDR PC, [PC, #24]' then fill handler addresses at 0x20
+    ldr r0, =0x00000000
+    ldr r1, =0xE59FF018        // LDR PC, [PC, #24]
+    mov r2, #8
+1:
+    str r1, [r0], #4
+    subs r2, r2, #1
+    bgt 1b
+
+    ldr r0, =0x00000020
+    ldr r1, =_start            // Reset entry points to vector table start
+    str r1, [r0], #4
+    ldr r1, =undef
+    str r1, [r0], #4
+    ldr r1, =swi
+    str r1, [r0], #4
+    ldr r1, =pabort
+    str r1, [r0], #4
+    ldr r1, =dabort
+    str r1, [r0], #4
+    mov r1, #0                 // Reserved
+    str r1, [r0], #4
+    ldr r1, =OSTickISR         // IRQ handler: direct to OS tick ISR
+    str r1, [r0], #4
+    ldr r1, =fiq
+    str r1, [r0], #4
+
+// 10. Jump to main
     bl main
     b .
-//reset结束================================================================
+// End of reset ===============================================================
     
     
     .align 2
     .ltorg
 
 
-// 内存配置数据表 SMRDATA
+// Memory configuration table SMRDATA
 SMRDATA:
     .long (0+(B1_BWSCON<<4)+(B2_BWSCON<<8)+(B3_BWSCON<<12)+(B4_BWSCON<<16)+(B5_BWSCON<<20)+(B6_BWSCON<<24)+(B7_BWSCON<<28))
     .long ((B0_Tacs<<13)+(B0_Tcos<<11)+(B0_Tacc<<8)+(B0_Tcoh<<6)+(B0_Tah<<4)+(B0_Tacp<<2)+(B0_PMC))
@@ -326,7 +367,7 @@ SMRDATA:
     .long 0x30
 
 
-// 链接器符号 (指针)
+// Linker symbols (pointers)
 
 BaseOfROM:  .word _start
 TopOfROM:   .word _etext
@@ -335,8 +376,8 @@ BaseOfZero: .word _bss_start_
 EndOfBSS:   .word _bss_end_
 
 
-// ISR 地址定义 (RAM)
-//异常处理程序地址（对应异常向量表），16进制也可以用，10进制计算便于检查
+// ISR address definitions (RAM)
+// Exception handler addresses (matching the vector table); hex is fine, decimal is easier to verify
     .equ ISR_ENTRIES_STARTADDRESS, 0x33ffff00
     .equ HandleReset,           ISR_ENTRIES_STARTADDRESS + 0
     .equ HandleUndef,           ISR_ENTRIES_STARTADDRESS + 4
@@ -347,8 +388,8 @@ EndOfBSS:   .word _bss_end_
     .equ HandleIRQ,             ISR_ENTRIES_STARTADDRESS + 24
     .equ HandleFIQ,             ISR_ENTRIES_STARTADDRESS + 28
 
-//S3C2440有32个中断源，每个中断源对应一个处理函数
-//具体的IRQ中断源处理函数地址表
+// S3C2440 has 32 interrupt sources, each with a handler
+// IRQ source handler address table
     .equ HandlerEINT0,          ISR_ENTRIES_STARTADDRESS + 32
     .equ HandlerEINT1,          ISR_ENTRIES_STARTADDRESS + 36
     .equ HandlerEINT2,          ISR_ENTRIES_STARTADDRESS + 40

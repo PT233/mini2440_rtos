@@ -37,277 +37,277 @@ LOAD build/.obj/lib/os_lib.o
 LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a
                 0x30000000                        . = 0x30000000
 
-.text           0x30000000     0x800d
+.text           0x30000000     0x80ad
  *startup.o(.text)
- .text          0x30000000      0x314 build/.obj/arch/startup.o
+ .text          0x30000000      0x3b4 build/.obj/arch/startup.o
                 0x30000000                _start
                 0x30000000                my_entry
  *(.text)
- .text          0x30000314      0x144 build/.obj/arch/os_cpu_context_switch.o
-                0x30000314                OS_CPU_SR_Save
-                0x30000324                OS_CPU_SR_Restore
-                0x3000032c                OSStartHighRdy
-                0x30000350                OSCtxSw
-                0x3000039c                OSIntCtxSw
-                0x300003cc                OSTickISR
- .text          0x30000458      0x774 build/.obj/user/main.o
-                0x30000458                main
-                0x3000049c                Task_Start
-                0x30000624                Task_Input
-                0x300008ac                Task_Work
-                0x30000970                Task_Display
-                0x30000aec                Task_Monitor
- .text          0x30000bcc      0x2c4 build/.obj/arch/os_cpu_init.o
-                0x30000bcc                OSTaskStkInit
-                0x30000d78                OSTaskCreateHook
-                0x30000d98                OSTaskDelHook
-                0x30000de0                OSTaskSwHook
-                0x30000df8                OSTaskStatHook
-                0x30000e10                OSTimeTickHook
-                0x30000e28                OSInitHookBegin
-                0x30000e40                OSInitHookEnd
-                0x30000e58                OSTCBInitHook
-                0x30000e78                OSTaskIdleHook
- .text          0x30000e90      0x2e0 build/.obj/drivers/os_bsp.o
-                0x30000e90                Beep_Ctrl
-                0x30000eec                Beep_Init
-                0x30000f38                LED_Set
-                0x30000ff0                LED_Init
-                0x3000103c                Key_Scan
-                0x300010fc                Key_Init
-                0x30001134                BSP_Init
- .text          0x30001170      0x114 build/.obj/drivers/os_timer.o
-                0x30001170                InitTimer4
- .text          0x30001284      0x834 build/.obj/drivers/os_uart.o
-                0x30001284                Uart_Init
-                0x3000136c                Uart_SendByte
-                0x300016ec                Uart_Printf
- .text          0x30001ab8        0x0 build/.obj/kernel/os.o
- .text          0x30001ab8     0x1274 build/.obj/kernel/os_core.o
-                0x30001d18                OSInit
-                0x30001d58                OSIntEnter
-                0x30001db0                OSIntExit
-                0x30001f0c                OSSchedLock
-                0x30001f7c                OSSchedUnlock
-                0x30002028                OSStart
-                0x3000210c                OSStatInit
-                0x3000218c                OSTimeTick
-                0x300022e4                OS_Dummy
-                0x300022fc                OS_EventTaskRdy
-                0x300024cc                OS_EventTaskWait
-                0x30002630                OS_EventTO
-                0x3000273c                OS_EventWaitListInit
-                0x30002894                OS_Sched
-                0x300029a0                OS_TaskIdle
-                0x300029e4                OS_TaskStat
-                0x30002b04                OS_TCBInit
- .text          0x30002d2c     0x117c build/.obj/kernel/os_flag.o
-                0x30002d2c                OSFlagAccept
-                0x30002fec                OSFlagCreate
-                0x300030c4                OSFlagDel
-                0x300032b0                OSFlagPend
-                0x3000374c                OSFlagPost
-                0x30003a1c                OSFlagQuery
-                0x30003ab0                OS_FlagInit
-                0x30003df4                OS_FlagUnlink
- .text          0x30003ea8      0x66c build/.obj/kernel/os_mbox.o
-                0x30003ea8                OSMboxAccept
-                0x30003f20                OSMboxCreate
-                0x30003fdc                OSMboxDel
-                0x300041b4                OSMboxPend
-                0x3000436c                OSMboxPost
-                0x30004444                OSMboxPostOpt
-                0x30004474                OSMboxQuery
- .text          0x30004514      0x4e4 build/.obj/kernel/os_mem.o
-                0x30004514                OSMemCreate
-                0x300046b8                OSMemGet
-                0x30004778                OSMemPut
-                0x30004830                OSMemQuery
-                0x300048fc                OS_MemInit
- .text          0x300049f8      0xcb0 build/.obj/kernel/os_mutex.o
-                0x300049f8                OSMutexAccept
-                0x30004b20                OSMutexCreate
-                0x30004c78                OSMutexDel
-                0x30004e94                OSMutexPend
-                0x3000523c                OSMutexPost
-                0x300055a8                OSMutexQuery
- .text          0x300056a8      0xb84 build/.obj/kernel/os_q.o
-                0x300056a8                OSQAccept
-                0x30005790                OSQCreate
-                0x30005918                OSQDel
-                0x30005b44                OSQFlush
-                0x30005bdc                OSQPend
-                0x30005dec                OSQPost
-                0x30005f2c                OSQPostFront
-                0x30006074                OSQPostOpt
-                0x300060a4                OSQQuery
-                0x30006194                OS_QInit
- .text          0x3000622c      0x614 build/.obj/kernel/os_sem.o
-                0x3000622c                OSSemAccept
-                0x300062b8                OSSemCreate
-                0x30006378                OSSemDel
-                0x30006550                OSSemPend
-                0x300066c8                OSSemPost
-                0x30006798                OSSemQuery
- .text          0x30006840      0xdf8 build/.obj/kernel/os_task.o
-                0x30006840                OSTaskChangePrio
-                0x30006c30                OSTaskCreate
-                0x30006d7c                OSTaskCreateExt
-                0x30006dac                OSTaskDel
-                0x30007160                OSTaskDelReq
-                0x30007244                OSTaskResume
-                0x30007388                OSTaskStkChk
-                0x300073b4                OSTaskSuspend
-                0x30007584                OSTaskQuery
- .text          0x30007638      0x47c build/.obj/kernel/os_time.o
-                0x30007638                OSTimeDly
-                0x30007754                OSTimeDlyHMSM
-                0x3000790c                OSTimeDlyResume
-                0x30007a34                OSTimeGet
-                0x30007a74                OSTimeSet
- .text          0x30007ab4      0x160 build/.obj/lib/os_lib.o
-                0x30007ab4                memset
-                0x30007b18                memcpy
- .text          0x30007c14      0x114 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
-                0x30007c14                __udivsi3
-                0x30007c14                __aeabi_uidiv
-                0x30007d08                __aeabi_uidivmod
- .text          0x30007d28      0x148 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
-                0x30007d28                __aeabi_idiv
-                0x30007d28                __divsi3
-                0x30007e50                __aeabi_idivmod
- .text          0x30007e70        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
-                0x30007e70                __aeabi_ldiv0
-                0x30007e70                __aeabi_idiv0
+ .text          0x300003b4      0x144 build/.obj/arch/os_cpu_context_switch.o
+                0x300003b4                OS_CPU_SR_Save
+                0x300003c4                OS_CPU_SR_Restore
+                0x300003cc                OSStartHighRdy
+                0x300003f0                OSCtxSw
+                0x3000043c                OSIntCtxSw
+                0x3000046c                OSTickISR
+ .text          0x300004f8      0x774 build/.obj/user/main.o
+                0x300004f8                main
+                0x3000053c                Task_Start
+                0x300006c4                Task_Input
+                0x3000094c                Task_Work
+                0x30000a10                Task_Display
+                0x30000b8c                Task_Monitor
+ .text          0x30000c6c      0x2c4 build/.obj/arch/os_cpu_init.o
+                0x30000c6c                OSTaskStkInit
+                0x30000e18                OSTaskCreateHook
+                0x30000e38                OSTaskDelHook
+                0x30000e80                OSTaskSwHook
+                0x30000e98                OSTaskStatHook
+                0x30000eb0                OSTimeTickHook
+                0x30000ec8                OSInitHookBegin
+                0x30000ee0                OSInitHookEnd
+                0x30000ef8                OSTCBInitHook
+                0x30000f18                OSTaskIdleHook
+ .text          0x30000f30      0x2e0 build/.obj/drivers/os_bsp.o
+                0x30000f30                Beep_Ctrl
+                0x30000f8c                Beep_Init
+                0x30000fd8                LED_Set
+                0x30001090                LED_Init
+                0x300010dc                Key_Scan
+                0x3000119c                Key_Init
+                0x300011d4                BSP_Init
+ .text          0x30001210      0x114 build/.obj/drivers/os_timer.o
+                0x30001210                InitTimer4
+ .text          0x30001324      0x834 build/.obj/drivers/os_uart.o
+                0x30001324                Uart_Init
+                0x3000140c                Uart_SendByte
+                0x3000178c                Uart_Printf
+ .text          0x30001b58        0x0 build/.obj/kernel/os.o
+ .text          0x30001b58     0x1274 build/.obj/kernel/os_core.o
+                0x30001db8                OSInit
+                0x30001df8                OSIntEnter
+                0x30001e50                OSIntExit
+                0x30001fac                OSSchedLock
+                0x3000201c                OSSchedUnlock
+                0x300020c8                OSStart
+                0x300021ac                OSStatInit
+                0x3000222c                OSTimeTick
+                0x30002384                OS_Dummy
+                0x3000239c                OS_EventTaskRdy
+                0x3000256c                OS_EventTaskWait
+                0x300026d0                OS_EventTO
+                0x300027dc                OS_EventWaitListInit
+                0x30002934                OS_Sched
+                0x30002a40                OS_TaskIdle
+                0x30002a84                OS_TaskStat
+                0x30002ba4                OS_TCBInit
+ .text          0x30002dcc     0x117c build/.obj/kernel/os_flag.o
+                0x30002dcc                OSFlagAccept
+                0x3000308c                OSFlagCreate
+                0x30003164                OSFlagDel
+                0x30003350                OSFlagPend
+                0x300037ec                OSFlagPost
+                0x30003abc                OSFlagQuery
+                0x30003b50                OS_FlagInit
+                0x30003e94                OS_FlagUnlink
+ .text          0x30003f48      0x66c build/.obj/kernel/os_mbox.o
+                0x30003f48                OSMboxAccept
+                0x30003fc0                OSMboxCreate
+                0x3000407c                OSMboxDel
+                0x30004254                OSMboxPend
+                0x3000440c                OSMboxPost
+                0x300044e4                OSMboxPostOpt
+                0x30004514                OSMboxQuery
+ .text          0x300045b4      0x4e4 build/.obj/kernel/os_mem.o
+                0x300045b4                OSMemCreate
+                0x30004758                OSMemGet
+                0x30004818                OSMemPut
+                0x300048d0                OSMemQuery
+                0x3000499c                OS_MemInit
+ .text          0x30004a98      0xcb0 build/.obj/kernel/os_mutex.o
+                0x30004a98                OSMutexAccept
+                0x30004bc0                OSMutexCreate
+                0x30004d18                OSMutexDel
+                0x30004f34                OSMutexPend
+                0x300052dc                OSMutexPost
+                0x30005648                OSMutexQuery
+ .text          0x30005748      0xb84 build/.obj/kernel/os_q.o
+                0x30005748                OSQAccept
+                0x30005830                OSQCreate
+                0x300059b8                OSQDel
+                0x30005be4                OSQFlush
+                0x30005c7c                OSQPend
+                0x30005e8c                OSQPost
+                0x30005fcc                OSQPostFront
+                0x30006114                OSQPostOpt
+                0x30006144                OSQQuery
+                0x30006234                OS_QInit
+ .text          0x300062cc      0x614 build/.obj/kernel/os_sem.o
+                0x300062cc                OSSemAccept
+                0x30006358                OSSemCreate
+                0x30006418                OSSemDel
+                0x300065f0                OSSemPend
+                0x30006768                OSSemPost
+                0x30006838                OSSemQuery
+ .text          0x300068e0      0xdf8 build/.obj/kernel/os_task.o
+                0x300068e0                OSTaskChangePrio
+                0x30006cd0                OSTaskCreate
+                0x30006e1c                OSTaskCreateExt
+                0x30006e4c                OSTaskDel
+                0x30007200                OSTaskDelReq
+                0x300072e4                OSTaskResume
+                0x30007428                OSTaskStkChk
+                0x30007454                OSTaskSuspend
+                0x30007624                OSTaskQuery
+ .text          0x300076d8      0x47c build/.obj/kernel/os_time.o
+                0x300076d8                OSTimeDly
+                0x300077f4                OSTimeDlyHMSM
+                0x300079ac                OSTimeDlyResume
+                0x30007ad4                OSTimeGet
+                0x30007b14                OSTimeSet
+ .text          0x30007b54      0x160 build/.obj/lib/os_lib.o
+                0x30007b54                memset
+                0x30007bb8                memcpy
+ .text          0x30007cb4      0x114 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
+                0x30007cb4                __udivsi3
+                0x30007cb4                __aeabi_uidiv
+                0x30007da8                __aeabi_uidivmod
+ .text          0x30007dc8      0x148 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
+                0x30007dc8                __aeabi_idiv
+                0x30007dc8                __divsi3
+                0x30007ef0                __aeabi_idivmod
+ .text          0x30007f10        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
+                0x30007f10                __aeabi_ldiv0
+                0x30007f10                __aeabi_idiv0
  *(.rodata)
- .rodata        0x30007e74      0x163 build/.obj/user/main.o
- *fill*         0x30007fd7        0x1 
- .rodata        0x30007fd8       0x22 build/.obj/arch/os_cpu_init.o
- *fill*         0x30007ffa        0x2 
- .rodata        0x30007ffc       0x11 build/.obj/drivers/os_uart.o
+ .rodata        0x30007f14      0x163 build/.obj/user/main.o
+ *fill*         0x30008077        0x1 
+ .rodata        0x30008078       0x22 build/.obj/arch/os_cpu_init.o
+ *fill*         0x3000809a        0x2 
+ .rodata        0x3000809c       0x11 build/.obj/drivers/os_uart.o
 
-.glue_7         0x30008010        0x0
- .glue_7        0x30008010        0x0 linker stubs
+.glue_7         0x300080b0        0x0
+ .glue_7        0x300080b0        0x0 linker stubs
 
-.glue_7t        0x30008010        0x0
- .glue_7t       0x30008010        0x0 linker stubs
+.glue_7t        0x300080b0        0x0
+ .glue_7t       0x300080b0        0x0 linker stubs
 
-.vfp11_veneer   0x30008010        0x0
- .vfp11_veneer  0x30008010        0x0 linker stubs
+.vfp11_veneer   0x300080b0        0x0
+ .vfp11_veneer  0x300080b0        0x0 linker stubs
 
-.v4_bx          0x30008010        0x0
- .v4_bx         0x30008010        0x0 linker stubs
+.v4_bx          0x300080b0        0x0
+ .v4_bx         0x300080b0        0x0 linker stubs
 
-.iplt           0x30008010        0x0
- .iplt          0x30008010        0x0 build/.obj/arch/os_cpu_context_switch.o
+.iplt           0x300080b0        0x0
+ .iplt          0x300080b0        0x0 build/.obj/arch/os_cpu_context_switch.o
 
-.rel.dyn        0x30008010        0x0
- .rel.iplt      0x30008010        0x0 build/.obj/arch/os_cpu_context_switch.o
-                0x30008010                        . = ALIGN (0x4)
-                0x30008010                        _etext = .
+.rel.dyn        0x300080b0        0x0
+ .rel.iplt      0x300080b0        0x0 build/.obj/arch/os_cpu_context_switch.o
+                0x300080b0                        . = ALIGN (0x4)
+                0x300080b0                        _etext = .
 
-.data           0x30008010      0x108
-                0x30008010                        _data = .
+.data           0x300080b0      0x108
+                0x300080b0                        _data = .
  *(.data)
- .data          0x30008010        0x0 build/.obj/arch/os_cpu_context_switch.o
- .data          0x30008010        0x0 build/.obj/arch/startup.o
- .data          0x30008010        0x0 build/.obj/user/main.o
- .data          0x30008010        0x0 build/.obj/arch/os_cpu_init.o
- .data          0x30008010        0x0 build/.obj/drivers/os_bsp.o
- .data          0x30008010        0x0 build/.obj/drivers/os_timer.o
- .data          0x30008010        0x0 build/.obj/drivers/os_uart.o
- .data          0x30008010        0x0 build/.obj/kernel/os.o
- .data          0x30008010      0x108 build/.obj/kernel/os_core.o
-                0x30008010                OSMapTbl
-                0x30008018                OSUnMapTbl
- .data          0x30008118        0x0 build/.obj/kernel/os_flag.o
- .data          0x30008118        0x0 build/.obj/kernel/os_mbox.o
- .data          0x30008118        0x0 build/.obj/kernel/os_mem.o
- .data          0x30008118        0x0 build/.obj/kernel/os_mutex.o
- .data          0x30008118        0x0 build/.obj/kernel/os_q.o
- .data          0x30008118        0x0 build/.obj/kernel/os_sem.o
- .data          0x30008118        0x0 build/.obj/kernel/os_task.o
- .data          0x30008118        0x0 build/.obj/kernel/os_time.o
- .data          0x30008118        0x0 build/.obj/lib/os_lib.o
- .data          0x30008118        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
- .data          0x30008118        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
- .data          0x30008118        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
+ .data          0x300080b0        0x0 build/.obj/arch/os_cpu_context_switch.o
+ .data          0x300080b0        0x0 build/.obj/arch/startup.o
+ .data          0x300080b0        0x0 build/.obj/user/main.o
+ .data          0x300080b0        0x0 build/.obj/arch/os_cpu_init.o
+ .data          0x300080b0        0x0 build/.obj/drivers/os_bsp.o
+ .data          0x300080b0        0x0 build/.obj/drivers/os_timer.o
+ .data          0x300080b0        0x0 build/.obj/drivers/os_uart.o
+ .data          0x300080b0        0x0 build/.obj/kernel/os.o
+ .data          0x300080b0      0x108 build/.obj/kernel/os_core.o
+                0x300080b0                OSMapTbl
+                0x300080b8                OSUnMapTbl
+ .data          0x300081b8        0x0 build/.obj/kernel/os_flag.o
+ .data          0x300081b8        0x0 build/.obj/kernel/os_mbox.o
+ .data          0x300081b8        0x0 build/.obj/kernel/os_mem.o
+ .data          0x300081b8        0x0 build/.obj/kernel/os_mutex.o
+ .data          0x300081b8        0x0 build/.obj/kernel/os_q.o
+ .data          0x300081b8        0x0 build/.obj/kernel/os_sem.o
+ .data          0x300081b8        0x0 build/.obj/kernel/os_task.o
+ .data          0x300081b8        0x0 build/.obj/kernel/os_time.o
+ .data          0x300081b8        0x0 build/.obj/lib/os_lib.o
+ .data          0x300081b8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
+ .data          0x300081b8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
+ .data          0x300081b8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
 
-.igot.plt       0x30008118        0x0
- .igot.plt      0x30008118        0x0 build/.obj/arch/os_cpu_context_switch.o
-                0x30008118                        . = ALIGN (0x4)
-                0x30008118                        _bss_start_ = .
+.igot.plt       0x300081b8        0x0
+ .igot.plt      0x300081b8        0x0 build/.obj/arch/os_cpu_context_switch.o
+                0x300081b8                        . = ALIGN (0x4)
+                0x300081b8                        _bss_start_ = .
 
-.bss            0x30008118     0x37d0
+.bss            0x300081b8     0x37d0
  *(.bss)
- .bss           0x30008118        0x0 build/.obj/arch/os_cpu_context_switch.o
- .bss           0x30008118        0x0 build/.obj/arch/startup.o
- .bss           0x30008118     0x2acc build/.obj/user/main.o
-                0x30008118                StartStk
-                0x30008918                InputStk
-                0x30009118                WorkStk
-                0x30009918                DisplayStk
-                0x3000a118                MonitorStk
-                0x3000a918                SemBeep
-                0x3000a91c                MboxLed
-                0x3000a920                DataQueue
-                0x3000a924                QMsgTbl
-                0x3000a94c                UartMutex
-                0x3000a950                SysModeFlag
-                0x3000a954                MemPartition
-                0x3000a958                MemStorage
- .bss           0x3000abe4        0x0 build/.obj/arch/os_cpu_init.o
- .bss           0x3000abe4        0x0 build/.obj/drivers/os_bsp.o
- .bss           0x3000abe4        0x0 build/.obj/drivers/os_timer.o
- .bss           0x3000abe4        0x0 build/.obj/drivers/os_uart.o
- .bss           0x3000abe4      0xd04 build/.obj/kernel/os.o
-                0x3000abe4                OSTime
-                0x3000abe8                OSIntNesting
-                0x3000abe9                OSIntExitY
-                0x3000abea                OSLockNesting
-                0x3000abeb                OSPrioCur
-                0x3000abec                OSPrioHighRdy
-                0x3000abed                OSRdyGrp
-                0x3000abf0                OSRdyTbl
-                0x3000abf8                OSRunning
-                0x3000abf9                OSTaskCtr
-                0x3000abfc                OSCtxSwCtr
-                0x3000ac00                OSIdleCtr
-                0x3000ac04                OSIdleCtrRun
-                0x3000ac08                OSIdleCtrMax
-                0x3000ac0c                OSStatRdy
-                0x3000ac0d                OSCPUUsage
-                0x3000ac10                OSTaskIdleStk
-                0x3000ad10                OSTaskStatStk
-                0x3000b510                OSTCBCur
-                0x3000b514                OSTCBFreeList
-                0x3000b518                OSTCBHighRdy
-                0x3000b51c                OSTCBList
-                0x3000b520                OSTCBPrioTbl
-                0x3000b61c                OSTCBTbl
-                0x3000b75c                OSEventFreeList
-                0x3000b760                OSEventTbl
-                0x3000b7c4                OSFlagFreeList
-                0x3000b7c8                OSFlagTbl
-                0x3000b804                OSMemFreeList
-                0x3000b808                OSMemTbl
-                0x3000b86c                OSQFreeList
-                0x3000b870                OSQTbl
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_core.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_flag.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_mbox.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_mem.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_mutex.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_q.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_sem.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_task.o
- .bss           0x3000b8e8        0x0 build/.obj/kernel/os_time.o
- .bss           0x3000b8e8        0x0 build/.obj/lib/os_lib.o
- .bss           0x3000b8e8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
- .bss           0x3000b8e8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
- .bss           0x3000b8e8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
+ .bss           0x300081b8        0x0 build/.obj/arch/os_cpu_context_switch.o
+ .bss           0x300081b8        0x0 build/.obj/arch/startup.o
+ .bss           0x300081b8     0x2acc build/.obj/user/main.o
+                0x300081b8                StartStk
+                0x300089b8                InputStk
+                0x300091b8                WorkStk
+                0x300099b8                DisplayStk
+                0x3000a1b8                MonitorStk
+                0x3000a9b8                SemBeep
+                0x3000a9bc                MboxLed
+                0x3000a9c0                DataQueue
+                0x3000a9c4                QMsgTbl
+                0x3000a9ec                UartMutex
+                0x3000a9f0                SysModeFlag
+                0x3000a9f4                MemPartition
+                0x3000a9f8                MemStorage
+ .bss           0x3000ac84        0x0 build/.obj/arch/os_cpu_init.o
+ .bss           0x3000ac84        0x0 build/.obj/drivers/os_bsp.o
+ .bss           0x3000ac84        0x0 build/.obj/drivers/os_timer.o
+ .bss           0x3000ac84        0x0 build/.obj/drivers/os_uart.o
+ .bss           0x3000ac84      0xd04 build/.obj/kernel/os.o
+                0x3000ac84                OSTime
+                0x3000ac88                OSIntNesting
+                0x3000ac89                OSIntExitY
+                0x3000ac8a                OSLockNesting
+                0x3000ac8b                OSPrioCur
+                0x3000ac8c                OSPrioHighRdy
+                0x3000ac8d                OSRdyGrp
+                0x3000ac90                OSRdyTbl
+                0x3000ac98                OSRunning
+                0x3000ac99                OSTaskCtr
+                0x3000ac9c                OSCtxSwCtr
+                0x3000aca0                OSIdleCtr
+                0x3000aca4                OSIdleCtrRun
+                0x3000aca8                OSIdleCtrMax
+                0x3000acac                OSStatRdy
+                0x3000acad                OSCPUUsage
+                0x3000acb0                OSTaskIdleStk
+                0x3000adb0                OSTaskStatStk
+                0x3000b5b0                OSTCBCur
+                0x3000b5b4                OSTCBFreeList
+                0x3000b5b8                OSTCBHighRdy
+                0x3000b5bc                OSTCBList
+                0x3000b5c0                OSTCBPrioTbl
+                0x3000b6bc                OSTCBTbl
+                0x3000b7fc                OSEventFreeList
+                0x3000b800                OSEventTbl
+                0x3000b864                OSFlagFreeList
+                0x3000b868                OSFlagTbl
+                0x3000b8a4                OSMemFreeList
+                0x3000b8a8                OSMemTbl
+                0x3000b90c                OSQFreeList
+                0x3000b910                OSQTbl
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_core.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_flag.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_mbox.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_mem.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_mutex.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_q.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_sem.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_task.o
+ .bss           0x3000b988        0x0 build/.obj/kernel/os_time.o
+ .bss           0x3000b988        0x0 build/.obj/lib/os_lib.o
+ .bss           0x3000b988        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
+ .bss           0x3000b988        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
+ .bss           0x3000b988        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
  *(COMMON)
-                0x3000b8e8                        _bss_end_ = .
+                0x3000b988                        _bss_end_ = .
 OUTPUT(build/mini2440_rtos.elf elf32-littlearm)
 LOAD linker stubs
 
@@ -375,44 +375,44 @@ LOAD linker stubs
  .comment       0x00000026       0x27 build/.obj/kernel/os_time.o
  .comment       0x00000026       0x27 build/.obj/lib/os_lib.o
 
-.debug_line     0x00000000     0x2a87
+.debug_line     0x00000000     0x2ab3
  .debug_line    0x00000000       0xa4 build/.obj/arch/os_cpu_context_switch.o
- .debug_line    0x000000a4      0x112 build/.obj/arch/startup.o
- .debug_line    0x000001b6      0x1ec build/.obj/user/main.o
- .debug_line    0x000003a2       0xba build/.obj/arch/os_cpu_init.o
- .debug_line    0x0000045c      0x181 build/.obj/drivers/os_bsp.o
- .debug_line    0x000005dd       0xa6 build/.obj/drivers/os_timer.o
- .debug_line    0x00000683      0x33e build/.obj/drivers/os_uart.o
- .debug_line    0x000009c1       0x4d build/.obj/kernel/os.o
- .debug_line    0x00000a0e      0x4fb build/.obj/kernel/os_core.o
- .debug_line    0x00000f09      0x4e1 build/.obj/kernel/os_flag.o
- .debug_line    0x000013ea      0x27e build/.obj/kernel/os_mbox.o
- .debug_line    0x00001668      0x1d9 build/.obj/kernel/os_mem.o
- .debug_line    0x00001841      0x450 build/.obj/kernel/os_mutex.o
- .debug_line    0x00001c91      0x3f1 build/.obj/kernel/os_q.o
- .debug_line    0x00002082      0x26e build/.obj/kernel/os_sem.o
- .debug_line    0x000022f0      0x42e build/.obj/kernel/os_task.o
- .debug_line    0x0000271e      0x17b build/.obj/kernel/os_time.o
- .debug_line    0x00002899       0xca build/.obj/lib/os_lib.o
- .debug_line    0x00002963       0x67 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
- .debug_line    0x000029ca       0x73 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
- .debug_line    0x00002a3d       0x4a /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
+ .debug_line    0x000000a4      0x13e build/.obj/arch/startup.o
+ .debug_line    0x000001e2      0x1ec build/.obj/user/main.o
+ .debug_line    0x000003ce       0xba build/.obj/arch/os_cpu_init.o
+ .debug_line    0x00000488      0x181 build/.obj/drivers/os_bsp.o
+ .debug_line    0x00000609       0xa6 build/.obj/drivers/os_timer.o
+ .debug_line    0x000006af      0x33e build/.obj/drivers/os_uart.o
+ .debug_line    0x000009ed       0x4d build/.obj/kernel/os.o
+ .debug_line    0x00000a3a      0x4fb build/.obj/kernel/os_core.o
+ .debug_line    0x00000f35      0x4e1 build/.obj/kernel/os_flag.o
+ .debug_line    0x00001416      0x27e build/.obj/kernel/os_mbox.o
+ .debug_line    0x00001694      0x1d9 build/.obj/kernel/os_mem.o
+ .debug_line    0x0000186d      0x450 build/.obj/kernel/os_mutex.o
+ .debug_line    0x00001cbd      0x3f1 build/.obj/kernel/os_q.o
+ .debug_line    0x000020ae      0x26e build/.obj/kernel/os_sem.o
+ .debug_line    0x0000231c      0x42e build/.obj/kernel/os_task.o
+ .debug_line    0x0000274a      0x17b build/.obj/kernel/os_time.o
+ .debug_line    0x000028c5       0xca build/.obj/lib/os_lib.o
+ .debug_line    0x0000298f       0x67 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
+ .debug_line    0x000029f6       0x73 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
+ .debug_line    0x00002a69       0x4a /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
 
 .debug_line_str
-                0x00000000       0xcd
+                0x00000000       0xb9
  .debug_line_str
-                0x00000000       0xcd build/.obj/arch/os_cpu_context_switch.o
-                                 0x45 (size before relaxing)
+                0x00000000       0xb9 build/.obj/arch/os_cpu_context_switch.o
+                                 0x31 (size before relaxing)
  .debug_line_str
-                0x000000cd       0x37 build/.obj/arch/startup.o
+                0x000000b9       0x23 build/.obj/arch/startup.o
  .debug_line_str
-                0x000000cd       0x7e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
+                0x000000b9       0x7e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
  .debug_line_str
-                0x000000cd       0x7e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
+                0x000000b9       0x7e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
  .debug_line_str
-                0x000000cd       0x7e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
+                0x000000b9       0x7e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
 
-.debug_info     0x00000000     0x5552
+.debug_info     0x00000000     0x5555
  .debug_info    0x00000000       0x25 build/.obj/arch/os_cpu_context_switch.o
  .debug_info    0x00000025       0x25 build/.obj/arch/startup.o
  .debug_info    0x0000004a      0x8e2 build/.obj/user/main.o
@@ -421,19 +421,19 @@ LOAD linker stubs
  .debug_info    0x00000e5c       0x85 build/.obj/drivers/os_timer.o
  .debug_info    0x00000ee1      0x364 build/.obj/drivers/os_uart.o
  .debug_info    0x00001245      0x6e7 build/.obj/kernel/os.o
- .debug_info    0x0000192c      0x9f0 build/.obj/kernel/os_core.o
- .debug_info    0x0000231c      0x7a8 build/.obj/kernel/os_flag.o
- .debug_info    0x00002ac4      0x5b7 build/.obj/kernel/os_mbox.o
- .debug_info    0x0000307b      0x361 build/.obj/kernel/os_mem.o
- .debug_info    0x000033dc      0x61d build/.obj/kernel/os_mutex.o
- .debug_info    0x000039f9      0x7b1 build/.obj/kernel/os_q.o
- .debug_info    0x000041aa      0x54b build/.obj/kernel/os_sem.o
- .debug_info    0x000046f5      0x7de build/.obj/kernel/os_task.o
- .debug_info    0x00004ed3      0x449 build/.obj/kernel/os_time.o
- .debug_info    0x0000531c      0x17e build/.obj/lib/os_lib.o
- .debug_info    0x0000549a       0x3e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
- .debug_info    0x000054d8       0x3e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
- .debug_info    0x00005516       0x3c /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
+ .debug_info    0x0000192c      0x9f3 build/.obj/kernel/os_core.o
+ .debug_info    0x0000231f      0x7a8 build/.obj/kernel/os_flag.o
+ .debug_info    0x00002ac7      0x5b7 build/.obj/kernel/os_mbox.o
+ .debug_info    0x0000307e      0x361 build/.obj/kernel/os_mem.o
+ .debug_info    0x000033df      0x61d build/.obj/kernel/os_mutex.o
+ .debug_info    0x000039fc      0x7b1 build/.obj/kernel/os_q.o
+ .debug_info    0x000041ad      0x54b build/.obj/kernel/os_sem.o
+ .debug_info    0x000046f8      0x7de build/.obj/kernel/os_task.o
+ .debug_info    0x00004ed6      0x449 build/.obj/kernel/os_time.o
+ .debug_info    0x0000531f      0x17e build/.obj/lib/os_lib.o
+ .debug_info    0x0000549d       0x3e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
+ .debug_info    0x000054db       0x3e /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
+ .debug_info    0x00005519       0x3c /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
 
 .debug_abbrev   0x00000000     0x1dcd
  .debug_abbrev  0x00000000       0x14 build/.obj/arch/os_cpu_context_switch.o
@@ -502,29 +502,29 @@ LOAD linker stubs
  .debug_aranges
                 0x00000278       0x20 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
 
-.debug_str      0x00000000      0xf7e
- .debug_str     0x00000000      0xf7e build/.obj/arch/os_cpu_context_switch.o
-                                 0x51 (size before relaxing)
- .debug_str     0x00000f7e       0x43 build/.obj/arch/startup.o
- .debug_str     0x00000f7e      0x51e build/.obj/user/main.o
- .debug_str     0x00000f7e      0x374 build/.obj/arch/os_cpu_init.o
- .debug_str     0x00000f7e      0x13d build/.obj/drivers/os_bsp.o
- .debug_str     0x00000f7e       0xfa build/.obj/drivers/os_timer.o
- .debug_str     0x00000f7e      0x1ae build/.obj/drivers/os_uart.o
- .debug_str     0x00000f7e      0x4c1 build/.obj/kernel/os.o
- .debug_str     0x00000f7e      0x67c build/.obj/kernel/os_core.o
- .debug_str     0x00000f7e      0x46c build/.obj/kernel/os_flag.o
- .debug_str     0x00000f7e      0x3f7 build/.obj/kernel/os_mbox.o
- .debug_str     0x00000f7e      0x25a build/.obj/kernel/os_mem.o
- .debug_str     0x00000f7e      0x442 build/.obj/kernel/os_mutex.o
- .debug_str     0x00000f7e      0x462 build/.obj/kernel/os_q.o
- .debug_str     0x00000f7e      0x3e1 build/.obj/kernel/os_sem.o
- .debug_str     0x00000f7e      0x4bb build/.obj/kernel/os_task.o
- .debug_str     0x00000f7e      0x395 build/.obj/kernel/os_time.o
- .debug_str     0x00000f7e      0x14c build/.obj/lib/os_lib.o
- .debug_str     0x00000f7e       0xa5 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
- .debug_str     0x00000f7e       0xa3 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
- .debug_str     0x00000f7e       0xa6 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
+.debug_str      0x00000000      0xf6a
+ .debug_str     0x00000000      0xf6a build/.obj/arch/os_cpu_context_switch.o
+                                 0x3d (size before relaxing)
+ .debug_str     0x00000f6a       0x2f build/.obj/arch/startup.o
+ .debug_str     0x00000f6a      0x50a build/.obj/user/main.o
+ .debug_str     0x00000f6a      0x360 build/.obj/arch/os_cpu_init.o
+ .debug_str     0x00000f6a      0x129 build/.obj/drivers/os_bsp.o
+ .debug_str     0x00000f6a       0xe6 build/.obj/drivers/os_timer.o
+ .debug_str     0x00000f6a      0x19a build/.obj/drivers/os_uart.o
+ .debug_str     0x00000f6a      0x4ad build/.obj/kernel/os.o
+ .debug_str     0x00000f6a      0x668 build/.obj/kernel/os_core.o
+ .debug_str     0x00000f6a      0x458 build/.obj/kernel/os_flag.o
+ .debug_str     0x00000f6a      0x3e3 build/.obj/kernel/os_mbox.o
+ .debug_str     0x00000f6a      0x246 build/.obj/kernel/os_mem.o
+ .debug_str     0x00000f6a      0x42e build/.obj/kernel/os_mutex.o
+ .debug_str     0x00000f6a      0x44e build/.obj/kernel/os_q.o
+ .debug_str     0x00000f6a      0x3cd build/.obj/kernel/os_sem.o
+ .debug_str     0x00000f6a      0x4a7 build/.obj/kernel/os_task.o
+ .debug_str     0x00000f6a      0x381 build/.obj/kernel/os_time.o
+ .debug_str     0x00000f6a      0x138 build/.obj/lib/os_lib.o
+ .debug_str     0x00000f6a       0xa5 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_udivsi3.o)
+ .debug_str     0x00000f6a       0xa3 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_divsi3.o)
+ .debug_str     0x00000f6a       0xa6 /usr/lib/gcc/arm-none-eabi/13.2.1/libgcc.a(_dvmd_tls.o)
 
 .debug_frame    0x00000000     0x111c
  .debug_frame   0x00000000       0xcc build/.obj/user/main.o

@@ -3,18 +3,12 @@
 这是一个基于 uC/OS-II 的 Mini2440 实时操作系统项目。
 
 ## 目录结构
-
+```bash
 mini2440_rtos/
 ├── arch/                           # 【架构层 - GNU工具链】
 │   ├── startup.S                   # 启动代码
 │   ├── os_cpu_context_switch.S     # 上下文切换汇编
 │   └── os_cpu_init.c               # 堆栈初始化
-│
-├── arch_keil/                      # 【架构层 - Keil工具链】
-│   ├── startup_keil.S              # 启动代码 (Keil汇编格式)
-│   ├── os_cpu_cs_keil.S            # 上下文切换汇编 (Keil格式)
-│   ├── os_cpu_init.c               # CPU初始化
-│   └── 注意用make不要把这个目录加入规则
 │
 ├── drivers/                        # 【驱动层】
 │   ├── os_bsp.c                    # 板级支持包 (BSP)
@@ -22,7 +16,7 @@ mini2440_rtos/
 │   └── os_timer.c                  # 定时器驱动
 │
 ├── include/                        # 【公共头文件】
-│   ├── 2440addr.h                  # S3C2440 寄存器定义 (C语言)
+│   ├── 2440addr.h                  # S3C2440 寄存器定义 (C 语言)
 │   ├── 2440addr.inc                # S3C2440 寄存器定义 (汇编)
 │   ├── memcfg.inc                  # 内存控制器配置
 │   ├── os_cpu.h                    # 架构相关头文件 (数据类型定义)
@@ -51,10 +45,11 @@ mini2440_rtos/
 │   └── main.c                      # 主程序入口及应用任务
 │
 ├── dnw/                            # 【下载工具】
-├── project/                        # 【Keil项目文件】
-│   ├── mini2440_rtos.uvprojx       # Keil工程文件
-│   ├── mini2440_rtos.uvoptx        # Keil项目选项文件
-│   └── s3c2440.sct                 # Keil链接脚本
+│
+├── project/                        # 【Keil 项目文件】
+│   ├── mini2440_rtos.uvprojx       # Keil 工程文件
+│   ├── mini2440_rtos.uvoptx        # Keil 项目选项文件
+│   └── s3c2440.sct                 # Keil 链接脚本
 │
 ├── build/                          # 【编译产物目录】
 │
@@ -64,7 +59,7 @@ mini2440_rtos/
 ├── run_docker.sh                   # Docker 运行脚本
 ├── mini2440.svd                    # SVD 设备描述文件
 └── README.md                       # 项目说明文档
-
+```
 ## 编译说明
 
 使用 `make` 命令进行编译：
@@ -83,4 +78,12 @@ make
 
 ```bash
 make clean
+```
+## 烧录环境搭建
+
+```bash
+开发环境搭建
+https://blog.csdn.net/qq_39883394/article/details/155205817
+如何烧录
+https://blog.csdn.net/qq_39883394/article/details/156205367
 ```
