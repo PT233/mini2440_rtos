@@ -297,12 +297,16 @@ on_sdram:
     ldr r1, [r1]            // r1 = _data (destination)
     ldr r2, BaseOfZero      // r2 = &_bss_start_
     ldr r2, [r2]            // r2 = _bss_start_ (end of data)
+
+    cmp r0, r1
+    beq skip_copy
 1:
     cmp r1, r2
     ldrcc r3, [r0], #4
     strcc r3, [r1], #4
     bcc 1b
 
+skip_copy:
 // 8. Zero BSS
     mov r0, #0
     ldr r2, BaseOfZero

@@ -47,7 +47,8 @@ static void int_to_str(int num, char *str, int pad_width)
     
     if (num == 0) {
         buf[i++] = '0';
-    } else {
+    } 
+    else {
         while (num > 0) {
             buf[i++] = '0' + (num % 10);
             num /= 10;
@@ -60,7 +61,8 @@ static void int_to_str(int num, char *str, int pad_width)
             str[j + 1] = buf[i - 1 - j];
         }
         str[i + 1] = '\0';
-    } else {
+    } 
+    else {
         for (int j = 0; j < i; j++) {
             str[j] = buf[i - 1 - j];
         }

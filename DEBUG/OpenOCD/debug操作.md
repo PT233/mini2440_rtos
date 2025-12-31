@@ -25,6 +25,17 @@ tty查看当前对话id
 新开一个wsl终端，输入：
 
 gdb-multiarch ./build/mini2440_rtos.elf -x init.gdb
+
+dashboard -output /dev/pts/2  # 依据TTY值替换2
+target remote localhost:3333
+set architecture armv4t
+monitor reset halt
+monitor reset init
+load
+dashboard
+set $pc = 0x30000000
+b main
+c
  
 ```
 ![alt text](../image/9.png)
